@@ -1,124 +1,71 @@
 /* ════════════════════════════════════════════════════════════════
    APRSNET.CN 首页样式
-   调色板与 APRSLocus 官网同一套 token（面板灰 / 铝白 / 安全橙 / 冷蓝），
-   深色（深空黑）为默认皮肤，浅色是同义变体 —— 下面两块 token 原样取自
-   APRSLocus docs/css/style.css 的 :root 与 :root[data-theme="dark"]。
-   规矩：规则里只写 token，不写死颜色。
+   本站自己的一套皮肤：NASA punk —— 混凝土白地 / 墨字 / 钢材灰，只有一支亮橙。
+   浅色是默认皮肤，深色是同义变体（深空黑仪器面板）。
+   规矩：规则里只写 token，不写死颜色；强调色只有一支（--hot*）。
    目录：01 token / 02 基础 / 03 导航 / 04 首屏 / 05 区块 / 06 清单 / 07 页脚 / 08 响应式与动效
    ════════════════════════════════════════════════════════════════ */
 
 /* ── 01. token ── */
 :root {
-  /* 面：白天是近乎实心的白（本站不用毛玻璃） */
-  --surface-1: rgba(255, 255, 255, .96);
-  --surface-2: rgba(255, 255, 255, .88);
-  --surface-3: rgba(255, 255, 255, .72);
-  --surface-4: rgba(240, 244, 250, .92);
-  --surface-hi: #ffffff;
-  --glass: var(--surface-1);
-  --code-bg: #0d1526;
-  --on-code: #eef3fa;
-  --bg-1: #f4f7fc;
-  --bg-2: #e9eff9;
-  /* 线：铝白体系里的极细边框 */
-  --line: rgba(148, 160, 178, .34);
-  --line-soft: rgba(148, 160, 178, .20);
-  --line-strong: rgba(148, 160, 178, .52);
-  --line-cool: rgba(29, 111, 208, .30);
-  --line-warn: rgba(180, 120, 0, .34);
-  --line-ok: rgba(30, 143, 99, .30);
-  --line-bad: rgba(192, 48, 39, .30);
-  /* 文字：白天的下限是墨色（#5b6b85 = 4.99，过 AA） */
-  --text: #0f172a;
-  --text-dim: #4b5a75;
-  --text-faint: #5b6b85;
-  /* 强调：冷蓝 = 数据高亮（链接 / 数值 / 图表），安全橙 = 主号召（CTA / 编号 / 标线） */
-  --cyan-deep: #0369a1;
-  --cyan: #1d6fd0;
-  --cyan-bright: #2490e6;
-  --blue: #2563eb;
-  --accent: #e25700;
-  --accent-deep: #b34700;
-  --on-accent: #1a1207;
-  /* 状态 */
-  --green: #1e8f63;
-  --green-deep: #047857;
-  --amber: #b47800;
-  --amber-deep: #92400e;
-  --red: #c03027;
-  /* 光晕 / 淡染层（背景光斑、选中态、代码底） */
-  --halo-cool: rgba(45, 122, 200, .14);
-  --halo-warm: rgba(226, 87, 0, .10);
-  --halo-ok: rgba(30, 143, 99, .10);
-  --halo-bad: rgba(192, 48, 39, .10);
-  /* 投影：哑光，不发光 */
-  --shadow-color: rgba(23, 42, 74, .12);
-  --shadow-cool: rgba(29, 111, 208, .26);
-  --shadow-warm: rgba(226, 87, 0, .22);
-  --shadow-ok: rgba(30, 143, 99, .20);
-  --shadow: 0 14px 34px var(--shadow-color);
-  --shadow-hover: 0 22px 48px var(--shadow-color);
-  /* 渐变：主号召一律橙底 + 深墨字（白字压橙只有 2.9:1，过不了 AA） */
-  --grad: linear-gradient(120deg, #ff6a00, #cf5200);
-  --grad-text: linear-gradient(120deg, #b34700, #8f3800);
-  --grad-rule: linear-gradient(120deg, #ff6a00, #4da3ff);
+  color-scheme: light;
+  /* 面：实心白面板（工业面板不用毛玻璃） */
+  --surface-1: #ffffff;
+  --surface-2: #f7f6f2;
+  --surface-3: #f0eee9;
+  --surface-4: #e8e6e0;
+  --bg-1: #f2f0ea;               /* 混凝土白 */
+  --bg-2: #e9e7e1;
+  /* 线：钢材灰的极细边框 */
+  --line: rgba(21, 24, 28, .20);
+  --line-hot: rgba(217, 79, 0, .42);
+  /* 文字：墨 / 淡墨（最淡的 #6c747a 压在白地上 4.6:1，过 AA） */
+  --text: #15181c;
+  --text-dim: #4b535a;
+  --text-faint: #6c747a;
+  /* 强调：只有一支亮橙 —— --hot 能当小字用（5.2:1），--hot-bright 只做底与标线 */
+  --hot: #b23c00;
+  --hot-deep: #8a2e00;
+  --hot-bright: #ff6a00;
+  /* 淡染层 / 投影：哑光，不发光 */
+  --halo-hot: rgba(217, 79, 0, .10);
+  --halo-warm: rgba(255, 106, 0, .10);
+  --shadow-color: rgba(21, 24, 28, .13);
+  --shadow-hot: rgba(217, 79, 0, .22);
+  /* 渐变：主号召一律橙底 + 墨字（白字压橙只有 2.9:1，过不了 AA） */
+  --grad: linear-gradient(120deg, #ff6a00, #d94f00);
+  --on-accent: #16110c;
   /* 字体：正文无衬线，数据 / 编号走等宽（栈里全是系统字体，不额外拉网络字体） */
   --font-sans: Inter, "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
   /* 微圆角：工业面板是切角，不是药丸 */
   --radius: 10px;
-  --radius-sm: 6px;
   --ease: cubic-bezier(.22, .8, .24, 1);
 }
 
-/* 深色 = 默认皮肤，整体覆盖上面的 token */
+/* 深色 = 深空黑仪器面板，整体覆盖上面的 token */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --surface-1: #1c2228;          /* 面板灰 */
-  --surface-2: #171d23;
-  --surface-3: #12181d;
-  --surface-4: #0f1519;
-  --surface-hi: #232a31;
-  --glass: var(--surface-1);
-  --code-bg: #05080f;
-  --on-code: #d8dde3;
-  --bg-1: #0a0e12;               /* 深空黑 */
-  --bg-2: #090c10;
-  --line: rgba(216, 221, 227, .14);
-  --line-soft: rgba(216, 221, 227, .09);
-  --line-strong: rgba(216, 221, 227, .26);
-  --line-cool: rgba(77, 163, 255, .32);
-  --line-warn: rgba(255, 176, 0, .32);
-  --line-ok: rgba(61, 220, 151, .28);
-  --line-bad: rgba(224, 60, 49, .34);
-  --text: #d8dde3;               /* 铝白 */
-  --text-dim: #98a2ac;
-  --text-faint: #868f9a;
-  --cyan-deep: #2e7fd1;
-  --cyan: #4da3ff;               /* 冷蓝：数据高亮 */
-  --cyan-bright: #8cc5ff;
-  --blue: #4da3ff;
-  --accent: #ff6a00;             /* 安全橙 */
-  --accent-deep: #ff8a3d;
-  --on-accent: #0a0e12;
-  --green: #3ddc97;              /* 信号绿：正常 */
-  --green-deep: #2aae77;
-  --amber: #ffb000;              /* 琥珀：注意 */
-  --amber-deep: #c98a00;
-  --red: #e03c31;                /* 警告红：故障 */
-  --halo-cool: rgba(77, 163, 255, .10);
+  --surface-1: #1b2026;
+  --surface-2: #161b20;
+  --surface-3: #12161b;
+  --surface-4: #0f1317;
+  --bg-1: #0b0e11;
+  --bg-2: #080a0d;
+  --line: rgba(218, 221, 224, .16);
+  --line-hot: rgba(255, 106, 0, .46);
+  --text: #dadde0;
+  --text-dim: #98a1a7;
+  --text-faint: #7d868c;
+  --hot: #ff8a3d;
+  --hot-deep: #ff6a00;
+  --hot-bright: #ffb066;
+  --halo-hot: rgba(255, 138, 61, .12);
   --halo-warm: rgba(255, 106, 0, .08);
-  --halo-ok: rgba(61, 220, 151, .06);
-  --halo-bad: rgba(224, 60, 49, .08);
   --shadow-color: rgba(0, 0, 0, .55);
-  --shadow-cool: rgba(77, 163, 255, .18);
-  --shadow-warm: rgba(255, 106, 0, .16);
-  --shadow-ok: rgba(61, 220, 151, .14);
-  --shadow: 0 14px 34px var(--shadow-color);
-  --shadow-hover: 0 22px 48px var(--shadow-color);
+  --shadow-hot: rgba(255, 106, 0, .18);
   --grad: linear-gradient(120deg, #ff6a00, #c2410c);
-  --grad-text: linear-gradient(120deg, #ffb000, #ff6a00);
-  --grad-rule: linear-gradient(120deg, #ff6a00, #4da3ff);
+  --on-accent: #12100c;
 }
 
 /* ── 02. 基础 ── */
@@ -127,7 +74,7 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: hidd
 body {
   font-family: var(--font-sans);
   background:
-    radial-gradient(1200px 700px at 85% -10%, var(--halo-cool), transparent 62%),
+    radial-gradient(1200px 700px at 85% -10%, var(--halo-hot), transparent 62%),
     radial-gradient(1000px 620px at 0% 42%, var(--halo-warm), transparent 62%),
     linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
   background-attachment: fixed;
@@ -141,17 +88,17 @@ img { max-width: 100%; display: block; }
 b, strong { font-weight: 800; }
 code {
   font-family: var(--font-mono);
-  background: var(--halo-cool);
-  color: var(--cyan-deep);
+  background: var(--halo-hot);
+  color: var(--hot-deep);
   padding: .1em .4em;
   border-radius: 6px;
   font-size: .9em;
 }
-:root[data-theme="dark"] code { color: var(--cyan-bright); }
-::selection { background: var(--halo-cool); }
+:root[data-theme="dark"] code { color: var(--hot-bright); }
+::selection { background: var(--halo-hot); }
 ::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 8px; }
-:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: var(--hot); border-radius: 8px; }
+:focus-visible { outline: 2px solid var(--hot); outline-offset: 3px; border-radius: 4px; }
 
 .skip-link {
   position: absolute; left: -9999px; top: 0; z-index: 200;
@@ -165,19 +112,19 @@ code {
 .nav.scrolled { padding: 10px 0; background: var(--surface-2); border-bottom: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow-color); }
 .nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 40px); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand-mark { width: 12px; height: 12px; border-radius: 3px; background: var(--grad); box-shadow: 0 0 18px var(--shadow-cool); }
+.brand-mark { width: 12px; height: 12px; border-radius: 3px; background: var(--grad); box-shadow: 0 0 18px var(--shadow-hot); }
 .brand-name { font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
 .nav-links { display: flex; align-items: center; gap: 4px; }
 .nav-links a { padding: 9px 13px; border-radius: var(--radius); font-size: 14.5px; color: var(--text-dim); transition: color .25s var(--ease), background .25s var(--ease); }
 .nav-links a:hover { color: var(--text); background: var(--surface-2); }
-.nav-links a.active { color: var(--cyan); background: var(--halo-cool); }
+.nav-links a.active { color: var(--hot); background: var(--halo-hot); }
 .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; margin-left: 6px; border-radius: var(--radius); cursor: pointer;
   color: var(--text-dim); background: transparent; border: 1px solid transparent;
   transition: color .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
 }
-.theme-toggle:hover { color: var(--cyan); background: var(--surface-2); border-color: var(--line); }
+.theme-toggle:hover { color: var(--hot); background: var(--surface-2); border-color: var(--line); }
 .theme-toggle .ico { width: 17px; height: 17px; fill: currentColor; }
 .theme-toggle .ico-sun { display: none; }
 :root[data-theme="dark"] .theme-toggle .ico-moon { display: none; }
@@ -193,8 +140,8 @@ code {
 .hero-grid {
   position: absolute; inset: 0; z-index: 0; opacity: .5; pointer-events: none;
   background-image:
-    linear-gradient(var(--halo-cool) 1px, transparent 1px),
-    linear-gradient(90deg, var(--halo-cool) 1px, transparent 1px);
+    linear-gradient(var(--halo-hot) 1px, transparent 1px),
+    linear-gradient(90deg, var(--halo-hot) 1px, transparent 1px);
   background-size: 56px 56px;
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 40% 35%, #000 40%, transparent 78%);
   mask-image: radial-gradient(ellipse 80% 70% at 40% 35%, #000 40%, transparent 78%);
@@ -204,7 +151,7 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .hero-kicker { font-size: 12.5px; font-weight: 700; letter-spacing: .16em; color: var(--text-faint); margin-bottom: 20px; }
 .hero-wordmark {
   font-size: clamp(40px, 7.2vw, 88px); font-weight: 900; letter-spacing: -.04em; line-height: .98;
-  background: linear-gradient(120deg, var(--text) 0%, var(--cyan) 100%);
+  background: linear-gradient(120deg, var(--text) 0%, var(--hot) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .hero-slogan { margin-top: 16px; font-size: clamp(19px, 2.5vw, 28px); font-weight: 700; letter-spacing: -.01em; }
@@ -212,10 +159,10 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
 
 .btn { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; padding: 14px 24px; border-radius: var(--radius); transition: transform .3s var(--ease), box-shadow .3s var(--ease), background .3s var(--ease), border-color .3s var(--ease); }
-.btn-primary { color: var(--on-accent); background: var(--grad); box-shadow: 0 14px 32px var(--shadow-cool); }
-.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 20px 44px var(--shadow-cool); }
+.btn-primary { color: var(--on-accent); background: var(--grad); box-shadow: 0 14px 32px var(--shadow-hot); }
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 20px 44px var(--shadow-hot); }
 .btn-ghost { color: var(--text); background: var(--surface-1); border: 1px solid var(--line); }
-.btn-ghost:hover { transform: translateY(-3px); border-color: var(--line-cool); color: var(--cyan); }
+.btn-ghost:hover { transform: translateY(-3px); border-color: var(--line-hot); color: var(--hot); }
 
 /* ── 05. 区块 ── */
 .section { position: relative; z-index: 1; padding: clamp(72px, 9vw, 108px) clamp(20px, 6vw, 96px); }
@@ -237,12 +184,12 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .link-list li { border-bottom: 1px solid var(--line); }
 .link-row { display: flex; align-items: center; gap: 20px; padding: 20px 4px; transition: transform .3s var(--ease); }
 .link-row:hover { transform: translateX(4px); }
-.link-row:hover .lr-main b { color: var(--cyan); }
+.link-row:hover .lr-main b { color: var(--hot); }
 .lr-main { flex: 1; }
 .lr-main b { display: block; font-size: 17px; transition: color .25s var(--ease); }
 .lr-main span { display: block; color: var(--text-dim); font-size: 15px; margin-top: 3px; }
-.lr-go { color: var(--cyan); font-weight: 800; font-size: 17px; }
-.lr-tag { flex: none; font-family: var(--font-mono); font-size: 13px; color: var(--cyan); border: 1px solid var(--line-cool); background: var(--halo-cool); padding: 6px 12px; border-radius: 999px; }
+.lr-go { color: var(--hot); font-weight: 800; font-size: 17px; }
+.lr-tag { flex: none; font-family: var(--font-mono); font-size: 13px; color: var(--hot); border: 1px solid var(--line-hot); background: var(--halo-hot); padding: 6px 12px; border-radius: 999px; }
 .link-row.is-static:hover { transform: none; }
 
 .glossary { border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(120px, 168px) 1fr; }
@@ -252,7 +199,7 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 /* 步骤：真 ol，编号交给 ::marker */
 .steps { list-style: decimal; padding-left: 30px; border-top: 1px solid var(--line); }
 .steps li { padding: 16px 0 16px 6px; border-bottom: 1px solid var(--line); color: var(--text-dim); font-size: 16px; }
-.steps li::marker { color: var(--cyan); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+.steps li::marker { color: var(--hot); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
 .steps b { display: block; color: var(--text); font-size: 16.5px; margin-bottom: 4px; }
 
 /* 问答：真 details / summary，不用 JS 折叠 */
@@ -260,9 +207,9 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .faq details { border-bottom: 1px solid var(--line); }
 .faq summary { display: flex; align-items: center; gap: 12px; padding: 16px 0; cursor: pointer; font-size: 16.5px; font-weight: 700; list-style: none; transition: color .25s var(--ease); }
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: "+"; margin-left: auto; color: var(--cyan); font-family: var(--font-mono); font-size: 17px; line-height: 1; }
+.faq summary::after { content: "+"; margin-left: auto; color: var(--hot); font-family: var(--font-mono); font-size: 17px; line-height: 1; }
 .faq details[open] summary::after { content: "−"; }
-.faq summary:hover, .faq details[open] summary { color: var(--cyan); }
+.faq summary:hover, .faq details[open] summary { color: var(--hot); }
 .faq p { padding: 0 0 18px; color: var(--text-dim); font-size: 15.5px; max-width: 760px; }
 
 /* ── 07. 回到顶部（带滚动进度环） ── */
@@ -274,12 +221,12 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
   transition: opacity .35s var(--ease), transform .35s var(--ease), border-color .3s var(--ease);
 }
 .backtop.show { opacity: 1; pointer-events: auto; transform: none; }
-.backtop:hover { border-color: var(--cyan); }
-.backtop-arrow { width: 20px; height: 20px; fill: var(--cyan); }
+.backtop:hover { border-color: var(--hot); }
+.backtop-arrow { width: 20px; height: 20px; fill: var(--hot); }
 .backtop-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ring-bg { fill: none; stroke: var(--line); stroke-width: 2.5; }
 .ring-fg {
-  fill: none; stroke: var(--cyan); stroke-width: 2.5; stroke-linecap: round;
+  fill: none; stroke: var(--hot); stroke-width: 2.5; stroke-linecap: round;
   transform: rotate(-90deg); transform-origin: 50% 50%;
   stroke-dasharray: 106.8; stroke-dashoffset: 106.8; transition: stroke-dashoffset .12s linear;
 }
@@ -292,10 +239,10 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .footer-brand span { color: var(--text-faint); font-size: 14px; }
 .footer-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .footer-links a { padding: 7px 12px; border-radius: var(--radius); font-size: 14px; color: var(--text-dim); border: 1px solid transparent; transition: color .25s var(--ease), border-color .25s var(--ease), background .25s var(--ease); }
-.footer-links a:hover { color: var(--cyan); border-color: var(--line); background: var(--surface-1); }
+.footer-links a:hover { color: var(--hot); border-color: var(--line); background: var(--surface-1); }
 .footer-note { color: var(--text-faint); font-size: 13.5px; max-width: 760px; margin-top: 26px; }
 .footer-edit { color: var(--text-faint); font-size: 13.5px; margin-top: 10px; }
-.footer-edit a { color: var(--cyan); }
+.footer-edit a { color: var(--hot); }
 .footer-edit a:hover { text-decoration: underline; }
 .footer-copy { color: var(--text-faint); font-size: 13px; margin-top: 12px; }
 
