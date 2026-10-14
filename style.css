@@ -12,7 +12,6 @@
   /* 面：实心白面板（工业面板不用毛玻璃） */
   --surface-1: #ffffff;
   --surface-2: #f7f6f2;
-  --surface-3: #f0eee9;
   --surface-4: #e8e6e0;
   --bg-1: #f2f0ea;               /* 混凝土白 */
   --bg-2: #e9e7e1;
@@ -53,7 +52,6 @@
   color-scheme: dark;
   --surface-1: #1b2026;
   --surface-2: #161b20;
-  --surface-3: #12161b;
   --surface-4: #0f1317;
   --bg-1: #0b0e11;
   --bg-2: #080a0d;
