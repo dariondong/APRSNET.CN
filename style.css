@@ -18,7 +18,11 @@
   --bg-2: #e9e7e1;
   /* 线：钢材灰的极细边框 */
   --line: rgba(21, 24, 28, .20);
+  --line-strong: rgba(21, 24, 28, .38);
   --line-hot: rgba(217, 79, 0, .42);
+  /* 蓝图网格：细格 32px / 粗格 160px */
+  --grid-minor: rgba(21, 24, 28, .07);
+  --grid-major: rgba(21, 24, 28, .15);
   /* 文字：墨 / 淡墨（最淡的 #6c747a 压在白地上 4.6:1，过 AA） */
   --text: #15181c;
   --text-dim: #4b535a;
@@ -39,7 +43,8 @@
   --font-sans: Inter, "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
   /* 微圆角：工业面板是切角，不是药丸 */
-  --radius: 10px;
+  --radius: 8px;
+  --radius-sm: 4px;
   --ease: cubic-bezier(.22, .8, .24, 1);
 }
 
@@ -53,7 +58,10 @@
   --bg-1: #0b0e11;
   --bg-2: #080a0d;
   --line: rgba(218, 221, 224, .16);
+  --line-strong: rgba(218, 221, 224, .30);
   --line-hot: rgba(255, 106, 0, .46);
+  --grid-minor: rgba(218, 221, 224, .055);
+  --grid-major: rgba(218, 221, 224, .13);
   --text: #dadde0;
   --text-dim: #98a1a7;
   --text-faint: #7d868c;
@@ -115,12 +123,12 @@ code {
 .brand-mark { width: 12px; height: 12px; border-radius: 3px; background: var(--grad); box-shadow: 0 0 18px var(--shadow-hot); }
 .brand-name { font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
 .nav-links { display: flex; align-items: center; gap: 4px; }
-.nav-links a { padding: 9px 13px; border-radius: var(--radius); font-size: 14.5px; color: var(--text-dim); transition: color .25s var(--ease), background .25s var(--ease); }
+.nav-links a { padding: 9px 13px; border-radius: var(--radius-sm); font-size: 14.5px; color: var(--text-dim); transition: color .25s var(--ease), background .25s var(--ease); }
 .nav-links a:hover { color: var(--text); background: var(--surface-2); }
 .nav-links a.active { color: var(--hot); background: var(--halo-hot); }
 .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; margin-left: 6px; border-radius: var(--radius); cursor: pointer;
+  width: 34px; height: 34px; margin-left: 6px; border-radius: var(--radius-sm); cursor: pointer;
   color: var(--text-dim); background: transparent; border: 1px solid transparent;
   transition: color .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
 }
@@ -138,11 +146,13 @@ code {
 /* ── 04. 首屏 ── */
 .hero { position: relative; z-index: 1; min-height: 100svh; display: flex; align-items: center; padding: clamp(140px, 20vh, 200px) clamp(20px, 6vw, 96px) clamp(72px, 10vh, 110px); overflow: hidden; }
 .hero-grid {
-  position: absolute; inset: 0; z-index: 0; opacity: .5; pointer-events: none;
+  position: absolute; inset: 0; z-index: 0; opacity: .9; pointer-events: none;
   background-image:
-    linear-gradient(var(--halo-hot) 1px, transparent 1px),
-    linear-gradient(90deg, var(--halo-hot) 1px, transparent 1px);
-  background-size: 56px 56px;
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
+  background-size: 160px 160px, 160px 160px, 32px 32px, 32px 32px;
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 40% 35%, #000 40%, transparent 78%);
   mask-image: radial-gradient(ellipse 80% 70% at 40% 35%, #000 40%, transparent 78%);
 }
@@ -157,6 +167,33 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .hero-slogan { margin-top: 16px; font-size: clamp(19px, 2.5vw, 28px); font-weight: 700; letter-spacing: -.01em; }
 .hero-sub { color: var(--text-dim); font-size: clamp(15px, 1.6vw, 17.5px); margin: 24px 0 34px; max-width: 620px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+
+/* 摩尔士带：首屏那串「点划」，纯装饰（读屏由 aria-hidden 挡掉） */
+.morse-band { display: block; margin-top: 38px; width: min(174px, 42vw); height: 5px; fill: currentColor; color: var(--text-faint); opacity: .5; }
+
+/* 四角裁切标线：工业面板的版面标记，随主题走 token */
+.hero::before, .hero::after {
+  content: ""; position: absolute; z-index: 1; pointer-events: none;
+  left: clamp(18px, 3vw, 46px); right: clamp(18px, 3vw, 46px); height: 44px;
+  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(var(--line-strong), var(--line-strong)),
+    linear-gradient(var(--line-strong), var(--line-strong)),
+    linear-gradient(var(--line-strong), var(--line-strong)),
+    linear-gradient(var(--line-strong), var(--line-strong));
+  background-size: 44px 3px, 3px 44px, 44px 3px, 3px 44px;
+}
+.hero::before { top: clamp(92px, 11vh, 128px); background-position: left top, left top, right top, right top; }
+.hero::after { bottom: clamp(26px, 5vh, 54px); background-position: left bottom, left bottom, right bottom, right bottom; }
+
+/* 打孔纸带分隔线：一排等距小孔，压在两段内容之间 */
+.tape-rule {
+  position: relative; z-index: 1; height: 13px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background-color: var(--surface-4);
+  background-image: radial-gradient(circle, var(--line-strong) 2.2px, transparent 2.4px);
+  background-size: 17px 13px; background-repeat: repeat-x; background-position: 6px center;
+}
 
 .btn { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; padding: 14px 24px; border-radius: var(--radius); transition: transform .3s var(--ease), box-shadow .3s var(--ease), background .3s var(--ease), border-color .3s var(--ease); }
 .btn-primary { color: var(--on-accent); background: var(--grad); box-shadow: 0 14px 32px var(--shadow-hot); }
@@ -189,7 +226,7 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .lr-main b { display: block; font-size: 17px; transition: color .25s var(--ease); }
 .lr-main span { display: block; color: var(--text-dim); font-size: 15px; margin-top: 3px; }
 .lr-go { color: var(--hot); font-weight: 800; font-size: 17px; }
-.lr-tag { flex: none; font-family: var(--font-mono); font-size: 13px; color: var(--hot); border: 1px solid var(--line-hot); background: var(--halo-hot); padding: 6px 12px; border-radius: 999px; }
+.lr-tag { flex: none; font-family: var(--font-mono); font-size: 13px; color: var(--hot); border: 1px solid var(--line-hot); background: var(--halo-hot); padding: 6px 12px; border-radius: var(--radius-sm); }
 .link-row.is-static:hover { transform: none; }
 
 .glossary { border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(120px, 168px) 1fr; }
