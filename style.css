@@ -34,9 +34,7 @@
   --halo-hot: rgba(217, 79, 0, .10);
   --halo-warm: rgba(255, 106, 0, .10);
   --shadow-color: rgba(21, 24, 28, .13);
-  --shadow-hot: rgba(217, 79, 0, .22);
-  /* 渐变：主号召一律橙底 + 墨字（白字压橙只有 2.9:1，过不了 AA） */
-  --grad: linear-gradient(120deg, #ff6a00, #d94f00);
+  /* 主号召一律橙底 + 墨字（白字压橙只有 2.9:1，过不了 AA） */
   --on-accent: #16110c;
   /* 字体：正文无衬线，数据 / 编号走等宽（栈里全是系统字体，不额外拉网络字体） */
   --font-sans: Inter, "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
@@ -69,8 +67,6 @@
   --halo-hot: rgba(255, 138, 61, .12);
   --halo-warm: rgba(255, 106, 0, .08);
   --shadow-color: rgba(0, 0, 0, .55);
-  --shadow-hot: rgba(255, 106, 0, .18);
-  --grad: linear-gradient(120deg, #ff6a00, #c2410c);
   --on-accent: #12100c;
 }
 
@@ -109,7 +105,7 @@ code {
 .skip-link {
   position: absolute; left: -9999px; top: 0; z-index: 200;
   padding: 12px 18px; border-radius: 0 0 var(--radius) 0;
-  background: var(--grad); color: var(--on-accent); font-weight: 700;
+  background: var(--hot-bright); color: var(--on-accent); font-weight: 700;
 }
 .skip-link:focus { left: 0; }
 
@@ -121,7 +117,7 @@ code {
 .nav.scrolled { padding: 10px 0; background: var(--surface-2); border-bottom: 2px solid var(--text); box-shadow: 0 10px 30px var(--shadow-color); }
 .nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 40px); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand-mark { width: 12px; height: 12px; border-radius: 3px; background: var(--grad); box-shadow: 0 0 18px var(--shadow-hot); }
+.brand-mark { width: 12px; height: 12px; border-radius: 3px; background: var(--hot-bright); }
 .brand-name { font-family: var(--font-mono); font-weight: 800; font-size: 16px; letter-spacing: .04em; }
 .nav-links { display: flex; align-items: center; gap: 4px; }
 .nav-links a { position: relative; padding: 9px 13px; border-radius: var(--radius-sm); font-size: 14.5px; color: var(--text-dim); transition: color .25s var(--ease), background .25s var(--ease); }
@@ -164,12 +160,8 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .hero-kicker::before { content: ""; width: 9px; height: 9px; background: var(--hot-bright); flex: none; }
 .hero-wordmark {
   font-size: clamp(40px, 7.2vw, 88px); font-weight: 900; letter-spacing: -.04em; line-height: .98;
-  background: linear-gradient(120deg, var(--text) 0%, var(--hot) 46%, var(--text) 96%);
-  background-size: 240% 100%; background-position: 0% 50%;
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: wordFlow 13s ease-in-out infinite;
+  color: var(--text);
 }
-@keyframes wordFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 .hero-slogan { margin-top: 16px; font-size: clamp(19px, 2.5vw, 28px); font-weight: 700; letter-spacing: -.01em; }
 .hero-sub { border-left: 2px solid var(--text); padding-left: 16px; color: var(--text-dim); font-size: clamp(15px, 1.6vw, 17.5px); margin: 24px 0 34px; max-width: 620px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
@@ -203,8 +195,8 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 }
 
 .btn { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; padding: 14px 24px; border-radius: var(--radius); transition: transform .3s var(--ease), box-shadow .3s var(--ease), background .3s var(--ease), border-color .3s var(--ease); }
-.btn-primary { color: var(--on-accent); background: var(--grad); box-shadow: 0 14px 32px var(--shadow-hot); }
-.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 20px 44px var(--shadow-hot); }
+.btn-primary { color: var(--on-accent); background: var(--hot-bright); box-shadow: 0 10px 22px var(--shadow-color); }
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 28px var(--shadow-color); }
 .btn-ghost { color: var(--text); background: var(--surface-1); border: 1px solid var(--line); }
 .btn-ghost:hover { transform: translateY(-3px); border-color: var(--line-hot); color: var(--hot); }
 
@@ -399,7 +391,7 @@ body.loaded .hero-figure { animation: riseIn .78s var(--ease) .3s both; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .faq details[open] p { animation: none; }
   .btn:active { transform: none; }
-  .hero-wordmark, .tape-rule, .section-head.in::after { animation: none; }
+  .tape-rule, .section-head.in::after { animation: none; }
 }
 
 /* 窄屏：视差与鼠标倾斜都收掉，别在手机上抖 */
