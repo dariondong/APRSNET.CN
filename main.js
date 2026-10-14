@@ -75,6 +75,21 @@
     });
   }
 
+  /* ── 导航高亮（Scrollspy）：当前区块对应的锚点加 .active ── */
+  var sections = Array.prototype.slice.call(document.querySelectorAll("section[id]"));
+  var navAnchors = Array.prototype.slice.call(document.querySelectorAll(".nav-links a[href^='#']"));
+  if ("IntersectionObserver" in window && sections.length && navAnchors.length) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        navAnchors.forEach(function (a) {
+          a.classList.toggle("active", a.getAttribute("href") === "#" + e.target.id);
+        });
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    sections.forEach(function (s) { spy.observe(s); });
+  }
+
   /* ── 首屏入场：等字体与样式就位后再亮起来 ── */
   var markLoaded = function () { document.body.classList.add("loaded"); };
   if (document.readyState === "complete") markLoaded();

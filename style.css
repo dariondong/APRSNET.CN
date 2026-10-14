@@ -170,6 +170,7 @@ code {
 .nav-links { display: flex; align-items: center; gap: 4px; }
 .nav-links a { padding: 9px 13px; border-radius: var(--radius); font-size: 14.5px; color: var(--text-dim); transition: color .25s var(--ease), background .25s var(--ease); }
 .nav-links a:hover { color: var(--text); background: var(--surface-2); }
+.nav-links a.active { color: var(--cyan); background: var(--halo-cool); }
 .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; margin-left: 6px; border-radius: var(--radius); cursor: pointer;
