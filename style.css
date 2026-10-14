@@ -156,7 +156,7 @@ code {
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 40% 35%, #000 40%, transparent 78%);
   mask-image: radial-gradient(ellipse 80% 70% at 40% 35%, #000 40%, transparent 78%);
 }
-.hero-inner { position: relative; z-index: 2; width: 100%; max-width: 900px; margin: 0 auto; opacity: 0; transform: translateY(16px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.hero-inner { position: relative; z-index: 2; width: 100%; max-width: 1180px; margin: 0 auto; display: grid; gap: 46px; opacity: 0; transform: translateY(16px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
 body.loaded .hero-inner { opacity: 1; transform: none; }
 .hero-kicker { font-size: 12.5px; font-weight: 700; letter-spacing: .16em; color: var(--text-faint); margin-bottom: 20px; }
 .hero-wordmark {
@@ -202,6 +202,15 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .btn-ghost:hover { transform: translateY(-3px); border-color: var(--line-hot); color: var(--hot); }
 
 /* ── 05. 区块 ── */
+/* 首屏两栏：左文案、右仪器面板图（宽屏才分栏） */
+.hero-copy { min-width: 0; }
+.hero-figure { margin: 0 auto; max-width: min(440px, 58vh); }
+.hero-panel-svg { display: block; width: 100%; height: auto; }
+@media (min-width: 1000px) {
+  .hero-inner { grid-template-columns: minmax(0, 1.06fr) minmax(0, .94fr); align-items: center; gap: clamp(30px, 4vw, 66px); }
+  .hero-figure { max-width: min(100%, 58vh); }
+}
+
 .section { position: relative; z-index: 1; padding: clamp(72px, 9vw, 108px) clamp(20px, 6vw, 96px); }
 .section.alt { background: linear-gradient(180deg, var(--surface-3), var(--surface-4)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .section-head { max-width: 720px; margin: 0 0 44px; }
