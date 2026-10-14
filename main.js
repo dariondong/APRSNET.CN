@@ -90,6 +90,56 @@
     sections.forEach(function (s) { spy.observe(s); });
   }
 
+  /* ── 动效开关：系统说要减少动效时，把 SVG 里的 SMIL 动画停住 ── */
+  var mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  var still = !!(mq && mq.matches);
+  if (still) {
+    Array.prototype.forEach.call(document.querySelectorAll("svg"), function (s) {
+      if (s.pauseAnimations) s.pauseAnimations();
+    });
+  }
+
+  /* ── 滚动揭示：脚本自己给条目挂 .reveal，进视野时再入场
+        （挂 class 的动作在脚本里，脚本不在时内容照常可见） ── */
+  if (!still && "IntersectionObserver" in window) {
+    var items = document.querySelectorAll(".section-head, .fact-list li, .link-list li, .steps li, .glossary dt, .glossary dd, .faq details");
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add("in");
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: "0px 0px -10% 0px", threshold: 0.06 });
+    Array.prototype.forEach.call(items, function (el) {
+      var sibs = el.parentNode ? el.parentNode.children : null;
+      var i = sibs ? Array.prototype.indexOf.call(sibs, el) : 0;
+      el.style.setProperty("--d", Math.min(i, 6) * 55 + "ms");
+      el.classList.add("reveal");
+      io.observe(el);
+    });
+  }
+
+  /* ── 首屏视差：蓝图网格与面板图随滚动错开一点 ── */
+  var heroGrid = document.querySelector(".hero-grid");
+  var heroFig = document.querySelector(".hero-figure");
+  if (!still && (heroGrid || heroFig)) {
+    var ticking = false;
+    var paint = function () {
+      ticking = false;
+      var y = window.scrollY || 0;
+      if (y > (window.innerHeight || 1) * 1.2) return;
+      if (heroGrid) heroGrid.style.transform = "translate3d(0," + (y * 0.10).toFixed(1) + "px,0)";
+      if (heroFig) heroFig.style.transform = "translate3d(0," + (y * -0.075).toFixed(1) + "px,0)";
+    };
+    var glide = function () {
+      if (ticking) return;
+      ticking = true;
+      if (window.requestAnimationFrame) window.requestAnimationFrame(paint); else paint();
+    };
+    paint();
+    window.addEventListener("scroll", glide, { passive: true });
+  }
+
   /* ── 首屏入场：等字体与样式就位后再亮起来 ── */
   var markLoaded = function () { document.body.classList.add("loaded"); };
   if (document.readyState === "complete") markLoaded();

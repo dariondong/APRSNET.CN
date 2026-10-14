@@ -3,7 +3,7 @@
    本站自己的一套皮肤：NASA punk —— 混凝土白地 / 墨字 / 钢材灰，只有一支亮橙。
    浅色是默认皮肤，深色是同义变体（深空黑仪器面板）。
    规矩：规则里只写 token，不写死颜色；强调色只有一支（--hot*）。
-   目录：01 token / 02 基础 / 03 导航 / 04 首屏 / 05 区块 / 06 清单 / 07 页脚 / 08 响应式与动效
+   目录：01 token / 02 基础 / 03 导航 / 04 首屏 / 05 区块 / 06 清单 / 07 页脚 / 08 响应式 / 09 动效
    ════════════════════════════════════════════════════════════════ */
 
 /* ── 01. token ── */
@@ -322,4 +322,48 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
   html { scroll-behavior: auto; }
   .hero-inner { opacity: 1; transform: none; transition: none; }
   .btn:hover, .link-row:hover { transform: none; }
+}
+
+/* ── 09. 动效 ── */
+/* 首屏分层入场：每个直接子元素错开一点升上来 */
+@keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+body.loaded .hero-copy > * { animation: riseIn .68s var(--ease) both; }
+body.loaded .hero-copy > *:nth-child(2) { animation-delay: .07s; }
+body.loaded .hero-copy > *:nth-child(3) { animation-delay: .14s; }
+body.loaded .hero-copy > *:nth-child(4) { animation-delay: .21s; }
+body.loaded .hero-copy > *:nth-child(5) { animation-delay: .28s; }
+body.loaded .hero-copy > *:nth-child(6) { animation-delay: .35s; }
+body.loaded .hero-figure { animation: riseIn .78s var(--ease) .3s both; }
+
+/* 滚动揭示：JS 挂上 .reveal 之后才隐藏（脚本不在时内容照常可见） */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity .62s var(--ease) var(--d, 0s), transform .62s var(--ease) var(--d, 0s); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* 视差与揭示都改 transform，提前提个醒 */
+.hero-grid, .hero-figure { will-change: transform; }
+
+/* 列表行：悬停时那条分隔线亮成橙色 */
+.fact-list li, .steps li, .glossary dt, .glossary dd { transition: border-color .3s var(--ease), color .3s var(--ease); }
+.fact-list li:hover, .steps li:hover, .glossary dd:hover { border-bottom-color: var(--hot-bright); }
+.link-row { transition: transform .3s var(--ease), background-color .3s var(--ease); }
+.link-row:hover { background-color: var(--halo-hot); }
+
+/* 按钮：按下时压一下 */
+.btn:active { transform: translateY(-1px) scale(.985); transition-duration: .12s; }
+
+/* 问答：展开时内容升上来，加号转个身 */
+@keyframes faqIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.faq details[open] p { animation: faqIn .34s var(--ease) both; }
+.faq summary::after { transition: transform .3s var(--ease), color .25s var(--ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  body.loaded .hero-copy > *, body.loaded .hero-figure { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .faq details[open] p { animation: none; }
+  .btn:active { transform: none; }
+}
+
+/* 窄屏：视差与揭示都收掉，别在手机上抖 */
+@media (max-width: 640px) {
+  .hero-grid, .hero-figure { transform: none !important; }
 }
