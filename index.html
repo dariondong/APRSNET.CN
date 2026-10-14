@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNET.CN — APRS 中文入口</title>
-<meta name="description" content="APRSNET.CN —— 面向中文业余无线电爱好者的 APRS 入口：APRS 是什么、能用什么客户端、去哪里找人。">
+<meta name="description" content="APRSNET.CN —— 面向中文业余无线电爱好者的 APRS 入口：APRS 是什么、怎么发出第一个信标、去哪里找人、卡住了怎么查。">
 <meta name="theme-color" content="#0a0e12">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="APRSNET.CN">
 <meta property="og:title" content="APRSNET.CN — APRS 中文入口">
-<meta property="og:description" content="面向中文业余无线电爱好者的 APRS 入口：APRS 是什么、能用什么客户端、去哪里找人。">
+<meta property="og:description" content="面向中文业余无线电爱好者的 APRS 入口：APRS 是什么、怎么发出第一个信标、去哪里找人。">
 <meta property="og:url" content="https://aprsnet.cn/">
 <meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
 <meta property="og:image:width" content="512">
@@ -21,7 +21,7 @@
 <link rel="apple-touch-icon" href="assets/icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="APRSNET.CN — APRS 中文入口">
-<meta name="twitter:description" content="面向中文业余无线电爱好者的 APRS 入口：APRS 是什么、能用什么客户端、去哪里找人。">
+<meta name="twitter:description" content="面向中文业余无线电爱好者的 APRS 入口：APRS 是什么、怎么发出第一个信标、去哪里找人。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
 <link rel="stylesheet" href="style.css?v=1">
 <script>
@@ -51,7 +51,9 @@
     <nav class="nav-links" aria-label="页面导航">
       <a href="#about">APRS 是什么</a>
       <a href="#start">从这里开始</a>
+      <a href="#steps">上手</a>
       <a href="#glossary">名词小抄</a>
+      <a href="#faq">常见问题</a>
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="true" aria-label="切换浅色模式" title="切换浅色模式">
         <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
         <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
@@ -152,7 +154,38 @@
     </div>
   </section>
 
-  <section class="section" id="glossary">
+  <section class="section" id="steps">
+    <div class="section-head">
+      <h2>发出第一个信标</h2>
+      <p>门槛不在软件，而在那张执照和一根能发射的线。按这个顺序走，最快当天就能在地图上看见自己。</p>
+    </div>
+    <div class="section-body">
+      <ol class="steps">
+        <li>
+          <b>拿到资格</b>
+          考取业余无线电操作证书、办下电台执照，拿到属于自己的呼号 —— APRS 包的第一段就是它。
+        </li>
+        <li>
+          <b>备好链路</b>
+          一台能收发 APRS 的电台，加一个终端（手机或电脑），中间用蓝牙 / 串口 TNC 或声卡线连起来。只想先熟悉界面，也可以只连 APRS-IS，不发射。
+        </li>
+        <li>
+          <b>装个客户端</b>
+          比如 APRSLocus：填呼号、挑连接方式，先把「接收」跑通，在屏幕上看见别人。
+        </li>
+        <li>
+          <b>发一次信标</b>
+          按当地约定选好频率和路径，发一次位置包；没听到回应就回头查线、PTT 和路径设置。
+        </li>
+        <li>
+          <b>上地图确认</b>
+          打开 aprs.fi 或客户端里的地图，搜自己的呼号。那个点出现的时候，你就已经在这张网里了。
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section alt" id="glossary">
     <div class="section-head">
       <h2>名词小抄</h2>
       <p>第一次见这些词，扫一眼，大多数 APRS 页面上的话就都能读懂了。</p>
@@ -176,6 +209,37 @@
         <dt>位置格式</dt>
         <dd>APRS 用度分格式，长这样：<code>3905.45N/07223.83W</code>。</dd>
       </dl>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="section-head">
+      <h2>常见问题</h2>
+      <p>刚上手最容易卡住的几个地方，先把它们说清楚。</p>
+    </div>
+    <div class="section-body">
+      <div class="faq">
+        <details>
+          <summary>没有呼号能玩吗？</summary>
+          <p>看，可以。APRS-IS 和各家公开地图都是开放浏览的，不用呼号也能看别人。发，不可以：发射和上中继一样，需要有本地的操作证书和电台执照。</p>
+        </details>
+        <details>
+          <summary>需要哪些设备？</summary>
+          <p>一台能收发 APRS 的电台（手台也行），加一个终端：手机或电脑。中间那条链路可以是蓝牙 / 串口 TNC、声卡线，也可以直接连 APRS-IS —— 那种玩法只用互联网，不发射。</p>
+        </details>
+        <details>
+          <summary>手台直连能传多远？</summary>
+          <p>视距，通常几公里到几十公里，取决于天线高度和地形。想更远就得靠高处的 digipeater 接力，或者由附近的 iGate 把包送进互联网。</p>
+        </details>
+        <details>
+          <summary>为什么地图上搜不到我？</summary>
+          <p>最常见的是三种：包根本没发出去（频率、连线、PTT 设置），附近没有 digipeater 或 iGate 接力，或者呼号与位置格式写错了。先把「只接收」跑通，再一段一段查发射链路。</p>
+        </details>
+        <details>
+          <summary>我的位置是公开的吗？</summary>
+          <p>是。发出去的包会进入公开的 APRS 网络，也会出现在各家地图上。不想公开就别发位置信标，或者只用它接收。</p>
+        </details>
+      </div>
     </div>
   </section>
 
