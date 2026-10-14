@@ -264,7 +264,26 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .faq summary:hover, .faq details[open] summary { color: var(--cyan); }
 .faq p { padding: 0 0 18px; color: var(--text-dim); font-size: 15.5px; max-width: 760px; }
 
-/* ── 07. 页脚 ── */
+/* ── 07. 回到顶部（带滚动进度环） ── */
+.backtop {
+  position: fixed; right: 26px; bottom: 26px; z-index: 90; width: 48px; height: 48px; border-radius: var(--radius);
+  display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--line);
+  box-shadow: 0 12px 30px var(--shadow-color);
+  opacity: 0; pointer-events: none; transform: translateY(14px);
+  transition: opacity .35s var(--ease), transform .35s var(--ease), border-color .3s var(--ease);
+}
+.backtop.show { opacity: 1; pointer-events: auto; transform: none; }
+.backtop:hover { border-color: var(--cyan); }
+.backtop-arrow { width: 20px; height: 20px; fill: var(--cyan); }
+.backtop-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ring-bg { fill: none; stroke: var(--line); stroke-width: 2.5; }
+.ring-fg {
+  fill: none; stroke: var(--cyan); stroke-width: 2.5; stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: 50% 50%;
+  stroke-dasharray: 106.8; stroke-dashoffset: 106.8; transition: stroke-dashoffset .12s linear;
+}
+
+/* ── 08. 页脚 ── */
 .footer { position: relative; z-index: 1; border-top: 1px solid var(--line); background: var(--surface-4); padding: 48px clamp(20px, 6vw, 96px) 56px; }
 .footer-inner { max-width: 1100px; margin: 0 auto; }
 .footer-top { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }

@@ -37,6 +37,23 @@
     });
   }
 
+  /* ── 回到顶部 + 进度环 ── */
+  var backTop = document.getElementById("backTop");
+  var ringFg = document.getElementById("ringFg");
+  if (backTop) {
+    var CIRC = 106.8; // 半径 17 的周长
+    var onScroll = function () {
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      var p = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+      backTop.classList.toggle("show", window.scrollY > 600);
+      if (ringFg) ringFg.style.strokeDashoffset = (CIRC * (1 - p)).toFixed(1);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+  }
+
   /* ── 主题切换（浅 / 深），偏好存 localStorage ── */
   var themeBtn = document.getElementById("themeToggle");
   if (themeBtn) {
