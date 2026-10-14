@@ -70,7 +70,7 @@
       document.documentElement.setAttribute("data-theme", next);
       try { localStorage.setItem("theme", next); } catch (e) {}
       var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", next === "dark" ? "#0a0e12" : "#f4f7fc");
+      if (meta) meta.setAttribute("content", next === "dark" ? "#0b0e11" : "#f2f0ea");
       syncTheme();
     });
   }
