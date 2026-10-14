@@ -104,16 +104,11 @@
     sections.forEach(function (s) { spy.observe(s); });
   }
 
-  /* ── 动效开关：系统说要减少动效时，把 SVG 里的 SMIL 动画停住 ── */
+  /* ── 动效开关：系统说要减少动效时，连那层淡入也不放 ── */
   var mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   var still = !!(mq && mq.matches);
-  if (still) {
-    Array.prototype.forEach.call(document.querySelectorAll("svg"), function (s) {
-      if (s.pauseAnimations) s.pauseAnimations();
-    });
-  }
 
-  /* ── 滚动揭示：脚本自己给条目挂 .reveal，进视野时再入场
+  /* ── 滚动揭示：脚本自己给条目挂 .reveal，进视野时淡入
         （挂 class 的动作在脚本里，脚本不在时内容照常可见） ── */
   if (!still && "IntersectionObserver" in window) {
     var items = document.querySelectorAll(".section-head, .fact-list li, .link-list li, .steps li, .glossary dt, .glossary dd, .faq details");
@@ -125,51 +120,9 @@
       });
     }, { rootMargin: "0px 0px -10% 0px", threshold: 0.06 });
     Array.prototype.forEach.call(items, function (el) {
-      var sibs = el.parentNode ? el.parentNode.children : null;
-      var i = sibs ? Array.prototype.indexOf.call(sibs, el) : 0;
-      el.style.setProperty("--d", Math.min(i, 6) * 55 + "ms");
       el.classList.add("reveal");
       io.observe(el);
     });
-  }
-
-  /* ── 首屏动效：蓝图网格与面板图随滚动错开，面板图再随鼠标轻微倾斜
-        （transform 只在这一处合成，免得多处互相覆盖） ── */
-  var heroGrid = document.querySelector(".hero-grid");
-  var heroFig = document.querySelector(".hero-panel-svg");
-  if (!still && (heroGrid || heroFig)) {
-    var wide = window.matchMedia ? window.matchMedia("(min-width: 1000px)") : null;
-    var canTilt = !!(wide && wide.matches && !("ontouchstart" in window));
-    var parY = 0, tiltX = 0, tiltY = 0, waiting = false;
-    var paint = function () {
-      waiting = false;
-      if (heroGrid) heroGrid.style.transform = "translate3d(0," + (parY * 0.10).toFixed(1) + "px,0)";
-      if (!heroFig) return;
-      var t = "translate3d(0," + (parY * -0.075).toFixed(1) + "px,0)";
-      if (canTilt) t = "perspective(1000px) " + t + " rotateY(" + tiltX.toFixed(2) + "deg) rotateX(" + tiltY.toFixed(2) + "deg)";
-      heroFig.style.transform = t;
-    };
-    var schedule = function () {
-      if (waiting) return;
-      waiting = true;
-      if (window.requestAnimationFrame) window.requestAnimationFrame(paint); else paint();
-    };
-    window.addEventListener("scroll", function () {
-      parY = Math.min(window.scrollY || 0, (window.innerHeight || 1) * 1.2);
-      schedule();
-    }, { passive: true });
-    if (canTilt) {
-      document.addEventListener("pointermove", function (e) {
-        var r = heroFig.getBoundingClientRect();
-        if (!r.width) return;
-        var nx = (e.clientX - (r.left + r.width / 2)) / ((window.innerWidth || 1) / 2);
-        var ny = (e.clientY - (r.top + r.height / 2)) / ((window.innerHeight || 1) / 2);
-        tiltX = Math.max(-1, Math.min(1, nx)) * 4.5;
-        tiltY = Math.max(-1, Math.min(1, ny)) * -3.5;
-        schedule();
-      }, { passive: true });
-    }
-    paint();
   }
 
   /* ── 首屏入场：等字体与样式就位后再亮起来 ── */
