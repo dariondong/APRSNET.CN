@@ -181,6 +181,11 @@ code {
 .theme-toggle .ico-sun { display: none; }
 :root[data-theme="dark"] .theme-toggle .ico-moon { display: none; }
 :root[data-theme="dark"] .theme-toggle .ico-sun { display: block; }
+.nav-burger { display: none; flex-direction: column; gap: 5px; background: none; border: 0; cursor: pointer; padding: 8px; }
+.nav-burger span { width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: transform .3s var(--ease), opacity .3s var(--ease); }
+.nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-burger.open span:nth-child(2) { opacity: 0; }
+.nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* ── 04. 首屏 ── */
 .hero { position: relative; z-index: 1; min-height: 100svh; display: flex; align-items: center; padding: clamp(140px, 20vh, 200px) clamp(20px, 6vw, 96px) clamp(72px, 10vh, 110px); overflow: hidden; }
@@ -276,7 +281,18 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
   .nav-links a { padding: 9px 10px; font-size: 14px; }
 }
 @media (max-width: 720px) {
-  .nav-links > a { display: none; }
+  /* 窄屏：锚点收进右侧抽屉（真开合，不是隐藏） */
+  .nav-links {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(300px, 80vw); z-index: 120;
+    flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px;
+    padding: 90px 24px 30px; background: var(--surface-2); border-left: 1px solid var(--line);
+    box-shadow: -20px 0 60px var(--shadow-color);
+    transform: translateX(100%); transition: transform .4s var(--ease); visibility: hidden;
+  }
+  .nav-links.open { transform: none; visibility: visible; }
+  .nav-links a { padding: 14px 16px; font-size: 16px; }
+  .nav-burger { display: flex; z-index: 130; }
+  .theme-toggle { width: 100%; justify-content: flex-start; gap: 10px; margin: 6px 0 0; padding-left: 16px; }
   .footer-top { align-items: flex-start; }
 }
 @media (max-width: 640px) {

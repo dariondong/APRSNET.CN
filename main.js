@@ -13,6 +13,30 @@
     window.addEventListener("scroll", syncNav, { passive: true });
   }
 
+  /* ── 窄屏抽屉：汉堡开合（点条目 / 按 Esc 直接关） ── */
+  var burger = document.getElementById("navBurger");
+  var navLinks = document.getElementById("navLinks");
+  if (burger && navLinks) {
+    var setMenu = function (open) {
+      burger.classList.toggle("open", open);
+      navLinks.classList.toggle("open", open);
+      burger.setAttribute("aria-expanded", String(open));
+      document.body.style.overflow = open ? "hidden" : "";
+    };
+    burger.addEventListener("click", function () {
+      setMenu(!navLinks.classList.contains("open"));
+    });
+    Array.prototype.forEach.call(navLinks.querySelectorAll("a"), function (a) {
+      a.addEventListener("click", function () { setMenu(false); });
+    });
+    document.addEventListener("keydown", function (e) {
+      if ((e.key === "Escape" || e.key === "Esc") && navLinks.classList.contains("open")) {
+        setMenu(false);
+        burger.focus();
+      }
+    });
+  }
+
   /* ── 主题切换（浅 / 深），偏好存 localStorage ── */
   var themeBtn = document.getElementById("themeToggle");
   if (themeBtn) {
