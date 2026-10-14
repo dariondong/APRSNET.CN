@@ -115,6 +115,9 @@ code {
 }
 .skip-link:focus { left: 0; }
 
+/* 顶部阅读进度：贴在最上面的一条橙线，随滚动拉长（transform 由脚本写） */
+.read-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 140; height: 3px; background: var(--hot-bright); transform: scaleX(0); transform-origin: left center; }
+
 /* ── 03. 导航 ── */
 .nav { position: fixed; inset: 0 0 auto 0; z-index: 100; padding: 18px 0; transition: padding .4s var(--ease), background .4s var(--ease), box-shadow .4s var(--ease); }
 .nav.scrolled { padding: 10px 0; background: var(--surface-2); border-bottom: 2px solid var(--text); box-shadow: 0 10px 30px var(--shadow-color); }
@@ -161,9 +164,12 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .hero-kicker { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; letter-spacing: .18em; color: var(--text-faint); margin-bottom: 20px; }
 .hero-wordmark {
   font-size: clamp(40px, 7.2vw, 88px); font-weight: 900; letter-spacing: -.04em; line-height: .98;
-  background: linear-gradient(120deg, var(--text) 0%, var(--hot) 100%);
+  background: linear-gradient(120deg, var(--text) 0%, var(--hot) 46%, var(--text) 96%);
+  background-size: 240% 100%; background-position: 0% 50%;
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: wordFlow 13s ease-in-out infinite;
 }
+@keyframes wordFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 .hero-slogan { margin-top: 16px; font-size: clamp(19px, 2.5vw, 28px); font-weight: 700; letter-spacing: -.01em; }
 .hero-sub { color: var(--text-dim); font-size: clamp(15px, 1.6vw, 17.5px); margin: 24px 0 34px; max-width: 620px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
@@ -193,6 +199,7 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
   background-color: var(--surface-4);
   background-image: radial-gradient(circle, var(--line-strong) 2.2px, transparent 2.4px);
   background-size: 17px 13px; background-repeat: repeat-x; background-position: 6px center;
+  animation: tapeRun 7s linear infinite;
 }
 
 .btn { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; padding: 14px 24px; border-radius: var(--radius); transition: transform .3s var(--ease), box-shadow .3s var(--ease), background .3s var(--ease), border-color .3s var(--ease); }
@@ -213,17 +220,21 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 
 .section { position: relative; z-index: 1; padding: clamp(72px, 9vw, 108px) clamp(20px, 6vw, 96px); }
 .section.alt { background: linear-gradient(180deg, var(--surface-3), var(--surface-4)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.section-head { max-width: 720px; margin: 0 0 44px; }
-/* 区块编号：只有带 .section 的内容区计数（首屏不算），交给下面的 ::before 显示 */
+.section-head { position: relative; max-width: 720px; margin: 0 0 44px; }
+/* 区块编号：只有带 .section 的内容区计数（首屏不算）；压顶的墨线由 ::after 画，能单独扫进来 */
 main { counter-reset: sec; }
 main > section.section { counter-increment: sec; }
 .section-head::before {
   content: counter(sec, decimal-leading-zero);
-  display: block; padding-top: 14px; margin-bottom: 22px;
-  border-top: 2px solid var(--text);
+  display: block; padding-top: 16px; margin-bottom: 22px;
   font-family: var(--font-mono); font-size: 12px; font-weight: 700;
   letter-spacing: .3em; color: var(--hot);
 }
+.section-head::after {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--text); transform-origin: left center;
+}
+.section-head.in::after { animation: ruleIn .55s var(--ease) both; }
 .section-head h2 { font-size: clamp(26px, 3.6vw, 38px); font-weight: 900; letter-spacing: -.03em; line-height: 1.22; }
 .section-head p { color: var(--text-dim); margin-top: 14px; font-size: 16.5px; }
 .section-body { max-width: 820px; }
@@ -336,6 +347,10 @@ main > section.section { counter-increment: sec; }
 /* ── 09. 动效 ── */
 /* 首屏分层入场：每个直接子元素错开一点升上来 */
 @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+/* 区块那条墨线从左扫到右 */
+@keyframes ruleIn { from { transform: scaleX(0); } to { transform: none; } }
+/* 打孔纸带慢慢往前走 */
+@keyframes tapeRun { from { background-position: 6px center; } to { background-position: 23px center; } }
 body.loaded .hero-copy > * { animation: riseIn .68s var(--ease) both; }
 body.loaded .hero-copy > *:nth-child(2) { animation-delay: .07s; }
 body.loaded .hero-copy > *:nth-child(3) { animation-delay: .14s; }
@@ -348,8 +363,8 @@ body.loaded .hero-figure { animation: riseIn .78s var(--ease) .3s both; }
 .reveal { opacity: 0; transform: translateY(16px); transition: opacity .62s var(--ease) var(--d, 0s), transform .62s var(--ease) var(--d, 0s); }
 .reveal.in { opacity: 1; transform: none; }
 
-/* 视差与揭示都改 transform，提前提个醒 */
-.hero-grid, .hero-figure { will-change: transform; }
+/* 视差、倾斜与揭示都改 transform，提前提个醒 */
+.hero-grid, .hero-panel-svg { will-change: transform; }
 
 /* 列表行：悬停时那条分隔线亮成橙色 */
 .fact-list li, .steps li, .glossary dt, .glossary dd { transition: border-color .3s var(--ease), color .3s var(--ease); }
@@ -370,9 +385,10 @@ body.loaded .hero-figure { animation: riseIn .78s var(--ease) .3s both; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .faq details[open] p { animation: none; }
   .btn:active { transform: none; }
+  .hero-wordmark, .tape-rule, .section-head.in::after { animation: none; }
 }
 
-/* 窄屏：视差与揭示都收掉，别在手机上抖 */
-@media (max-width: 640px) {
-  .hero-grid, .hero-figure { transform: none !important; }
+/* 窄屏：视差与鼠标倾斜都收掉，别在手机上抖 */
+@media (max-width: 999px) {
+  .hero-grid, .hero-panel-svg { transform: none !important; }
 }

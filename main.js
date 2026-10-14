@@ -54,6 +54,20 @@
     window.addEventListener("resize", onScroll);
   }
 
+  /* ── 顶部阅读进度：一条橙色细线，随页面滚到底而填满 ── */
+  var readBar = document.getElementById("readBar");
+  if (readBar) {
+    var syncBar = function () {
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      var p = max > 0 ? Math.min(Math.max(window.scrollY / max, 0), 1) : 0;
+      readBar.style.transform = "scaleX(" + p.toFixed(4) + ")";
+    };
+    syncBar();
+    window.addEventListener("scroll", syncBar, { passive: true });
+    window.addEventListener("resize", syncBar);
+  }
+
   /* ── 主题切换（浅 / 深），偏好存 localStorage ── */
   var themeBtn = document.getElementById("themeToggle");
   if (themeBtn) {
@@ -119,25 +133,43 @@
     });
   }
 
-  /* ── 首屏视差：蓝图网格与面板图随滚动错开一点 ── */
+  /* ── 首屏动效：蓝图网格与面板图随滚动错开，面板图再随鼠标轻微倾斜
+        （transform 只在这一处合成，免得多处互相覆盖） ── */
   var heroGrid = document.querySelector(".hero-grid");
-  var heroFig = document.querySelector(".hero-figure");
+  var heroFig = document.querySelector(".hero-panel-svg");
   if (!still && (heroGrid || heroFig)) {
-    var ticking = false;
+    var wide = window.matchMedia ? window.matchMedia("(min-width: 1000px)") : null;
+    var canTilt = !!(wide && wide.matches && !("ontouchstart" in window));
+    var parY = 0, tiltX = 0, tiltY = 0, waiting = false;
     var paint = function () {
-      ticking = false;
-      var y = window.scrollY || 0;
-      if (y > (window.innerHeight || 1) * 1.2) return;
-      if (heroGrid) heroGrid.style.transform = "translate3d(0," + (y * 0.10).toFixed(1) + "px,0)";
-      if (heroFig) heroFig.style.transform = "translate3d(0," + (y * -0.075).toFixed(1) + "px,0)";
+      waiting = false;
+      if (heroGrid) heroGrid.style.transform = "translate3d(0," + (parY * 0.10).toFixed(1) + "px,0)";
+      if (!heroFig) return;
+      var t = "translate3d(0," + (parY * -0.075).toFixed(1) + "px,0)";
+      if (canTilt) t = "perspective(1000px) " + t + " rotateY(" + tiltX.toFixed(2) + "deg) rotateX(" + tiltY.toFixed(2) + "deg)";
+      heroFig.style.transform = t;
     };
-    var glide = function () {
-      if (ticking) return;
-      ticking = true;
+    var schedule = function () {
+      if (waiting) return;
+      waiting = true;
       if (window.requestAnimationFrame) window.requestAnimationFrame(paint); else paint();
     };
+    window.addEventListener("scroll", function () {
+      parY = Math.min(window.scrollY || 0, (window.innerHeight || 1) * 1.2);
+      schedule();
+    }, { passive: true });
+    if (canTilt) {
+      document.addEventListener("pointermove", function (e) {
+        var r = heroFig.getBoundingClientRect();
+        if (!r.width) return;
+        var nx = (e.clientX - (r.left + r.width / 2)) / ((window.innerWidth || 1) / 2);
+        var ny = (e.clientY - (r.top + r.height / 2)) / ((window.innerHeight || 1) / 2);
+        tiltX = Math.max(-1, Math.min(1, nx)) * 4.5;
+        tiltY = Math.max(-1, Math.min(1, ny)) * -3.5;
+        schedule();
+      }, { passive: true });
+    }
     paint();
-    window.addEventListener("scroll", glide, { passive: true });
   }
 
   /* ── 首屏入场：等字体与样式就位后再亮起来 ── */
