@@ -294,6 +294,9 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 .footer-links a { padding: 7px 12px; border-radius: var(--radius); font-size: 14px; color: var(--text-dim); border: 1px solid transparent; transition: color .25s var(--ease), border-color .25s var(--ease), background .25s var(--ease); }
 .footer-links a:hover { color: var(--cyan); border-color: var(--line); background: var(--surface-1); }
 .footer-note { color: var(--text-faint); font-size: 13.5px; max-width: 760px; margin-top: 26px; }
+.footer-edit { color: var(--text-faint); font-size: 13.5px; margin-top: 10px; }
+.footer-edit a { color: var(--cyan); }
+.footer-edit a:hover { text-decoration: underline; }
 .footer-copy { color: var(--text-faint); font-size: 13px; margin-top: 12px; }
 
 /* ── 08. 响应式与动效 ── */
