@@ -126,9 +126,10 @@ code {
 .brand-mark { width: 12px; height: 12px; border-radius: 3px; background: var(--grad); box-shadow: 0 0 18px var(--shadow-hot); }
 .brand-name { font-family: var(--font-mono); font-weight: 800; font-size: 16px; letter-spacing: .04em; }
 .nav-links { display: flex; align-items: center; gap: 4px; }
-.nav-links a { padding: 9px 13px; border-radius: var(--radius-sm); font-size: 14.5px; color: var(--text-dim); transition: color .25s var(--ease), background .25s var(--ease); }
+.nav-links a { position: relative; padding: 9px 13px; border-radius: var(--radius-sm); font-size: 14.5px; color: var(--text-dim); transition: color .25s var(--ease), background .25s var(--ease); }
 .nav-links a:hover { color: var(--text); background: var(--surface-2); }
-.nav-links a.active { color: var(--hot); background: var(--halo-hot); }
+.nav-links a.active { color: var(--text); background: transparent; }
+.nav-links a.active::after { content: ""; position: absolute; left: 13px; right: 13px; bottom: 5px; height: 2px; background: var(--hot-bright); }
 .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; margin-left: 6px; border-radius: var(--radius-sm); cursor: pointer;
@@ -161,7 +162,8 @@ code {
 }
 .hero-inner { position: relative; z-index: 2; width: 100%; max-width: 1180px; margin: 0 auto; display: grid; gap: 46px; opacity: 0; transform: translateY(16px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
 body.loaded .hero-inner { opacity: 1; transform: none; }
-.hero-kicker { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; letter-spacing: .18em; color: var(--text-faint); margin-bottom: 20px; }
+.hero-kicker { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; letter-spacing: .18em; color: var(--text-faint); margin-bottom: 20px; }
+.hero-kicker::before { content: ""; width: 9px; height: 9px; background: var(--hot-bright); flex: none; }
 .hero-wordmark {
   font-size: clamp(40px, 7.2vw, 88px); font-weight: 900; letter-spacing: -.04em; line-height: .98;
   background: linear-gradient(120deg, var(--text) 0%, var(--hot) 46%, var(--text) 96%);
@@ -171,7 +173,7 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 }
 @keyframes wordFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 .hero-slogan { margin-top: 16px; font-size: clamp(19px, 2.5vw, 28px); font-weight: 700; letter-spacing: -.01em; }
-.hero-sub { color: var(--text-dim); font-size: clamp(15px, 1.6vw, 17.5px); margin: 24px 0 34px; max-width: 620px; }
+.hero-sub { border-left: 2px solid var(--text); padding-left: 16px; color: var(--text-dim); font-size: clamp(15px, 1.6vw, 17.5px); margin: 24px 0 34px; max-width: 620px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
 
 /* 摩尔士带：首屏那串「点划」，纯装饰（读屏由 aria-hidden 挡掉） */
@@ -219,7 +221,12 @@ body.loaded .hero-inner { opacity: 1; transform: none; }
 }
 
 .section { position: relative; z-index: 1; padding: clamp(72px, 9vw, 108px) clamp(20px, 6vw, 96px); }
-.section.alt { background: linear-gradient(180deg, var(--surface-3), var(--surface-4)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.section.alt {
+  background-color: var(--surface-4);
+  background-image: linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 56px 100%;
+  border-top: 2px solid var(--text); border-bottom: 2px solid var(--text);
+}
 .section-head { position: relative; max-width: 720px; margin: 0 0 44px; }
 /* 区块编号：只有带 .section 的内容区计数（首屏不算）；压顶的墨线由 ::after 画，能单独扫进来 */
 main { counter-reset: sec; }
@@ -244,11 +251,20 @@ main > section.section { counter-increment: sec; }
 
 /* ── 06. 清单（行式，不是卡片） ── */
 .fact-list, .link-list { list-style: none; border-top: 2px solid var(--text); }
-.fact-list { margin: 26px 0; }
-.fact-list li { padding: 16px 0; border-bottom: 1px solid var(--line); color: var(--text-dim); font-size: 16px; }
+.fact-list { margin: 26px 0; counter-reset: fact; }
+.fact-list li { position: relative; counter-increment: fact; padding: 16px 0 16px 36px; border-bottom: 1px solid var(--line); color: var(--text-dim); font-size: 16px; }
+.fact-list li::before {
+  content: counter(fact, decimal-leading-zero); position: absolute; left: 0; top: 19px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--hot);
+}
 .fact-list b { display: block; color: var(--text); font-size: 16.5px; margin-bottom: 4px; }
-.link-list li { border-bottom: 1px solid var(--line); }
-.link-row { display: flex; align-items: center; gap: 20px; padding: 20px 4px; transition: transform .3s var(--ease); }
+.link-list { counter-reset: lk; }
+.link-list li { position: relative; counter-increment: lk; border-bottom: 1px solid var(--line); }
+.link-list li::before {
+  content: counter(lk, decimal-leading-zero); position: absolute; left: 6px; top: 23px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--hot);
+}
+.link-row { display: flex; align-items: center; gap: 20px; padding: 20px 4px 20px 40px; transition: transform .3s var(--ease); }
 .link-row:hover { transform: translateX(4px); }
 .link-row:hover .lr-main b { color: var(--hot); }
 .lr-main { flex: 1; }
@@ -301,7 +317,7 @@ main > section.section { counter-increment: sec; }
 .footer { position: relative; z-index: 1; border-top: 2px solid var(--text); background: var(--surface-4); padding: 48px clamp(20px, 6vw, 96px) 56px; }
 .footer-inner { max-width: 1100px; margin: 0 auto; }
 .footer-top { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }
-.footer-brand b { display: block; font-size: 17px; font-weight: 800; }
+.footer-brand b { display: block; font-family: var(--font-mono); font-size: 16px; font-weight: 800; letter-spacing: .02em; }
 .footer-brand span { color: var(--text-faint); font-size: 14px; }
 .footer-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .footer-links a { padding: 7px 12px; border-radius: var(--radius); font-size: 14px; color: var(--text-dim); border: 1px solid transparent; transition: color .25s var(--ease), border-color .25s var(--ease), background .25s var(--ease); }
