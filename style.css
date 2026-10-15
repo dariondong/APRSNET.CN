@@ -301,7 +301,7 @@ main > section.section { counter-increment: sec; }
 .footer { border-top: 2px solid var(--text); padding: 44px var(--gut) 52px; }
 .footer-inner { max-width: var(--measure); margin: 0 auto; }
 .footer-brand b { display: block; font-size: 16px; }
-.footer-brand > span { color: var(--text-faint); font-size: 14.5px; }
+.footer-brand > span { display: block; color: var(--text-faint); font-size: 14.5px; }
 /* 站内目录：一页一栏、栏上一个标题；整块平铺，不再是一串没归属的链接 */
 .footer-index { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 26px 28px; margin-top: 34px; padding-top: 30px; border-top: 1px solid var(--line); }
 .footer-group b { display: block; font-size: 13px; font-weight: 700; color: var(--text); }
