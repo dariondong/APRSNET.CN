@@ -27,7 +27,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "31"        # style.css?v=
+CSS_V = "32"        # style.css?v=
 MAIN_V = "12"       # main.js?v=
 SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
@@ -177,6 +177,28 @@ EXTRA_TITLE = {
     "about-origin": "这个站从哪来", "about-site": "站上有什么", "about-upkeep": "谁在维护",
 }
 
+# 页脚目录的分栏名：默认用导航里的名字，不在导航里的子页在这里自己报个名
+FOOT_GROUP = {
+    "tutorial.html": "教程", "aprsis.html": "APRS-IS 文档",
+    "protocol.html": "协议规范", "about.html": "关于本站",
+}
+# 页脚目录最后一栏：仓库与反馈
+FOOT_SOURCE = ("本站", (
+    ("https://github.com/dariondong/APRSNET.CN", "源码仓库"),
+    ("https://github.com/dariondong/APRSNET.CN/issues", "提个 issue"),
+))
+
+
+def footer_groups():
+    """页脚目录分栏：[（标题, [区块, ...]）, ...]，按 PAGES 顺序（也就是导航顺序）。"""
+    out = []
+    for page in PAGES:
+        keys = [b for b in EXTRA_TITLE if BLOCK_PAGE.get(b) == page["file"]]
+        if not keys:
+            continue
+        out.append((FOOT_GROUP.get(page["file"]) or page.get("nav") or page["file"], keys))
+    return out
+
 HEAD = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -261,18 +283,15 @@ FOOT = """
 
 <footer class="footer">
   <div class="footer-inner">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
-        <span>业余无线电 · APRS 中文资料站</span>
-      </div>
-      <nav class="footer-links" aria-label="相关链接">
-{footer_links}
-        <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
-      </nav>
+    <div class="footer-brand">
+      <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
+      <span>业余无线电 · APRS 中文资料站</span>
     </div>
+    <nav class="footer-index" aria-label="站内目录">
+{footer_links}
+    </nav>
     <p class="footer-note">本站由业余无线电爱好者维护，与任何厂商、组织和项目都没有隶属关系。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
-    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/{file}" target="_blank" rel="noopener">在 GitHub 上改这一页</a>，或者<a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a>。</p>
+    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/{file}" target="_blank" rel="noopener">在 GitHub 上改这一页</a>。</p>
     <p class="footer-copy">© <span id="year">2026</span> {author}</p>
   </div>
 </footer>
@@ -379,10 +398,22 @@ def render(page):
         '      <a href="%s"%s>%s</a>' % (
             "./" if p["file"] == "index.html" else p["file"], nav_state(p), p["nav"])
         for p in PAGES if p.get("nav"))
-    footer_links = "\n".join(
-        '        <a href="%s#%s">%s</a>' % (BLOCK_PAGE[b], b, EXTRA_TITLE[b])
-        if BLOCK_PAGE[b] != file else '        <a href="#%s">%s</a>' % (b, EXTRA_TITLE[b])
-        for b in EXTRA_TITLE)
+    # 页脚目录：一页一栏，栏上一个标题；本页的区块用 #锚点，别的页带上文件名
+    groups = []
+    for label, keys in footer_groups():
+        items = "\n".join(
+            '          <li><a href="%s#%s">%s</a></li>' % (BLOCK_PAGE[b], b, EXTRA_TITLE[b])
+            if BLOCK_PAGE[b] != file else '          <li><a href="#%s">%s</a></li>' % (b, EXTRA_TITLE[b])
+            for b in keys)
+        groups.append('      <div class="footer-group">\n        <b>%s</b>\n        <ul>\n%s\n        </ul>\n      </div>'
+                      % (label, items))
+    label, links = FOOT_SOURCE
+    items = "\n".join(
+        '          <li><a href="%s" target="_blank" rel="noopener">%s</a></li>' % (href, text)
+        for href, text in links)
+    groups.append('      <div class="footer-group">\n        <b>%s</b>\n        <ul>\n%s\n        </ul>\n      </div>'
+                  % (label, items))
+    footer_links = "\n".join(groups)
 
     body = [read_part(b) for b in page["blocks"]]
     if "hero" not in page["blocks"]:

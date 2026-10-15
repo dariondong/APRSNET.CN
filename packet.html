@@ -27,7 +27,7 @@
 <meta name="twitter:title" content="APRS 报文与字段 — 位置包逐段拆开看">
 <meta name="twitter:description" content="APRS 报文与字段：位置包逐段拆开看，字段与名词一次查清。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
-<link rel="stylesheet" href="style.css?v=31">
+<link rel="stylesheet" href="style.css?v=32">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRS 报文与字段 — 位置包逐段拆开看","url":"https://aprsnet.cn/packet.html","inLanguage":"zh-CN","description":"APRS 报文格式：位置包怎么拆开看、每个字段什么意思、呼号与符号怎么读，常用名词解释，照着 APRS101 整理。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
@@ -214,51 +214,105 @@
 
 <footer class="footer">
   <div class="footer-inner">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
-        <span>业余无线电 · APRS 中文资料站</span>
-      </div>
-      <nav class="footer-links" aria-label="相关链接">
-        <a href="index.html#about">认识 APRS</a>
-        <a href="index.html#start">常用工具</a>
-        <a href="guide.html#steps">上手步骤</a>
-        <a href="guide.html#freq">频率与路径</a>
-        <a href="#packets">报文长什么样</a>
-        <a href="#fields">报文字段</a>
-        <a href="#glossary">名词小抄</a>
-        <a href="guide.html#gear">设备与链路</a>
-        <a href="faq.html#faq">常见问题</a>
-        <a href="tocall.html#tocall">官方 TOCALL 查询</a>
-        <a href="tocall.html#tocall-refs">名单与出处</a>
-        <a href="docs.html#docs">中文文档</a>
-        <a href="docs.html#refs">英文原文</a>
-        <a href="tutorial.html#tut-listen">先在手机上听</a>
-        <a href="tutorial.html#tut-send">接线发出第一个包</a>
-        <a href="tutorial.html#tut-trouble">没上去怎么查</a>
-        <a href="aprsis.html#aprsis-connect">连上 APRS-IS</a>
-        <a href="aprsis.html#aprsis-login">登录行怎么写</a>
-        <a href="aprsis.html#aprsis-send">UDP 与只发端口</a>
-        <a href="index.html#contribute">参与贡献</a>
-        <a href="protocol.html#proto-head">协议说明</a>
-        <a href="protocol.html#proto-general">总则</a>
-        <a href="protocol.html#proto-arch">系统组成</a>
-        <a href="protocol.html#proto-access">接入规范</a>
-        <a href="protocol.html#proto-whitelist">白名单</a>
-        <a href="protocol.html#proto-forward">报文转发</a>
-        <a href="protocol.html#proto-filter">过滤器</a>
-        <a href="protocol.html#proto-ops">安全与运维</a>
-        <a href="protocol.html#proto-boundary">网络边界</a>
-        <a href="protocol.html#proto-test">测试与版本</a>
-        <a href="protocol.html#proto-misc">附则</a>
-        <a href="about.html#about-origin">这个站从哪来</a>
-        <a href="about.html#about-site">站上有什么</a>
-        <a href="about.html#about-upkeep">谁在维护</a>
-        <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
-      </nav>
+    <div class="footer-brand">
+      <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
+      <span>业余无线电 · APRS 中文资料站</span>
     </div>
+    <nav class="footer-index" aria-label="站内目录">
+      <div class="footer-group">
+        <b>认识</b>
+        <ul>
+          <li><a href="index.html#about">认识 APRS</a></li>
+          <li><a href="index.html#start">常用工具</a></li>
+          <li><a href="index.html#contribute">参与贡献</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>上手</b>
+        <ul>
+          <li><a href="guide.html#steps">上手步骤</a></li>
+          <li><a href="guide.html#freq">频率与路径</a></li>
+          <li><a href="guide.html#gear">设备与链路</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>教程</b>
+        <ul>
+          <li><a href="tutorial.html#tut-listen">先在手机上听</a></li>
+          <li><a href="tutorial.html#tut-send">接线发出第一个包</a></li>
+          <li><a href="tutorial.html#tut-trouble">没上去怎么查</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>报文</b>
+        <ul>
+          <li><a href="#packets">报文长什么样</a></li>
+          <li><a href="#fields">报文字段</a></li>
+          <li><a href="#glossary">名词小抄</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>查询</b>
+        <ul>
+          <li><a href="tocall.html#tocall">官方 TOCALL 查询</a></li>
+          <li><a href="tocall.html#tocall-refs">名单与出处</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>问答</b>
+        <ul>
+          <li><a href="faq.html#faq">常见问题</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>文档</b>
+        <ul>
+          <li><a href="docs.html#docs">中文文档</a></li>
+          <li><a href="docs.html#refs">英文原文</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>协议规范</b>
+        <ul>
+          <li><a href="protocol.html#proto-head">协议说明</a></li>
+          <li><a href="protocol.html#proto-general">总则</a></li>
+          <li><a href="protocol.html#proto-arch">系统组成</a></li>
+          <li><a href="protocol.html#proto-access">接入规范</a></li>
+          <li><a href="protocol.html#proto-whitelist">白名单</a></li>
+          <li><a href="protocol.html#proto-forward">报文转发</a></li>
+          <li><a href="protocol.html#proto-filter">过滤器</a></li>
+          <li><a href="protocol.html#proto-ops">安全与运维</a></li>
+          <li><a href="protocol.html#proto-boundary">网络边界</a></li>
+          <li><a href="protocol.html#proto-test">测试与版本</a></li>
+          <li><a href="protocol.html#proto-misc">附则</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>APRS-IS 文档</b>
+        <ul>
+          <li><a href="aprsis.html#aprsis-connect">连上 APRS-IS</a></li>
+          <li><a href="aprsis.html#aprsis-login">登录行怎么写</a></li>
+          <li><a href="aprsis.html#aprsis-send">UDP 与只发端口</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>关于本站</b>
+        <ul>
+          <li><a href="about.html#about-origin">这个站从哪来</a></li>
+          <li><a href="about.html#about-site">站上有什么</a></li>
+          <li><a href="about.html#about-upkeep">谁在维护</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>本站</b>
+        <ul>
+          <li><a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">源码仓库</a></li>
+          <li><a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a></li>
+        </ul>
+      </div>
+    </nav>
     <p class="footer-note">本站由业余无线电爱好者维护，与任何厂商、组织和项目都没有隶属关系。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
-    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/packet.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>，或者<a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a>。</p>
+    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/packet.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>。</p>
     <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
   </div>
 </footer>
