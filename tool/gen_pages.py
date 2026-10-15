@@ -176,6 +176,17 @@ PAGES = [
         blocks=["q-what", "q-server", "q-client", "q-rules", "q-examples", "q-refs"],
     ),
     dict(
+        file="tools.html", nav="", nav_active="links.html", h1="工具与链接",
+        lead="APRS 的软件、网站和自制的家伙都收在这一页：手机电脑上的客户端、浏览器里的地图，想自己搭一套时用得上的东西也在。",
+        title="APRS 工具与链接 — 客户端、在线地图与自建工具",
+        desc="中文 APRS 工具与链接集合：客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
+        og="APRS 的工具和网站收在一页：客户端、在线地图，和自己动手用的东西。",
+        keywords="APRS 工具,APRS 客户端,APRS 软件,APRS 地图,APRS 网站,APRSdroid,"
+                 "APRSLocus,YAAC,APRSIS32,PinPoint APRS,Direwolf,aprs.fi,APRS.TV,"
+                 "APRS 链接,APRS 设备名单",
+        blocks=["tools-client", "tools-web", "tools-make", "tools-submit"],
+    ),
+    dict(
         file="links.html", nav="友链", h1="友链",
         lead="同一条电波上的站，互相留个门牌。",
         title="友链 — APRS 相关的项目与站点",
@@ -226,13 +237,15 @@ EXTRA_TITLE = {
     "proto-test": "测试与版本", "proto-misc": "附则",
     "about-origin": "这个站从哪来", "about-site": "站上有什么", "about-upkeep": "谁在维护",
     "links": "站与项目", "links-friends": "同行的站", "links-swap": "换链接",
+    "tools-client": "客户端", "tools-web": "在线地图与查询",
+    "tools-make": "自己动手", "tools-submit": "加一条",
 }
 
 # 页脚目录的分栏名：默认用导航里的名字，不在导航里的子页在这里自己报个名
 FOOT_GROUP = {
     "tutorial.html": "教程", "aprsis.html": "APRS-IS 文档",
     "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
-    "qconstruct.html": "q 构造",
+    "qconstruct.html": "q 构造", "tools.html": "工具与链接",
     "protocol.html": "协议规范", "about.html": "关于本站",
 }
 # 页脚目录最后一栏：仓库与反馈
