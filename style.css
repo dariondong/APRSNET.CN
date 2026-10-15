@@ -133,6 +133,12 @@ body.loaded .hero-inner { opacity: 1; }
 .hero-beats b { display: block; font-size: 17px; font-weight: 700; }
 .hero-beats span { color: var(--text-dim); font-size: 15px; }
 .hero-meta { order: 2; display: grid; gap: 26px; max-width: 46ch; }
+/* 首屏示意图：一个点 → 空气 → 一张网（静态，不加动效） */
+.hero-net { margin: 0; }
+.hero-net svg { display: block; width: 100%; max-width: 330px; height: auto; }
+.hero-net .dot, .hero-net .cell-on { fill: var(--hot-bright); }
+.hero-net .cell { fill: var(--line-strong); }
+.hero-net .arc, .hero-net .link { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
 .hero-sub { color: var(--text-dim); font-size: 16.5px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 @media (min-width: 900px) {
