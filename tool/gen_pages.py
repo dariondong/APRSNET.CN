@@ -30,6 +30,7 @@ PARTS = HERE / "parts"
 CSS_V = "27"        # style.css?v=
 MAIN_V = "11"       # main.js?v=
 SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "11"}  # 页内脚本的缓存键
+ICON_V = "2"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
 
 SITE = "https://aprsnet.cn/"
 SITE_NAME = "APRSNET.CN"
@@ -188,8 +189,8 @@ HEAD = """<!DOCTYPE html>
 <meta property="og:image:alt" content="APRSNET.CN">
 <meta property="og:locale" content="zh_CN">
 <link rel="canonical" href="{url}">
-<link rel="icon" type="image/png" href="assets/favicon.png">
-<link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="icon" type="image/png" href="assets/favicon.png?v={icon_v}">
+<link rel="apple-touch-icon" href="assets/icon.png?v={icon_v}">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{og}">
@@ -387,7 +388,7 @@ def render(page):
                       for s in page.get("scripts", ()))
     return (HEAD.format(title=page["title"], desc=page["desc"], og=page["og"],
                         keywords=page["keywords"], author=AUTHOR, url=page_url(page),
-                        jsonld=build_jsonld(page), css_v=CSS_V, nav=nav,
+                        jsonld=build_jsonld(page), css_v=CSS_V, icon_v=ICON_V, nav=nav,
                         extra_head=page.get("extra_head", ""))
             + "\n\n".join(out) + "\n"
             + FOOT.format(footer_links=footer_links, file=file, author=AUTHOR)
