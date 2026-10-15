@@ -11,6 +11,9 @@
     python3 tool/gen_pages.py --check  # 只比对，不写（CI/自检用）
 
 改内容 → 改 tool/parts/<区块>.html；改分页 → 改下面的 PAGES；改外壳 → 改这里的模板。
+
+只写这 5 个 HTML。根目录其他文件（CNAME、BingSiteAuth.xml、assets/、style.css、
+main.js、tocalls.js、hero-field.js）都不归它管，也不要去搬。
 """
 import re
 import sys
