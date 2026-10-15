@@ -126,14 +126,22 @@ body.loaded .hero-inner { opacity: 1; }
 .hero-kicker { border-top: 1px solid var(--line-strong); padding-top: 16px; font-size: 14px; color: var(--text-faint); }
 .hero-wordmark { font-size: clamp(46px, 10.5vw, 164px); font-weight: 700; letter-spacing: -.045em; line-height: .94; }
 .hero-slogan { font-size: clamp(19px, 2.1vw, 30px); font-weight: 400; color: var(--text-dim); }
-.hero-meta { display: grid; gap: 26px; max-width: 46ch; }
+/* 首屏叙述：一个点 → 发一次信标 → 被看见；编号沿用区块编号的橙色 */
+.hero-beats { list-style: none; counter-reset: beat; order: 3; margin-top: 30px; max-width: 48ch; border-top: 1px solid var(--line-strong); }
+.hero-beats li { position: relative; padding: 15px 0 15px 46px; border-bottom: 1px solid var(--line); }
+.hero-beats li::before { counter-increment: beat; content: counter(beat, decimal-leading-zero); position: absolute; left: 0; top: 16px; color: var(--hot); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hero-beats b { display: block; font-size: 17px; font-weight: 700; }
+.hero-beats span { color: var(--text-dim); font-size: 15px; }
+.hero-meta { order: 2; display: grid; gap: 26px; max-width: 46ch; }
 .hero-sub { color: var(--text-dim); font-size: 16.5px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 @media (min-width: 900px) {
   .hero-inner { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); column-gap: clamp(36px, 6vw, 96px); row-gap: 14px; }
   .hero-kicker { grid-column: 1 / -1; }
+  .hero-wordmark { grid-column: 1; }
   .hero-slogan { grid-column: 1; }
-  .hero-meta { grid-column: 2; grid-row: 2 / span 2; align-self: end; }
+  .hero-beats { grid-column: 1; }
+  .hero-meta { grid-column: 2; grid-row: 2 / span 3; align-self: end; }
 }
 
 .btn {
