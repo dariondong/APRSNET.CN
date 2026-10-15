@@ -15,7 +15,7 @@ keywords / canonical / JSON-LD / sitemap）。
 
 产出：5 个 HTML + sitemap.xml + robots.txt。
 根目录其他文件（CNAME、BingSiteAuth.xml、assets/、style.css、main.js、
-tocalls.js、hero-field.js）都不归它管，也不要去搬。
+tocalls.js、hero-field.js、passcode.js）都不归它管，也不要去搬。
 """
 import datetime
 import json
@@ -29,7 +29,7 @@ PARTS = HERE / "parts"
 
 CSS_V = "34"        # style.css?v=
 MAIN_V = "13"       # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12"}  # 页内脚本的缓存键
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12", "passcode.js": "1"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
 
 SITE = "https://aprsnet.cn/"
@@ -179,12 +179,14 @@ PAGES = [
         file="tools.html", nav="工具", h1="工具与链接",
         lead="APRS 的软件、网站和自制的家伙都收在这一页：手机电脑上的客户端、浏览器里的地图，想自己搭一套时用得上的东西也在。",
         title="APRS 工具与链接 — 客户端、在线地图与自建工具",
-        desc="中文 APRS 工具与链接集合：客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
-        og="APRS 的工具和网站收在一页：客户端、在线地图，和自己动手用的东西。",
-        keywords="APRS 工具,APRS 客户端,APRS 软件,APRS 地图,APRS 网站,APRSdroid,"
-                 "APRSLocus,YAAC,APRSIS32,PinPoint APRS,Direwolf,aprs.fi,APRS.TV,"
-                 "APRS 链接,APRS 设备名单",
-        blocks=["tools-client", "tools-web", "tools-make", "tools-submit"],
+        desc="中文 APRS 工具与链接集合：passcode 计算器（填呼号算 APRS-IS 的 passcode）、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
+        og="APRS 的工具和网站收在一页：passcode 计算器、客户端、在线地图，和自己动手用的东西。",
+        keywords="APRS 工具,passcode,APRS-IS passcode,passcode 计算器,APRS 客户端,"
+                 "APRS 软件,APRS 地图,APRS 网站,APRSdroid,APRSLocus,YAAC,APRSIS32,"
+                 "PinPoint APRS,Direwolf,aprs.fi,APRS.TV,APRS 设备名单",
+        blocks=["tools-client", "tools-passcode", "tools-web", "tools-make",
+                "tools-submit"],
+        scripts=("passcode.js",),
     ),
     dict(
         file="links.html", nav="友链", h1="友链",
