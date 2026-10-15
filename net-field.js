@@ -1,16 +1,17 @@
-/* APRSNET.CN 首屏：一个点 → 发一次信标 → 一张网
+/* APRSNET.CN「一个点，一张网」：一个点 → 发一次信标 → 一张网
    手写 WebGL1 点云，零依赖、定种子（同一份球面，每次打开都一样）。
    讲的是同一件事：一开始所有点都塌在一个点上，按下去发一次信标，
    点散成一张网点阵，其中一粒是你；一圈波纹从你这里漫过整张网。
+   滚到这一屏才开演（见 ready / schedule）。
 
    没有 WebGL、关掉动效、或者上下文丢了，就什么都不做 ——
-   留在 <figure class="hero-net"> 里的那张静态 SVG 顶上。 */
+   留在 <figure class="net-figure"> 里的那张静态 SVG 顶上。 */
 (function () {
   "use strict";
 
-  var canvas = document.getElementById("heroField");
+  var canvas = document.getElementById("netField");
   if (!canvas || !canvas.getContext) return;
-  var host = canvas.closest ? canvas.closest(".hero-net") : canvas.parentNode;
+  var host = canvas.closest ? canvas.closest(".net-figure") : canvas.parentNode;
   if (!host) return;
 
   /* 系统说要减少动效时，连这一层也不放 */
@@ -71,7 +72,7 @@
     "  bright *= mix(1.0, 0.72 + 0.78 * pulse, you);",
     "  float q = (distance(normalize(home), normalize(uYou)) - uRing) * 3.4;",
     "  bright *= 1.0 + exp(-q * q) * 2.2 * g;",
-    "  float vis = mix(1.0, 0.14 + 0.86 * front, g);",
+    "  float vis = mix(1.0, 0.10 + 0.90 * front, g);",
     "  vis = max(vis, you * 0.5);",
     "  vFade = clamp(vis * bright, 0.0, 1.0);",
     "  vec3 base = mix(uCloud, uHot, you);",
@@ -90,7 +91,7 @@
     "  vec2 c = gl_PointCoord - vec2(0.5);",
     "  float r2 = dot(c, c);",
     "  if (r2 > 0.25) discard;",
-    "  float a = vFade * (1.0 - smoothstep(0.09, 0.25, r2));",
+    "  float a = vFade * (1.0 - smoothstep(0.16, 0.25, r2));",
     "  gl_FragColor = vec4(vCol, a);",
     "}"
   ].join("\n");
@@ -144,9 +145,10 @@
     var r = Math.sqrt(Math.max(0, 1 - y * y));
     var a = i * GA;
     var dx = Math.cos(a) * r, dz = Math.sin(a) * r;
-    var rad = 0.84 + 0.30 * rnd();
+    /* 壳薄一点，球面才清楚；点小一点，一粒一粒看得出来 */
+    var rad = 0.95 + 0.09 * rnd();
     var ph = rnd();
-    var size = 0.014 + 0.010 * rnd();
+    var size = 0.009 + 0.006 * rnd();
     var dot = dx * YOU[0] + y * YOU[1] + dz * YOU[2];
     if (dot > youBest) { youBest = dot; youIndex = i; }
     var o = i * 6;
@@ -157,7 +159,7 @@
     data[o + 4] = ph;
     data[o + 5] = 0;
   }
-  data[youIndex * 6 + 3] = 0.046;
+  data[youIndex * 6 + 3] = 0.026;
   data[youIndex * 6 + 5] = 1;
 
   var vbo = gl.createBuffer();
@@ -228,7 +230,8 @@
   var RING_MAX = 2.35;    /* 单位球面上两点最远距离 2 */
   var SPIN = 0.13;        /* 弧度/秒，一圈约 48 秒 */
 
-  var t0 = 0, started = false, raf = 0, inView = true, tAnim = 0, gather = 0, spin = 0, ring = 9;
+  var raf = 0, loaded = false, inView = false;
+  var tAnim = 0, last = 0, gather = 0, spin = 0, ring = 9;
 
   function draw() {
     if (!canvas.width || !canvas.height) return;
@@ -255,19 +258,23 @@
   }
 
   function schedule() {
-    if (raf || !inView || document.hidden) return;
+    if (raf || !loaded || !inView || document.hidden) return;
     raf = requestAnimationFrame(frame);
   }
 
+  /* 时间靠自己累加：滚出去就停表，回来看的还是同一条入场线（不按挂钟跳） */
   function frame(ts) {
     raf = 0;
-    if (!started) { t0 = ts; started = true; }
-    var e = Math.max(0, (ts - t0) / 1000);
-    tAnim = e;
-    spin = (e * SPIN) % (Math.PI * 2);
-    var g = (e - GATHER_AT) / GATHER_MS;
+    if (!last) last = ts;
+    var dt = (ts - last) / 1000;
+    last = ts;
+    if (dt < 0) dt = 0;
+    if (dt > 0.06) dt = 0.06;
+    tAnim += dt;
+    spin = (tAnim * SPIN) % (Math.PI * 2);
+    var g = (tAnim - GATHER_AT) / GATHER_MS;
     gather = g <= 0 ? 0 : (g >= 1 ? 1 : g);
-    var age = e - RING_AT;
+    var age = tAnim - RING_AT;
     ring = age < 0 ? 9 : ((age % RING_PERIOD) / RING_MS) * RING_MAX;
     if (ring > RING_MAX) ring = 9;
     draw();
@@ -280,11 +287,12 @@
     return;
   }
 
-  /* 亮出来之前先摆成一粒点 */
+  /* 还没滚到这一屏：先安静地坐成一粒点 */
   draw();
 
-  if (document.readyState === "complete") schedule();
-  else window.addEventListener("load", schedule);
+  function ready() { loaded = true; schedule(); }
+  if (document.readyState === "complete") ready();
+  else window.addEventListener("load", ready);
 
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(function (list) {
@@ -322,7 +330,7 @@
   }, false);
 
   /* 给以后的自检留个口子（同页面脚本可读） */
-  window.__heroField = {
+  window.__netField = {
     state: function () {
       return {
         gather: gather, ring: ring, spin: spin, points: N, you: youIndex,
