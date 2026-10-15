@@ -2,19 +2,23 @@
 # -*- coding: utf-8 -*-
 """APRSNET.CN 页面生成器：把 tool/parts/*.html 里切好的区块组装成整页。
 
-为什么要生成而不是手写每个页面：导航、页脚、head、缓存键这些东西在每一页都
-一模一样，手抄五份迟早对不上。区块正文留在 tool/parts/*.html 里（一个字都不
-改），这个脚本只负责外壳、分页、编号和跨页链接。
+为什么要生成而不是手写每个页面：导航、页脚、head、缓存键、SEO 标签这些东西在
+每一页都一模一样，手抄五份迟早对不上。区块正文留在 tool/parts/*.html 里（一个字
+都不改），这个脚本只负责外壳、分页、编号、跨页链接与 SEO（title / description /
+keywords / canonical / JSON-LD / sitemap）。
 
 用法：
     python3 tool/gen_pages.py          # 写文件
-    python3 tool/gen_pages.py --check  # 只比对，不写（CI/自检用）
+    python3 tool/gen_pages.py --check  # 只比对，不写（自检用）
 
 改内容 → 改 tool/parts/<区块>.html；改分页 → 改下面的 PAGES；改外壳 → 改这里的模板。
 
-只写这 5 个 HTML。根目录其他文件（CNAME、BingSiteAuth.xml、assets/、style.css、
-main.js、tocalls.js、hero-field.js）都不归它管，也不要去搬。
+产出：5 个 HTML + sitemap.xml + robots.txt。
+根目录其他文件（CNAME、BingSiteAuth.xml、assets/、style.css、main.js、
+tocalls.js、hero-field.js）都不归它管，也不要去搬。
 """
+import datetime
+import json
 import re
 import sys
 import pathlib
@@ -25,9 +29,13 @@ PARTS = HERE / "parts"
 
 CSS_V = "20"        # style.css?v=
 MAIN_V = "9"        # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "3"}   # 页内脚本的缓存键
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "2"}   # 页内脚本的缓存键
 
-# ── 页面表：file / 导航名 / 标题 / 描述 / 区块顺序 ──
+SITE = "https://aprsnet.cn/"
+SITE_NAME = "APRSNET.CN"
+AUTHOR = "BG7LZQ (Darion)"
+
+# ── 页面表：file / 导航名 / 标题 / 描述 / 关键词 / 区块顺序 ──
 # blocks 里的名字 = tool/parts/<名字>.html；hero 只在首页。
 PAGES = [
     dict(
@@ -35,39 +43,49 @@ PAGES = [
         title="APRSNET.CN — APRS 中文资料站",
         desc="APRSNET.CN —— 中文业余无线电 APRS（自动分组报告系统）资料站：APRS 是什么、常用工具、官方 TOCALL 查询，一处查完。",
         og="面向中文业余无线电爱好者的 APRS 资料站：从认识 APRS 开始，附常用工具与官方 TOCALL 查询。",
+        keywords="APRS,APRS 中文,APRS 教程,业余无线电,自动分组报告系统,APRSNET,"
+                 "APRS 是什么,信标,中继,网关,iGate,TOCALL 查询",
         scripts=("tocalls.js", "hero-field.js"),
         blocks=["hero", "about", "start", "query"],
     ),
     dict(
         file="guide.html", nav="上手", h1="上手与设备",
         lead="从零发出第一个包：参数怎么填、频率与路径怎么选，以及电台、TNC、网关这些设备怎么串起来。",
-        title="上手与设备 — APRSNET.CN",
-        desc="APRS 上手：信标参数怎么填、频率与路径怎么选，以及电台、TNC、网关这些设备怎么串起来。",
+        title="APRS 上手与设备 — 参数、频率与路径、TNC 与网关",
+        desc="APRS 上手：信标参数怎么填、频率与路径（含 WIDE1-1 之类怎么写）怎么选，以及电台、TNC、iGate 这些设备怎么串起来。",
         og="APRS 上手与设备：从零发出第一个包，参数、频率、路径与链路一次讲清。",
+        keywords="APRS 上手,APRS 参数,APRS 频率,APRS 路径,WIDE1-1,APRS 网关,iGate,"
+                 "APRS 电台,TNC,APRS 手台,信标参数",
         blocks=["steps", "freq", "gear"],
     ),
     dict(
         file="packet.html", nav="报文", h1="报文与字段",
         lead="APRS 报文到底长什么样：一条位置包里每一段是什么、字段怎么读，附一份名词小抄。",
-        title="报文与字段 — APRSNET.CN",
-        desc="APRS 报文格式：位置包怎么拆开看、每个字段什么意思、常用名词解释，照着 APRS101 整理。",
+        title="APRS 报文与字段 — 位置包逐段拆开看",
+        desc="APRS 报文格式：位置包怎么拆开看、每个字段什么意思、呼号与符号怎么读，常用名词解释，照着 APRS101 整理。",
         og="APRS 报文与字段：位置包逐段拆开看，字段与名词一次查清。",
+        keywords="APRS 报文,APRS 数据包,APRS 字段,APRS 位置包,APRS 呼号,APRS 符号,"
+                 "APRS 报文解码,APRS101,APRS 名词",
         blocks=["packets", "fields", "glossary"],
     ),
     dict(
         file="faq.html", nav="问答", h1="常见问题",
         lead="最常被问到的几件事：为什么别人看不到我、包为什么会重复、网关要不要自己架。",
-        title="常见问题 — APRSNET.CN",
-        desc="APRS 常见问题：别人看不到我、包重复、网关怎么架、能不能只收不发，逐条说清楚。",
+        title="APRS 常见问题 — 看不到、包重复、网关要不要架",
+        desc="APRS 常见问题：没有呼号能不能玩、需要什么设备、别人看不到我、包重复、网关怎么架、能不能只收不发，逐条说清楚。",
         og="APRS 常见问题：看不到、包重复、网关与只收不发，逐条说清楚。",
+        keywords="APRS 常见问题,APRS 看不到,APRS 重复包,APRS 只收不发,iGate 搭建,"
+                 "APRS 没有呼号,APRS 设备",
         blocks=["faq"],
     ),
     dict(
         file="docs.html", nav="文档", h1="规范与文档",
         lead="规范原文与官方文档入口 —— APRS101、APRS-IS 实施细则，以及 TAPR 的历年资料（英文）。",
-        title="规范与文档 — APRSNET.CN",
-        desc="APRS 规范与官方文档入口：APRS101、APRS-IS 规范与实施细则、服务器列表与过滤器语法（英文原文）。",
+        title="APRS 规范与文档 — APRS101、APRS-IS 实施细则",
+        desc="APRS 规范与官方文档入口：APRS101、APRS-IS 规范与实施细则、服务器列表与过滤器语法、TAPR 历年资料（英文原文）。",
         og="APRS 规范与文档：APRS101、APRS-IS 实施细则与官方入口。",
+        keywords="APRS101,APRS-IS,APRS 规范,APRS 实施细则,APRS 官方文档,TAPR,"
+                 "APRS 服务器列表,过滤器语法",
         blocks=["docs"],
     ),
 ]
@@ -76,7 +94,7 @@ PAGES = [
 BLOCK_PAGE = {}
 for _p in PAGES:
     for _b in _p["blocks"]:
-        if _b not in ("hero",):
+        if _b != "hero":
             BLOCK_PAGE[_b] = _p["file"]
 
 EXTRA_TITLE = {
@@ -93,19 +111,22 @@ HEAD = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{title}</title>
 <meta name="description" content="{desc}">
+<meta name="keywords" content="{keywords}">
+<meta name="author" content="{author}">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
 <meta name="theme-color" content="#f2f0ea">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="APRSNET.CN">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{og}">
-<meta property="og:url" content="https://aprsnet.cn/{url}">
+<meta property="og:url" content="{url}">
 <meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
 <meta property="og:image:alt" content="APRSNET.CN">
 <meta property="og:locale" content="zh_CN">
-<link rel="canonical" href="https://aprsnet.cn/{url}">
+<link rel="canonical" href="{url}">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/icon.png">
 <meta name="twitter:card" content="summary">
@@ -113,6 +134,7 @@ HEAD = """<!DOCTYPE html>
 <meta name="twitter:description" content="{og}">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
 <link rel="stylesheet" href="style.css?v={css_v}">
+<script type="application/ld+json">{jsonld}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -178,7 +200,7 @@ FOOT = """
     </div>
     <p class="footer-note">本站由业余无线电爱好者维护，与任何厂商、组织和项目都没有隶属关系。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
     <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/{file}" target="_blank" rel="noopener">在 GitHub 上改这一页</a>，或者<a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a>。</p>
-    <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
+    <p class="footer-copy">© <span id="year">2026</span> {author}</p>
   </div>
 </footer>
 
@@ -188,12 +210,65 @@ FOOT = """
 </a>
 """
 
+TAGS = re.compile(r"<[^>]+>")
+ENT = {"&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " "}
+DETAILS = re.compile(r"<details[^>]*>\s*<summary[^>]*>(.*?)</summary>(.*?)</details>", re.S)
+
+
+def page_url(page):
+    return SITE if page["file"] == "index.html" else SITE + page["file"]
+
 
 def read_part(name):
     path = PARTS / (name + ".html")
     if not path.exists():
         sys.exit("FAIL: 缺区块文件 %s" % path)
     return path.read_text(encoding="utf-8").rstrip("\n")
+
+
+def plain(html):
+    text = TAGS.sub(" ", html)
+    for k, v in ENT.items():
+        text = text.replace(k, v)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def faq_items():
+    """把 faq 区块里的 <details> 抽成 schema.org 的问答（内容照抄，不另编）。"""
+    items = []
+    for q, a in DETAILS.findall(read_part("faq")):
+        items.append({
+            "@type": "Question",
+            "name": plain(q),
+            "acceptedAnswer": {"@type": "Answer", "text": plain(a)},
+        })
+    return items
+
+
+def build_jsonld(page):
+    node = {
+        "@context": "https://schema.org",
+        "@type": ["WebPage", "FAQPage"] if page["file"] == "faq.html" else "WebPage",
+        "name": page["title"],
+        "url": page_url(page),
+        "inLanguage": "zh-CN",
+        "description": page["desc"],
+        "isPartOf": {"@type": "WebSite", "name": SITE_NAME, "url": SITE},
+        "publisher": {"@type": "Organization", "name": SITE_NAME, "url": SITE},
+        "license": "https://creativecommons.org/licenses/by-sa/4.0/",
+    }
+    if page["file"] == "index.html":
+        node["@type"] = "WebSite"
+        node["name"] = SITE_NAME
+        node["alternateName"] = "APRS 中文资料站"
+        node.pop("isPartOf", None)
+        node["hasPart"] = [
+            {"@type": "WebPage", "name": p["title"].split(" — ")[0], "url": page_url(p)}
+            for p in PAGES if p["file"] != "index.html"
+        ]
+    if page["file"] == "faq.html":
+        node["mainEntity"] = faq_items()
+    return json.dumps(node, ensure_ascii=False, separators=(",", ":"))
 
 
 def set_band(block, alt):
@@ -230,9 +305,7 @@ def render(page):
         if BLOCK_PAGE[b] != file else '        <a href="#%s">%s</a>' % (b, EXTRA_TITLE[b])
         for b in EXTRA_TITLE)
 
-    body = []
-    for b in page["blocks"]:
-        body.append(read_part(b))
+    body = [read_part(b) for b in page["blocks"]]
     if "hero" not in page["blocks"]:
         body.insert(0, INTRO.format(h1=page["h1"], lead=page["lead"]).rstrip("\n"))
 
@@ -247,67 +320,144 @@ def render(page):
     scripts = "".join('\n<script src="%s?v=%s"></script>' % (s, SCRIPT_V[s])
                       for s in page.get("scripts", ()))
     return (HEAD.format(title=page["title"], desc=page["desc"], og=page["og"],
-                        url="" if file == "index.html" else file,
-                        css_v=CSS_V, nav=nav)
+                        keywords=page["keywords"], author=AUTHOR, url=page_url(page),
+                        jsonld=build_jsonld(page), css_v=CSS_V, nav=nav)
             + "\n\n".join(out) + "\n"
-            + FOOT.format(footer_links=footer_links, file=file)
+            + FOOT.format(footer_links=footer_links, file=file, author=AUTHOR)
             + scripts
             + '\n<script src="main.js?v=%s"></script>\n</body>\n</html>\n' % MAIN_V)
 
 
+def lastmod():
+    """sitemap 的 lastmod：生成当天（= 内容最后一次变动的日子，跑生成器就是动过）。
+
+    不用 git log 取日期：新提交的日期在生成时还不存在，取出来永远慢一拍。
+    """
+    return datetime.datetime.utcnow().strftime("%Y-%m-%d")
+
+
+def sitemap_xml():
+    stamp = lastmod()
+    rows = []
+    for p in PAGES:
+        rows.append("  <url>\n"
+                    "    <loc>%s</loc>\n"
+                    "    <lastmod>%s</lastmod>\n"
+                    "    <changefreq>weekly</changefreq>\n"
+                    "    <priority>%s</priority>\n"
+                    "  </url>" % (page_url(p), stamp, "1.0" if p["file"] == "index.html" else "0.8"))
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            + "\n".join(rows) + "\n</urlset>\n")
+
+
+def robots_txt():
+    return ("User-agent: *\n"
+            "Allow: /\n"
+            "\n"
+            "Sitemap: %ssitemap.xml\n" % SITE)
+
+
+def build():
+    out = {}
+    for page in PAGES:
+        out[page["file"]] = render(page)
+    out["sitemap.xml"] = sitemap_xml()
+    out["robots.txt"] = robots_txt()
+    return out
+
+
 def norm(t):
     """把区块底色类和跨页链接还原，用于「区块有没有原样进页」的比对。"""
-    t = re.sub(r'(<section\b[^>]*\bclass=")[^"]*(")', r'\1X\2', t)
+    t = re.sub(r'(<section\b[^>]*\bclass=")[^"]*(")', r"\1X\2", t)
     return re.sub(r'href="[^"#]*#([\w-]+)"', r'href="#\1"', t)
 
 
-def main():
-    check = "--check" in sys.argv
-    bad = 0
-    for page in PAGES:
-        text = render(page)
-        path = REPO / page["file"]
-        old = path.read_text(encoding="utf-8") if path.exists() else None
-        if old == text:
-            print("same: %-12s %6d 字节" % (page["file"], len(text.encode("utf-8"))))
-            continue
-        if check:
-            bad += 1
-            print("DIFF: %-12s 磁盘 %s / 生成 %s 字节" % (
-                page["file"], len(old.encode("utf-8")) if old else "-", len(text.encode("utf-8"))))
-        else:
-            path.write_text(text, encoding="utf-8")
-            print("write: %-12s %6d 字节 %s" % (
-                page["file"], len(text.encode("utf-8")), "(新建)" if old is None else ""))
-
-    # 自检：每页里的区块必须和 tool/parts 里那片一字不差（除了底色类和跨页链接）
+def selfcheck(files):
+    # 每页里的区块必须和 tool/parts 里那片一字不差（除了底色类和跨页链接）
     lost = []
     for page in PAGES:
-        text = norm(render(page))
+        text = norm(files[page["file"]])
         for b in page["blocks"]:
             if norm(read_part(b)) not in text:
                 lost.append("%s ← %s" % (page["file"], b))
     if lost:
         sys.exit("FAIL: 有区块没能原样进页：%s" % ", ".join(lost))
 
-    # 自检：同一页里不能有两个相同 id；跨页链接指向的页面与锚点必须真的存在
+    # 同一页里不能有两个相同 id；跨页链接指向的页面与锚点必须真的存在
     by_file = dict((p["file"], p) for p in PAGES)
     for page in PAGES:
-        text = render(page)
+        text = files[page["file"]]
         ids = re.findall(r'\bid="([\w-]+)"', text)
         dup = sorted(set(i for i in ids if ids.count(i) > 1))
         if dup:
             sys.exit("FAIL: %s 里有重复 id：%s" % (page["file"], dup))
+        if not re.search(r"<h1[ >]", text):
+            sys.exit("FAIL: %s 没有 h1" % page["file"])
+        if text.count("<h1") != 1:
+            sys.exit("FAIL: %s 的 h1 不止一个" % page["file"])
         for target, anchor in re.findall(r'href="([\w-]+\.html)#([\w-]+)"', text):
             if target not in by_file:
                 sys.exit("FAIL: %s 链到了不存在的页面 %s" % (page["file"], target))
-            if anchor not in re.findall(r'\bid="([\w-]+)"', render(by_file[target])):
+            if anchor not in re.findall(r'\bid="([\w-]+)"', files[target]):
                 sys.exit("FAIL: %s 链到了 %s 里不存在的错点 #%s" %
                          (page["file"], target, anchor))
 
+    # 结构化数据得是能解析的 JSON，sitemap 得是能解析的 XML
+    for page in PAGES:
+        m = re.search(r'<script type="application/ld\+json">(.*?)</script>',
+                      files[page["file"]], re.S)
+        if not m:
+            sys.exit("FAIL: %s 缺 JSON-LD" % page["file"])
+        try:
+            data = json.loads(m.group(1))
+        except ValueError as e:
+            sys.exit("FAIL: %s 的 JSON-LD 不是合法 JSON：%s" % (page["file"], e))
+        if data.get("url") != page_url(page) or not data.get("description"):
+            sys.exit("FAIL: %s 的 JSON-LD 缺 url/description" % page["file"])
+    import xml.etree.ElementTree as ET
+    try:
+        root = ET.fromstring(files["sitemap.xml"])
+    except ET.ParseError as e:
+        sys.exit("FAIL: sitemap.xml 不是合法 XML：%s" % e)
+    locs = [e.text for e in root.iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
+    if sorted(locs) != sorted(page_url(p) for p in PAGES):
+        sys.exit("FAIL: sitemap 里的地址和页面表对不上：%s" % locs)
+
+
+def no_stamp(t):
+    """比对 sitemap 时把 lastmod 抹掉：跨天跑 --check 不该报错。"""
+    return re.sub(r"<lastmod>[^<]*</lastmod>", "<lastmod>X</lastmod>", t)
+
+
+def main():
+    check = "--check" in sys.argv
+    files = build()
+    selfcheck(files)
+
+    bad = 0
+    for name in sorted(files):
+        path = REPO / name
+        old = path.read_text(encoding="utf-8") if path.exists() else None
+        text = files[name]
+        if name == "sitemap.xml" and old is not None and no_stamp(old) == no_stamp(text):
+            print("same:  %-12s （只有 lastmod 日期不同）" % name)
+            continue
+        if old == text:
+            print("same:  %-12s %6d 字节" % (name, len(text.encode("utf-8"))))
+        elif check:
+            bad += 1
+            print("DIFF:  %-12s 磁盘 %s / 生成 %d 字节" % (
+                name, len(old.encode("utf-8")) if old else "-", len(text.encode("utf-8"))))
+        else:
+            path.write_text(text, encoding="utf-8")
+            print("write: %-12s %6d 字节 %s" % (
+                name, len(text.encode("utf-8")), "(新建)" if old is None else ""))
+
     if check and bad:
-        sys.exit("%d 个页面与生成结果不一致，跑一遍 python3 tool/gen_pages.py" % bad)
-    print("OK: %d 个页面，区块原样进页、id 不重复、跨页链接都能落地" % len(PAGES))
+        sys.exit("%d 个文件与生成结果不一致，跑一遍 python3 tool/gen_pages.py" % bad)
+    print("OK: %d 个文件，区块原样进页、h1 唯一、跨页链接能落地、JSON-LD 与 sitemap 合法"
+          % len(files))
 
 
 if __name__ == "__main__":
