@@ -27,7 +27,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "33"        # style.css?v=
+CSS_V = "34"        # style.css?v=
 MAIN_V = "13"       # main.js?v=
 SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
@@ -271,6 +271,7 @@ HEAD = """<!DOCTYPE html>
       </button>
       <a class="nav-brand-aside" href="about.html" aria-label="关于本站">
         <img src="assets/icon.png?v={icon_v}" alt="" width="64" height="64">
+        <span>信标不止，回响不息。</span>
       </a>
     </nav>
     <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>

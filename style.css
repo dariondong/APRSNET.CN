@@ -333,6 +333,8 @@ main > section.section { counter-increment: sec; }
     padding: 22px 0 0; border-top: 1px solid var(--line); border-bottom: 0;
   }
   .nav-links a.nav-brand-aside img { width: 64px; height: 64px; }
+  /* 抽屉底部方标右边那行 slogan */
+  .nav-links a.nav-brand-aside span { margin-left: 12px; color: var(--text-dim); font-size: 14.5px; }
   .theme-toggle { width: 100%; margin-top: 20px; justify-content: flex-start; gap: 8px; padding: 10px 12px; }
   .nav-burger { display: flex; z-index: 130; }
 }
