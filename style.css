@@ -105,6 +105,8 @@ code {
 .nav-links a:hover { color: var(--text); }
 .nav-links a.active { color: var(--text); }
 .nav-links a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--hot-bright); }
+/* 抽屉底部的字标：只在窄屏抽屉里出现，点它去首页的「认识 APRS」那一块 */
+.nav-links a.nav-brand-aside { display: none; }
 .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border: 1px solid var(--line-strong); background: transparent;
@@ -322,6 +324,12 @@ main > section.section { counter-increment: sec; }
   .nav-links a { padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 17px; }
   .nav-links a.active { color: var(--hot); }
   .nav-links a.active::after { display: none; }
+  /* 抽屉底部：字标推到面板最下面，点它去首页的「认识 APRS」 */
+  .nav-links a.nav-brand-aside {
+    display: flex; align-items: center; margin-top: auto;
+    padding: 22px 0 0; border-top: 1px solid var(--line); border-bottom: 0;
+  }
+  .nav-links a.nav-brand-aside .brand-name { font-size: 21px; }
   .theme-toggle { width: 100%; margin-top: 20px; justify-content: flex-start; gap: 8px; padding: 10px 12px; }
   .nav-burger { display: flex; z-index: 130; }
 }

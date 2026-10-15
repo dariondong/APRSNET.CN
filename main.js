@@ -91,7 +91,7 @@
 
   /* ── 导航高亮（Scrollspy）：当前区块对应的锚点加 .active ── */
   var sections = Array.prototype.slice.call(document.querySelectorAll("section[id]"));
-  var navAnchors = Array.prototype.slice.call(document.querySelectorAll(".nav-links a[href^='#']"));
+  var navAnchors = Array.prototype.slice.call(document.querySelectorAll(".nav-links a[href^='#']:not(.nav-brand-aside)"));
   if ("IntersectionObserver" in window && sections.length && navAnchors.length) {
     var spy = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
