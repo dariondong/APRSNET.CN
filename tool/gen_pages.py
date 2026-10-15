@@ -46,7 +46,7 @@ PAGES = [
         keywords="APRS,APRS 中文,APRS 教程,业余无线电,自动分组报告系统,APRSNET,"
                  "APRS 是什么,信标,中继,网关,iGate,TOCALL 查询",
         scripts=("tocalls.js", "hero-field.js"),
-        blocks=["hero", "about", "start", "query", "contribute"],
+        blocks=["hero", "about", "start", "contribute"],
     ),
     dict(
         file="guide.html", nav="上手", h1="上手与设备",
@@ -77,6 +77,16 @@ PAGES = [
         keywords="APRS 报文,APRS 数据包,APRS 字段,APRS 位置包,APRS 呼号,APRS 符号,"
                  "APRS 报文解码,APRS101,APRS 名词",
         blocks=["packets", "fields", "glossary"],
+    ),
+    dict(
+        file="tocall.html", nav="查询", h1="官方 TOCALL 查询",
+        lead="呼号后面那段 TOCALL 是设备或软件的记号。粘一整行报文进来也行，查表就在浏览器里做。",
+        title="APRS TOCALL 查询 — 呼号后面那段是什么设备",
+        desc="APRS 官方 TOCALL 查询：输入呼号后面那段标识，或直接粘整行报文，在浏览器里对照 APRS.org 官方设备名单，看对面用的是什么设备或软件。",
+        og="APRS TOCALL 查询：呼号后面那段是什么设备，粘报文也能查。",
+        keywords="TOCALL,TOCALL 查询,APRS 设备识别,APRS 报文头,APDR16,APRS 设备名单,"
+                 "aprs-deviceid,APRSDroid,呼号",
+        blocks=["tocall", "tocall-refs"],
     ),
     dict(
         file="faq.html", nav="问答", h1="常见问题",
@@ -121,7 +131,8 @@ EXTRA_TITLE = {
     "about": "认识 APRS", "start": "常用工具", "steps": "上手步骤",
     "freq": "频率与路径", "packets": "报文长什么样", "fields": "报文字段",
     "glossary": "名词小抄", "gear": "设备与链路", "faq": "常见问题",
-    "query": "官方 TOCALL 查询", "docs": "中文文档", "refs": "英文原文",
+    "tocall": "官方 TOCALL 查询", "tocall-refs": "名单与出处",
+    "docs": "中文文档", "refs": "英文原文",
     "tut-listen": "先在手机上听", "tut-send": "接线发出第一个包", "tut-trouble": "没上去怎么查",
     "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
     "aprsis-send": "UDP 与只发端口", "contribute": "参与贡献",
