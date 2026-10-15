@@ -1,136 +1,31 @@
 /* APRSNET.CN 首屏：一个点 → 发一次信标 → 一张网
-   手写 WebGL1，零依赖、定种子（同一份网，每次打开都一样）。
-   一开始 900 个点塌在一个点上，按下去发一次信标，点散开成球面，
-   邻点之间自己拉出线来 —— 这才看出是「一张网」而不是一团雾；
+   手写 Canvas 2D，零依赖、定种子（同一份网，每次打开都一样）。
+   900 个点按黄金角铺在球面上，一开始挤成一粒；按下去等于发一次信标，
+   点散开成球面，邻点之间自己拉出线来 —— 这才看出是「一张网」；
    其中一粒是你的（橙的），一圈波纹从你这里漫过整张网。
 
-   同一个 program 画两遍：先连线（uMode=1），再点（uMode=0），
-   省掉第二套 uniform。点云里连的是最近邻，一眼能看出网格结构。
+   为什么换成 2D 画布：原来那版是 WebGL1 点云，在有的浏览器/设备上首屏
+   一直是空的（拿不到上下文，或者带 alpha 的画布合成不出来），只剩一张
+   静态图顶着。2D 画布哪里都有，几何和时间轴一个字没改，换的只是画法：
+   邻点连线一次 stroke 出去，点按明暗分桶，一桶一次 fill。
 
-   没有 WebGL、或者上下文丢了，就什么都不做 —— 画布一直是那块空白，
-   不再顶一张静态图（那张方块格子 SVG 已经删掉）。 */
+   画布就是首屏那张网，没有备胎（静态 SVG 已删）。
+   关了动效就给一张静止的网：不呼吸、不转、不放电波，但照样画出来。 */
 (function () {
   "use strict";
 
   var canvas = document.getElementById("heroField");
   if (!canvas || !canvas.getContext) return;
+  var ctx = null;
+  try { ctx = canvas.getContext("2d"); } catch (e) { ctx = null; }
+  if (!ctx) return;
 
-  /* 系统说要减少动效时不开动画 —— 但仍然给一张静止的网（见文件末尾的 still 分支） */
+  /* 系统说要减少动效时不开动画 —— 但仍然给一张静止的网（见下面的 still 分支） */
   var still = false;
   try {
     var mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
     still = !!(mq && mq.matches);
   } catch (e) { still = false; }
-
-  var opts = {
-    alpha: true, premultipliedAlpha: false, antialias: false,
-    depth: false, stencil: false, powerPreference: "low-power"
-  };
-  var gl = null;
-  try {
-    gl = canvas.getContext("webgl", opts) || canvas.getContext("experimental-webgl", opts);
-  } catch (e) { gl = null; }
-  if (!gl) return;
-
-  /* ── 着色器 ──
-     aPos  单位球面上的位置（物体空间）
-     aMeta x = 尺寸系数, y = 错峰相位（同一次广播里各点先后不一样）
-     aKind 1 = 你自己那一粒
-     uMode 1 = 画线（不取样 gl_PointCoord），0 = 画点 */
-  var VS = [
-    "precision highp float;",
-    "attribute vec3 aPos;",
-    "attribute vec2 aMeta;",
-    "attribute float aKind;",
-    "uniform float uSpin;",
-    "uniform float uGather;",
-    "uniform float uTime;",
-    "uniform float uDist;",
-    "uniform float uProj;",
-    "uniform float uAspect;",
-    "uniform float uPxScale;",
-    "uniform float uMinPx;",
-    "uniform float uMaxSize;",
-    "uniform float uRing;",
-    "uniform float uMode;",
-    "uniform vec3 uCloud;",
-    "uniform vec3 uHot;",
-    "uniform vec3 uYou;",
-    "varying vec3 vCol;",
-    "varying float vFade;",
-    "void main() {",
-    "  float ca = cos(uSpin);",
-    "  float sa = sin(uSpin);",
-    "  vec3 home = vec3(aPos.x * ca - aPos.z * sa, aPos.y, aPos.x * sa + aPos.z * ca);",
-    "  float g = clamp((uGather - aMeta.y * 0.45) / 0.55, 0.0, 1.0);",
-    "  g = g * g * (3.0 - 2.0 * g);",
-    "  vec3 p = home * g;",
-    "  float you = step(0.5, aKind);",
-    "  float d = uDist - p.z;",
-    "  float front = clamp(p.z * 0.9 + 0.55, 0.0, 1.0);",
-    "  float tw = 0.5 + 0.5 * sin(uTime * (0.6 + 0.9 * aMeta.y) + aMeta.y * 24.0);",
-    "  float bright = 0.42 + 0.58 * tw;",
-    "  float pulse = 0.5 + 0.5 * sin(uTime * 1.5);",
-    "  bright *= mix(1.0, 0.72 + 0.78 * pulse, you);",
-    "  float q = (distance(normalize(home), normalize(uYou)) - uRing) * 3.4;",
-    "  bright *= 1.0 + exp(-q * q) * 2.2 * g;",
-    "  float vis = mix(1.0, 0.10 + 0.90 * front, g);",
-    "  vis = max(vis, you * 0.5);",
-    "  vFade = clamp(vis * bright, 0.0, 1.0);",
-    "  vec3 base = mix(uCloud, uHot, you);",
-    "  vCol = mix(uHot, base, g) * (0.78 + 0.42 * bright);",
-    "  gl_PointSize = clamp(aMeta.x * uPxScale / max(d, 0.45) * mix(1.8, 1.0, g) * (0.88 + 0.28 * tw), uMinPx, uMaxSize);",
-    "  vec2 sc = vec2(p.x * uProj / uAspect, p.y * uProj);",
-    "  gl_Position = vec4(sc, d - uDist, d);",
-    "}"
-  ].join("\n");
-
-  var FS = [
-    "precision mediump float;",
-    "varying vec3 vCol;",
-    "varying float vFade;",
-    "uniform float uMode;",
-    "void main() {",
-    "  float a = vFade;",
-    "  if (uMode < 0.5) {",
-    "    vec2 c = gl_PointCoord - vec2(0.5);",
-    "    float r2 = dot(c, c);",
-    "    if (r2 > 0.25) discard;",
-    "    a *= 1.0 - smoothstep(0.18, 0.25, r2);",
-    "  } else {",
-    "    a *= 0.22;",
-    "  }",
-    "  gl_FragColor = vec4(vCol, a);",
-    "}"
-  ].join("\n");
-
-  function compile(type, src) {
-    var sh = gl.createShader(type);
-    if (!sh) return null;
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) { gl.deleteShader(sh); return null; }
-    return sh;
-  }
-
-  var vs = compile(gl.VERTEX_SHADER, VS);
-  var fs = compile(gl.FRAGMENT_SHADER, FS);
-  if (!vs || !fs) return;
-  var prog = gl.createProgram();
-  if (!prog) return;
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
-
-  /* 每个 uniform 都在这里点一次名 —— .scratch/cn_field_check.py 会拿它和着色器里的声明对表 */
-  var UNIFORMS = [
-    "uSpin", "uGather", "uTime", "uDist", "uProj", "uAspect",
-    "uPxScale", "uMinPx", "uMaxSize", "uRing", "uMode", "uCloud", "uHot", "uYou"
-  ];
-  var u = {};
-  var i;
-  for (i = 0; i < UNIFORMS.length; i++) u[UNIFORMS[i]] = gl.getUniformLocation(prog, UNIFORMS[i]);
 
   /* ── 几何：球面上的等距点（黄金角螺旋），壳薄一点球面才清楚 ── */
   var N = 900;
@@ -145,46 +40,39 @@
   var youLen = Math.sqrt(YOU[0] * YOU[0] + YOU[1] * YOU[1] + YOU[2] * YOU[2]);
   YOU[0] /= youLen; YOU[1] /= youLen; YOU[2] /= youLen;
 
-  var STRIDE = 24;
-  var data = new Float32Array(N * 6);
+  var gx = new Float32Array(N), gy = new Float32Array(N), gz = new Float32Array(N);
+  var psz = new Float32Array(N);   /* 点的粗细系数 */
+  var ph = new Float32Array(N);    /* 错峰相位（同一次广播里各点先后不一样） */
+  var kind = new Uint8Array(N);    /* 1 = 你自己那一粒 */
   var youIndex = 0, youBest = -2;
+  var i, j;
   for (i = 0; i < N; i++) {
     var y = 1 - (i + 0.5) * 2 / N;
     var r = Math.sqrt(Math.max(0, 1 - y * y));
     var a = i * GA;
     var dx = Math.cos(a) * r, dz = Math.sin(a) * r;
     var rad = 0.96 + 0.07 * rnd();
-    var ph = rnd();
+    ph[i] = rnd();
     /* 每隔十来个点给一粒稍大的，看上去像地图上的台站，不是均匀的一团 */
-    var size = (0.019 + 0.007 * rnd()) * (i % 11 === 0 ? 1.5 : 1);
+    psz[i] = (0.019 + 0.007 * rnd()) * (i % 11 === 0 ? 1.5 : 1);
+    gx[i] = dx * rad;
+    gy[i] = y * rad;
+    gz[i] = dz * rad;
     var dot = dx * YOU[0] + y * YOU[1] + dz * YOU[2];
     if (dot > youBest) { youBest = dot; youIndex = i; }
-    var o = i * 6;
-    data[o] = dx * rad;
-    data[o + 1] = y * rad;
-    data[o + 2] = dz * rad;
-    data[o + 3] = size;
-    data[o + 4] = ph;
-    data[o + 5] = 0;
   }
-  data[youIndex * 6 + 3] = 0.052;
-  data[youIndex * 6 + 5] = 1;
-
-  var pointVbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, pointVbo);
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  psz[youIndex] = 0.052;
+  kind[youIndex] = 1;
 
   /* ── 邻点之间拉线：先量出近邻尺度，再按 1.7 倍连边（只看 i<j，天然不重复） ── */
   var near2 = new Float32Array(N);
-  var a2, b2, d2, j, k, dx2, dy2, dz2;
+  var d2, dx2, dy2, dz2;
   for (i = 0; i < N; i++) near2[i] = 8;
   for (i = 0; i < N; i++) {
-    var oi = i * 6;
     for (j = i + 1; j < N; j++) {
-      var oj = j * 6;
-      dx2 = data[oi] - data[oj];
-      dy2 = data[oi + 1] - data[oj + 1];
-      dz2 = data[oi + 2] - data[oj + 2];
+      dx2 = gx[i] - gx[j];
+      dy2 = gy[i] - gy[j];
+      dz2 = gz[i] - gz[j];
       d2 = dx2 * dx2 + dy2 * dy2 + dz2 * dz2;
       if (d2 < near2[i]) near2[i] = d2;
       if (d2 < near2[j]) near2[j] = d2;
@@ -196,94 +84,58 @@
 
   var segs = [];
   for (i = 0; i < N; i++) {
-    var oa = i * 6;
-    a2 = data[oa + 0]; b2 = data[oa + 1];
-    var c2 = data[oa + 2];
-    /* 先比单个轴，超出半径就直接跳过，不必每次都算完整平方和 */
     for (j = i + 1; j < N; j++) {
-      var ob = j * 6;
-      dx2 = a2 - data[ob];
+      dx2 = gx[i] - gx[j];
       if (dx2 * dx2 > cut2) continue;
-      dy2 = b2 - data[ob + 1];
+      dy2 = gy[i] - gy[j];
       if (dy2 * dy2 > cut2) continue;
-      dz2 = c2 - data[ob + 2];
+      dz2 = gz[i] - gz[j];
       if (dz2 * dz2 > cut2) continue;
       d2 = dx2 * dx2 + dy2 * dy2 + dz2 * dz2;
       if (d2 <= cut2 && d2 > 0.000001) segs.push(i, j);
     }
   }
-  var lineData = new Float32Array(segs.length * 6);
-  for (k = 0; k < segs.length; k++) {
-    var so = segs[k] * 6, to = k * 6;
-    lineData[to] = data[so];
-    lineData[to + 1] = data[so + 1];
-    lineData[to + 2] = data[so + 2];
-    lineData[to + 3] = data[so + 3];
-    lineData[to + 4] = data[so + 4];
-    lineData[to + 5] = data[so + 5];
-  }
-  var lineVbo = null;
-  if (segs.length) {
-    lineVbo = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, lineVbo);
-    gl.bufferData(gl.ARRAY_BUFFER, lineData, gl.STATIC_DRAW);
-  }
-
-  gl.useProgram(prog);
-  var aPos = gl.getAttribLocation(prog, "aPos");
-  var aMeta = gl.getAttribLocation(prog, "aMeta");
-  var aKind = gl.getAttribLocation(prog, "aKind");
-  function bindAttribs(buf) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, STRIDE, 0);
-    gl.enableVertexAttribArray(aMeta);
-    gl.vertexAttribPointer(aMeta, 2, gl.FLOAT, false, STRIDE, 12);
-    gl.enableVertexAttribArray(aKind);
-    gl.vertexAttribPointer(aKind, 1, gl.FLOAT, false, STRIDE, 20);
-  }
 
   /* ── 颜色：只从站上现成的两支令牌里取，不写死色号 ── */
-  function hexToRgb(s) {
-    var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(s);
-    if (!m) return null;
-    var h = m[1];
-    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
-    var n = parseInt(h, 16);
-    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
-  }
   function token(name, fallback) {
     var raw = "";
     try { raw = getComputedStyle(document.documentElement).getPropertyValue(name) || ""; } catch (e) { raw = ""; }
-    return hexToRgb(raw.replace(/\s+/g, "")) || fallback;
+    var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(raw.replace(/\s+/g, ""));
+    if (!m) return fallback;
+    var h = m[1];
+    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+    var n = parseInt(h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
   /* 网用墨色（不是淡墨）—— 白底上一粒深点才干净，深浅交给前后层次去拉 */
-  var col = [0.08, 0.09, 0.11], hot = [1, 0.42, 0];
+  var col = [21, 24, 28], hot = [255, 106, 0];
   function readTokens() {
-    col = token("--text", [0.08, 0.09, 0.11]);
-    hot = token("--hot-bright", [1, 0.42, 0]);
+    col = token("--text", [21, 24, 28]);
+    hot = token("--hot-bright", [255, 106, 0]);
   }
   readTokens();
+
+  function rgba(c, a) {
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")";
+  }
 
   /* ── 画布尺寸：量 clientWidth/Height（CSS 变换不触发 resize，用缩放后的矩形会糊） ── */
   var FOV = 33 * Math.PI / 180;
   var PROJ = 1 / Math.tan(FOV / 2);
   var DIST = 3.8;
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var aspect = 4 / 3, pxScale = 400;
+  var cw = 0, chh = 0, pxScale = 400;
 
   function resize() {
-    var cw = canvas.clientWidth || 0;
-    var ch = canvas.clientHeight || 0;
-    if (cw < 8 || ch < 8) return false;
-    var w = Math.round(cw * dpr), h = Math.round(ch * dpr);
+    cw = canvas.clientWidth || 0;
+    chh = canvas.clientHeight || 0;
+    if (cw < 8 || chh < 8) return false;
+    var w = Math.round(cw * dpr), h = Math.round(chh * dpr);
     if (w !== canvas.width || h !== canvas.height) {
       canvas.width = w;
       canvas.height = h;
     }
-    gl.viewport(0, 0, w, h);
-    aspect = cw / ch;
-    pxScale = (h / 2) * PROJ;
+    pxScale = (chh / 2) * PROJ;
     return true;
   }
 
@@ -298,35 +150,119 @@
 
   var t0 = 0, started = false, raf = 0, inView = true, tAnim = 0, gather = 0, spin = 0, ring = 9;
 
+  /* 每帧用的几个暂存：投影后的屏幕坐标、明暗、粗细 */
+  var sxa = new Float32Array(N), sya = new Float32Array(N);
+  var fad = new Float32Array(N), sza = new Float32Array(N);
+
+  /* 明暗分档：桶里取的值略低于该档上限，免得把背面的点/线也提亮
+     （原来那版是 vFade 逐像素插值的，分桶要是向上取整，整张网会糊成一片）
+     另外背面（f 很小）索性不画 —— 一眼看得出球面朝向，也不白花力气。 */
+  var CULL = 0.32;
+  var LINE_A = [0.04, 0.08, 0.14];
+  var DOT_A = [0.3, 0.5, 0.75, 0.95];
+  var lineB = new Uint8Array(segs.length); /* 复用的分桶表，省得每帧新建 */
+
   function draw() {
-    if (!canvas.width || !canvas.height) return;
-    gl.disable(gl.DEPTH_TEST);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.useProgram(prog);
-    gl.uniform1f(u.uSpin, spin);
-    gl.uniform1f(u.uGather, gather);
-    gl.uniform1f(u.uTime, tAnim);
-    gl.uniform1f(u.uDist, DIST);
-    gl.uniform1f(u.uProj, PROJ);
-    gl.uniform1f(u.uAspect, aspect);
-    gl.uniform1f(u.uPxScale, pxScale);
-    gl.uniform1f(u.uMinPx, 1.0);
-    gl.uniform1f(u.uMaxSize, 16.0);
-    gl.uniform1f(u.uRing, ring);
-    gl.uniform3f(u.uCloud, col[0], col[1], col[2]);
-    gl.uniform3f(u.uHot, hot[0], hot[1], hot[2]);
-    gl.uniform3f(u.uYou, YOU[0], YOU[1], YOU[2]);
-    if (lineVbo) {
-      gl.uniform1f(u.uMode, 1.0);
-      bindAttribs(lineVbo);
-      gl.drawArrays(gl.LINES, 0, segs.length);
+    if (!cw || !chh) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cw, chh);
+
+    var ca = Math.cos(spin), sa = Math.sin(spin);
+    var hx = cw / 2, hy = chh / 2;
+    var k, b, x, y, z, g, d, tw, bright, pulse, front, vis, f, ln, q, t;
+    /* 散开的过程中点先是橙的（刚发出去的那一粒），落定成墨色 */
+    var cloud = [
+      Math.round(hot[0] + (col[0] - hot[0]) * gather),
+      Math.round(hot[1] + (col[1] - hot[1]) * gather),
+      Math.round(hot[2] + (col[2] - hot[2]) * gather)
+    ];
+
+    for (i = 0; i < N; i++) {
+      x = gx[i] * ca - gz[i] * sa;
+      z = gx[i] * sa + gz[i] * ca;
+      y = gy[i];
+      /* 每粒自己的散开进度，错峰 */
+      g = (gather - ph[i] * 0.45) / 0.55;
+      g = g <= 0 ? 0 : (g >= 1 ? 1 : g);
+      g = g * g * (3 - 2 * g);
+      /* 波纹：按它与「你」的球面距离取一圈亮环（home 半径≈1，先归一化） */
+      ln = Math.sqrt(x * x + y * y + z * z) || 1;
+      q = (x / ln) * YOU[0] + (y / ln) * YOU[1] + (z / ln) * YOU[2];
+      q = q > 1 ? 1 : (q < -1 ? -1 : q);
+      q = (Math.sqrt(2 - 2 * q) - ring) * 3.4;
+
+      x *= g; y *= g; z *= g;
+      d = DIST - z;
+      if (d < 0.45) d = 0.45;
+      sxa[i] = hx + (x / d) * pxScale;
+      sya[i] = hy - (y / d) * pxScale;
+
+      tw = 0.5 + 0.5 * Math.sin(tAnim * (0.6 + 0.9 * ph[i]) + ph[i] * 24);
+      bright = 0.42 + 0.58 * tw;
+      if (kind[i]) {
+        pulse = 0.5 + 0.5 * Math.sin(tAnim * 1.5);
+        bright *= 0.72 + 0.78 * pulse;
+      }
+      bright *= 1 + Math.exp(-q * q) * 2.2 * g;
+      front = z * 0.9 + 0.55;
+      front = front < 0 ? 0 : (front > 1 ? 1 : front);
+      vis = 1 + (0.10 + 0.90 * front - 1) * g;
+      if (kind[i] && vis < 0.5) vis = 0.5;
+      f = vis * bright;
+      fad[i] = f > 1 ? 1 : f;
+      sza[i] = psz[i] * pxScale / d * (1.8 - 0.8 * g) * (0.88 + 0.28 * tw);
     }
-    gl.uniform1f(u.uMode, 0.0);
-    bindAttribs(pointVbo);
-    gl.drawArrays(gl.POINTS, 0, N);
+
+    /* 先连线：按两端明暗分成三档，一档一条路径一次 stroke */
+    t = segs.length * 0.5;
+    for (k = 0; k < t; k++) {
+      f = (fad[segs[k * 2]] + fad[segs[k * 2 + 1]]) * 0.5;
+      lineB[k] = f < CULL ? 255 : (f < 0.42 ? 0 : (f < 0.7 ? 1 : 2));
+    }
+    for (b = 0; b < 3; b++) {
+      ctx.beginPath();
+      for (k = 0; k < t; k++) {
+        if (lineB[k] !== b) continue;
+        i = segs[k * 2];
+        j = segs[k * 2 + 1];
+        ctx.moveTo(sxa[i], sya[i]);
+        ctx.lineTo(sxa[j], sya[j]);
+      }
+      ctx.strokeStyle = rgba(col, LINE_A[b]);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    /* 再画点：颜色两种（墨 / 橙）× 明暗四档，一桶一次 fill */
+    for (b = 0; b < 4; b++) {
+      ctx.fillStyle = rgba(cloud, DOT_A[b]);
+      ctx.beginPath();
+      for (i = 0; i < N; i++) {
+        if (kind[i]) continue;
+        f = fad[i];
+        if (f < CULL) continue;
+        if ((f >= 1 ? 3 : (f * 4) | 0) !== b) continue;
+        k = sza[i];
+        if (k < 0.8) k = 0.8;
+        if (k > 8) k = 8;
+        if (k < 2) ctx.rect(sxa[i] - k * 0.5, sya[i] - k * 0.5, k, k);
+        else {
+          /* 圆点前先 moveTo：arc 会从当前点拉一条线过来，否则整片路径连成一张实心网 */
+          ctx.moveTo(sxa[i] + k * 0.5, sya[i]);
+          ctx.arc(sxa[i], sya[i], k * 0.5, 0, 6.2832);
+        }
+      }
+      ctx.fill();
+    }
+    /* 「你」那一粒单独画：最亮，橙的 */
+    ctx.fillStyle = rgba(hot, 1);
+    ctx.beginPath();
+    k = sza[youIndex];
+    if (k < 1.2) k = 1.2;
+    if (k > 12) k = 12;
+    ctx.moveTo(sxa[youIndex] + k * 0.5, sya[youIndex]);
+    ctx.arc(sxa[youIndex], sya[youIndex], k * 0.5, 0, 6.2832);
+    ctx.fill();
   }
 
   function schedule() {
@@ -408,30 +344,27 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   } catch (e) { /* 老浏览器没有 MutationObserver 也没关系 */ }
 
-  /* 上下文丢了就先停手；浏览器把上下文还回来之前，画布就空着 */
-  canvas.addEventListener("webglcontextlost", function (ev) {
-    ev.preventDefault();
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-  }, false);
-
   /* 给以后的自检留个口子（同页面脚本可读） */
   window.__heroField = {
+    draw: draw,
     state: function () {
       return {
+        engine: "2d",
         gather: gather, ring: ring, spin: spin, points: N, you: youIndex,
-        segs: segs.length, spacing: spacing,
+        segs: segs.length * 0.5, spacing: spacing,
         w: canvas.width, h: canvas.height, dpr: dpr
       };
     },
-    /* 没开 preserveDrawingBuffer，只有紧跟在一次绘制之后读才有数 */
+    /* 2D 画布随时可读（不像 WebGL 那样只有紧跟一次绘制之后才有数） */
     pixelStats: function () {
-      var w = canvas.width, h = canvas.height, px, lit = 0, orange = 0;
+      var w = canvas.width, h = canvas.height, pix, lit = 0, orange = 0, m;
       if (!w || !h) return null;
-      px = new Uint8Array(w * h * 4);
-      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      for (var m = 0; m < px.length; m += 4) {
-        if (px[m + 3] > 8) lit++;
-        if (px[m + 3] > 8 && px[m] > px[m + 2] + 40) orange++;
+      try { pix = ctx.getImageData(0, 0, w, h).data; } catch (e) { return null; }
+      for (m = 0; m < pix.length; m += 4) {
+        if (pix[m + 3] > 8) {
+          lit++;
+          if (pix[m] > pix[m + 2] + 40) orange++;
+        }
       }
       return { w: w, h: h, lit: lit, orange: orange, ratio: lit / (w * h) };
     }
