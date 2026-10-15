@@ -523,39 +523,53 @@
 
   <section class="section alt" id="query">
     <div class="section-head">
-      <h2>官方设备查询</h2>
-      <p>在国内，能合法发射的设备要有型号核准。买之前先查一眼，比装好之后被劝停划算得多。</p>
+      <h2>官方 TOCALL 查询</h2>
+      <p>每个 APRS 设备或软件都会在自己的包上盖一个记号 —— 呼号后面那段 TOCALL。查一下它，就知道对面用的是什么机器。</p>
     </div>
     <div class="section-body">
-      <form class="idq" id="cmiitForm" novalidate>
-        <label class="idq-label" for="cmiitId">型号核准代码（CMIIT ID）</label>
-        <p class="idq-hint">设备铭牌上那串像 <code>CMIIT ID: 2023DJ1234</code> 的字符。校验和复制都在你本机完成：本站不发请求，也不存任何东西。</p>
+      <form class="idq" id="tlqForm" novalidate>
+        <label class="idq-label" for="tlqInput">TOCALL，或者整行报文</label>
+        <p class="idq-hint">例如 <code>BG7LZQ&gt;APDR16</code> 里的那段；把整行报文粘进来也行。查表就在浏览器里做：本站不发请求，也不存任何东西（手边有官方登记 <span id="tlqCount">—</span> 条）。</p>
         <div class="idq-row">
-          <input class="idq-input" id="cmiitId" name="cmiitId" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="2023DJ1234" aria-describedby="cmiitOut">
-          <button class="btn btn-primary idq-btn" type="submit">校验并复制</button>
+          <input class="idq-input" id="tlqInput" name="tlqInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="APDR16" aria-describedby="tlqOut">
+          <button class="btn btn-primary idq-btn" type="submit">查设备</button>
           <button class="idq-clear" type="reset">清空</button>
         </div>
-        <p class="idq-out" id="cmiitOut" role="status" aria-live="polite"></p>
+        <p class="idq-out" id="tlqOut" role="status" aria-live="polite"></p>
       </form>
       <ul class="fact-list">
         <li>
-          <b>为什么要查</b>
-          在国内发射，设备本身要有型号核准；买之前对一眼铭牌上的代码，能省掉不少退货换货的麻烦。
+          <b>TOCALL 是什么</b>
+          报文头部「呼号 &gt; TOCALL,路径:」里的那一段，是设备或软件自己的标识：APRSdroid 是 APDR，各家车台、手台、网关也各有记号。
         </li>
         <li>
-          <b>怎么查</b>
-          把代码粘到下面的官方入口里搜一下，出来的品牌、型号、核准日期要和手上的机器对得上。
+          <b>为什么认得出来</b>
+          厂商和作者在 APRS.org 的官方名单里登记自己的 TOCALL —— 带 <code>?</code> 的表示该位可变；各家客户端和地图站读的是同一张表。
         </li>
         <li>
-          <b>对不上怎么办</b>
-          代码对不上型号，或者压根没有这串代码（自制设备、老设备常见）：先找卖家或厂家问清楚，别急着发射。
-        </li>
-        <li>
-          <b>设台与验台</b>
-          设台申请、执照办理和验台按属地管；入口一般在各省工信厅官网的「无线电管理」栏目里。
+          <b>查不到怎么办</b>
+          名单里没有，多半是自制程序或还没登记，也可能是拄错了一两位。以官方名单为准，别拿猜的结论去判断对面是什么设备。
         </li>
       </ul>
       <ul class="link-list">
+        <li>
+          <a class="link-row" href="http://www.aprs.org/aprs11/tocalls.txt" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>官方 TOCALL 名单</b>
+              <span>APRS.org 维护的原始清单，纯文本；带 ? 的条目表示该位可变。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://github.com/aprsorg/aprs-deviceid" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>aprs-deviceid</b>
+              <span>同一份名单的机器可读版（YAML / JSON）；本页这张查表就是它生成的。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
         <li>
           <a class="link-row" href="https://ythzxfw.miit.gov.cn/" target="_blank" rel="noopener">
             <span class="lr-main">
@@ -584,7 +598,7 @@
           </a>
         </li>
       </ul>
-      <p class="prose">上面的入口都是政府或协会官网；政府站点改版频繁，进站之后搜「<b>型号核准</b>」两个字最稳。</p>
+      <p class="prose">查表数据来自官方 aprs-deviceid 名单（维护者 OH7LZB，<b>CC BY-SA 2.0</b>），随站点一起发布；它是设备名册，不是判断设备好坏的依据。国内买机器，型号核准还是绕不开工信部。</p>
     </div>
   </section>
 
@@ -690,7 +704,7 @@
         <a href="#glossary">名词小抄</a>
         <a href="#gear">设备与链路</a>
         <a href="#faq">常见问题</a>
-        <a href="#query">官方设备查询</a>
+        <a href="#query">官方 TOCALL 查询</a>
         <a href="#docs">规范与文档</a>
         <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
       </nav>
@@ -706,6 +720,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="main.js?v=8"></script>
+<script src="tocalls.js?v=1"></script>
+<script src="main.js?v=9"></script>
 </body>
 </html>

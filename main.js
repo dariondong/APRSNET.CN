@@ -125,41 +125,71 @@
     });
   }
 
-  /* ── 型号核准代码：本机校验 + 复制（不发请求、不存数据） ── */
-  var idForm = document.getElementById("cmiitForm");
-  if (idForm) {
-    var idInput = document.getElementById("cmiitId");
-    var idOut = document.getElementById("cmiitOut");
-    var idSay = function (msg, kind) {
-      idOut.textContent = msg;
-      idOut.className = kind ? "idq-out " + kind : "idq-out";
+  /* ── TOCALL 查询：只查随站点发布的官方名单，不发请求 ── */
+  var tlqForm = document.getElementById("tlqForm");
+  if (tlqForm) {
+    var tlqInput = document.getElementById("tlqInput");
+    var tlqOut = document.getElementById("tlqOut");
+    var tlqCount = document.getElementById("tlqCount");
+    var TLQ = window.APRS_TOCALLS || {};
+    var TLQ_KEYS = Object.keys(TLQ);
+    if (tlqCount) tlqCount.textContent = String(TLQ_KEYS.length);
+
+    var tlqSay = function (msg, kind) {
+      tlqOut.textContent = msg;
+      tlqOut.className = kind ? "idq-out " + kind : "idq-out";
     };
-    idForm.addEventListener("submit", function (e) {
+    /* 整行报文也行：取「呼号>」之后的第一个字段 */
+    var pickTocall = function (raw) {
+      var s = String(raw || "").toUpperCase();
+      var i = s.indexOf(">");
+      if (i >= 0) s = s.slice(i + 1);
+      s = s.split(",")[0].split(":")[0];
+      return s.replace(/[^0-9A-Z?]/g, "");
+    };
+    /* 按位比：官方名单里的 ? 表示该位可以是任意字符 */
+    var matchKey = function (key, tc) {
+      if (key.length !== tc.length) return false;
+      for (var i = 0; i < key.length; i++) {
+        var c = key.charAt(i);
+        if (c !== "?" && c !== tc.charAt(i)) return false;
+      }
+      return true;
+    };
+    var tlqLookup = function (tc) {
+      if (TLQ[tc]) return { key: tc, val: TLQ[tc], exact: true };
+      for (var i = 0; i < TLQ_KEYS.length; i++) {
+        if (TLQ_KEYS[i].indexOf("?") >= 0 && matchKey(TLQ_KEYS[i], tc)) {
+          return { key: TLQ_KEYS[i], val: TLQ[TLQ_KEYS[i]], exact: false };
+        }
+      }
+      return null;
+    };
+    var tlqNear = function (tc) {
+      var head = tc.replace(/\?/g, "").slice(0, 4), out = [];
+      if (head.length < 3) return out;
+      for (var i = 0; i < TLQ_KEYS.length && out.length < 3; i++) {
+        if (TLQ_KEYS[i].replace(/\?/g, "").indexOf(head) === 0) out.push(TLQ_KEYS[i]);
+      }
+      return out;
+    };
+    tlqForm.addEventListener("submit", function (e) {
       e.preventDefault();
-      var raw = String(idInput.value || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
-      if (raw.indexOf("CMIITID") === 0) raw = raw.slice(7);
-      if (!raw) { idSay("先把手上的代码填进去。", "bad"); return; }
-      var m = /^(\d{4})([A-Z]{2})(\d{2,6})$/.exec(raw);
-      if (!m) {
-        idSay("这不像型号核准代码：它是「4 位年份 + 两个字母 + 几位数字」，例如 2023DJ1234。", "bad");
+      var tc = pickTocall(tlqInput.value);
+      if (!tc) { tlqSay("先填一个 TOCALL，或者把整行报文粘进来。", "bad"); return; }
+      var hit = tlqLookup(tc);
+      if (hit) {
+        tlqInput.value = tc;
+        tlqSay(tc + " → " + hit.val + (hit.exact ? "" : "（按官方条目 " + hit.key + " 匹配）"), "good");
         return;
       }
-      idInput.value = raw;
-      var parts = m[1] + " 年核准、" + m[2] + " 类别、编号 " + m[3];
-      var good = function () {
-        idSay("格式看着对：" + parts + "。已经复制，到下面的官方入口粘贴查询。", "good");
-      };
-      var manual = function () {
-        idSay("格式看着对：" + parts + "。复制没成功，手动选中输入框里的代码，再去官方入口查询。", "good");
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(raw).then(good, manual);
-      } else {
-        manual();
-      }
+      var near = tlqNear(tc);
+      tlqSay("名单里没有 " + tc + "：可能是抄错了一两位，也可能是自制程序或还没登记的软件。"
+        + (near.length ? "同开头的还有：" + near.join("、") + "。" : "")
+        + "官方名单在下面的链接里。", "bad");
     });
-    var idReset = idForm.querySelector("button[type=reset]");
-    if (idReset) idReset.addEventListener("click", function () { idSay(""); });
+    var tlqReset = tlqForm.querySelector("button[type=reset]");
+    if (tlqReset) tlqReset.addEventListener("click", function () { tlqSay(""); });
   }
 
   /* ── 首屏入场：等字体与样式就位后再亮起来 ── */
