@@ -1,0 +1,28 @@
+  <section class="section" id="igate-down">
+    <div class="section-head">
+      <h2>发回空中的消息</h2>
+      <p>消息要发回空中，下面四条得同时成立。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>收件的那台</b>
+          在预定的时间内被听到过，范围按中继跳数、距离，或者两者一起算。听不到就不必发。
+        </li>
+        <li>
+          <b>发信的那台</b>
+          在预定的时间内没有从空中听到过。别人从互联网转上来的包不算数。
+        </li>
+        <li>
+          <b>发信的那台，包头</b>
+          里面没有 TCPXX，也没有 NOGATE 或者 RFONLY。
+        </li>
+        <li>
+          <b>收件的那台，另一头</b>
+          在预定的时间内没有在互联网上出现过。
+        </li>
+      </ul>
+      <p class="prose">什么算在互联网上出现过？两种情况：它自己的包里带着 <code>TCPIP*</code> 或者 <code>TCPXX*</code>；或者它自己就是网关，往空中送过第三方包，而那些包的第三方头里带着 TCPIP 或者 TCPXX。第二种情况下，你在空中就能认出这台是网关。</p>
+      <p class="prose">除了这几条硬条件，台长还能自己加规则，比如只放行某几个呼号，或者某几个对象。</p>
+    </div>
+  </section>

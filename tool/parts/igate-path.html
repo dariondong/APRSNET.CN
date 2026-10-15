@@ -1,0 +1,31 @@
+  <section class="section" id="igate-path">
+    <div class="section-head">
+      <h2>路径和第三方格式</h2>
+      <p>网关只许补上自己的呼号，别的一个字符都不动。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">包送进 APRS-IS 时，路径上只能做一件事：末尾加上 <code>,qAR,网关呼号</code>。网关呼号写自己的，表示这个包是从这儿进网的。只收不发的网关写 <code>qAO</code>。除了这一段，别的地方都不要改，数据段更是绝对不能碰。头里带 TCPIP 或者 TCPXX 的包，不要再送回 APRS-IS。</p>
+      <p class="prose">往空中发的时候必须用第三方格式，把原包整个装进去。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>第三方格式</b>
+          <code>网关呼号&gt;APRS,GATEPATH:}原发&gt;原收,TCPIP,网关呼号*:原包数据</code>
+          <code>GATEPATH</code> 是这个包上了频率之后要走的路径。第三方头里 <code>TCPIP,网关呼号*</code> 这一段是必须的，写上它，别的网关就不会把这个包再送回 APRS-IS。来自 APRS-IS 的路径段，上频率之前要先剥掉。
+        </li>
+      </ul>
+      <ul class="fact-list">
+        <li>
+          <b>q 构造不上频率</b>
+          q 构造只活在互联网那一侧，空中一个都不该出现。
+        </li>
+        <li>
+          <b>I 构造不上频率</b>
+          同样是互联网侧的标记。
+        </li>
+        <li>
+          <b>TCPIP 与 TCPXX</b>
+          除了第三方格式里那一段，空中不该出现这两个标记。
+        </li>
+      </ul>
+    </div>
+  </section>

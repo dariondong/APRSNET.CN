@@ -1,0 +1,18 @@
+  <section class="section" id="igate-query">
+    <div class="section-head">
+      <h2>查询怎么答</h2>
+      <p>有人问「这附近有网关吗」，网关就报一次自己的本事。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">收到 <code>?IGATE?</code> 这类指名查询时，网关回一条台站能力消息。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>能力消息</b>
+          <code>&lt;IGATE,MSG_CNT=12,LOC_CNT=3</code>
+          <code>MSG_CNT</code> 和 <code>LOC_CNT</code> 按自己的实际数字填，后面还能补自己的说明。这类消息什么时候都能发，不少网关就跟着自己的位置包一起发。
+        </li>
+      </ul>
+      <p class="prose">广播式查询（数据段以 <code>?</code> 开头、没有指定台站）两个方向都别放行。往空中发会让一堆台站同时回话，往网上送也是一样。第三方格式那边还有两条：第三方头里带 TCPIP 或者 TCPXX 的包，不要送回 APRS-IS；没带的，剥掉 RF 头和那段数据类型再送。</p>
+      <p class="prose">现在各家网关都会顺手把第三方头里的路径信息清空，省点带宽，也让包长落在 AX.25 允许的范围里。</p>
+    </div>
+  </section>

@@ -135,7 +135,7 @@ PAGES = [
     ),
     dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
-        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用。过滤器另有专篇，网关细则和 q 构造接着补。",
+        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用。过滤器和网关细则另有专篇，q 构造接着补。",
         title="APRS-IS 中文文档 — 连接、登录行、端口与过滤器",
         desc="APRS-IS 官方文档的中文整理：TCP/UDP 端口怎么选（14501 / 10152 / 14580 / 23000）、登录行与 passcode、呼号与 SSID 规则、只发端口与 HTTP/WebSocket 返回码，附原文入口。",
         og="APRS-IS 中文文档：连上网络、登录行、UDP 与只发端口。",
@@ -153,6 +153,17 @@ PAGES = [
                  "t/ 类型过滤,s/ 符号过滤,q 构造,APRS-IS 中文文档",
         blocks=["filter-basics", "filter-place", "filter-station",
                 "filter-type", "filter-symbol", "filter-refs"],
+    ),
+    dict(
+        file="igate.html", nav="", nav_active="docs.html", h1="iGate 细则",
+        lead="网关把空中和互联网两头接起来。转什么、不转什么、路径怎么改，官方细则都在这一页。",
+        title="iGate 细则 — 网关转什么、不转什么、路径怎么写（中文）",
+        desc="APRS-IS 官方的 iGate 细则中文整理：哪些包该送上互联网、哪几类不转，消息什么条件下发回空中，qAR 与 qAO 怎么加，第三方格式怎么拼，附原文入口。",
+        og="iGate 细则中文整理：转什么、不转什么、路径和第三方格式怎么写。",
+        keywords="iGate,APRS 网关,iGate 细则,qAR,qAO,第三方格式,APRS-IS 网关,"
+                 "网关搭建,APRS 中文文档",
+        blocks=["igate-duty", "igate-up", "igate-down", "igate-path",
+                "igate-query", "igate-refs"],
     ),
     dict(
         file="links.html", nav="友链", h1="友链",
@@ -193,6 +204,9 @@ EXTRA_TITLE = {
     "filter-basics": "怎么写", "filter-place": "按位置挑",
     "filter-station": "按台站挑", "filter-type": "按类型挑",
     "filter-symbol": "按符号挑", "filter-refs": "原文与相关",
+    "igate-duty": "网关干的活", "igate-up": "收上来的包",
+    "igate-down": "发回空中的消息", "igate-path": "路径与第三方格式",
+    "igate-query": "查询怎么答", "igate-refs": "原文与相关",
     "proto-head": "协议说明", "proto-general": "总则", "proto-arch": "系统组成",
     "proto-access": "接入规范", "proto-whitelist": "白名单", "proto-forward": "报文转发",
     "proto-filter": "过滤器", "proto-ops": "安全与运维", "proto-boundary": "网络边界",
@@ -204,7 +218,7 @@ EXTRA_TITLE = {
 # 页脚目录的分栏名：默认用导航里的名字，不在导航里的子页在这里自己报个名
 FOOT_GROUP = {
     "tutorial.html": "教程", "aprsis.html": "APRS-IS 文档",
-    "filter.html": "APRS-IS 过滤器",
+    "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
     "protocol.html": "协议规范", "about.html": "关于本站",
 }
 # 页脚目录最后一栏：仓库与反馈

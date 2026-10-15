@@ -1,0 +1,34 @@
+  <section class="section" id="igate-up">
+    <div class="section-head">
+      <h2>收上来的包，哪些不转</h2>
+      <p>原则上空中听到的包都送上互联网，下面这几类除外。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>不像样的包</b>
+          控制字段不是 <code>0x03</code>，或者 PID 不是 <code>0xf0</code>。
+        </li>
+        <li>
+          <b>TNC 开了 PASSALL</b>
+          开了就表示校验失败的包也照收，这类包不该往上送。
+        </li>
+        <li>
+          <b>从网络来的第三方包</b>
+          数据段以 <code>}</code> 开头，并且第三方头里带着 TCPIP 或者 TCPXX。这类包本来就出自 APRS-IS，转回去会绕成环。
+        </li>
+        <li>
+          <b>第三方包的另一种</b>
+          第三方头里既没有 TCPIP 也没有 TCPXX 的，要把 RF 头和那段数据类型剥掉，再送进 APRS-IS。
+        </li>
+        <li>
+          <b>广播式查询</b>
+          数据段以 <code>?</code> 开头、没有指定台站的那种。放上去会让一堆台站同时回话，一下刷出几千条响应。
+        </li>
+        <li>
+          <b>头里带标记的</b>
+          包头里有 TCPIP 或者 TCPXX，这两类不放行；也有网关顺带挡下带 NOGATE、RFONLY 的包，这两条看台长自己取舍。
+        </li>
+      </ul>
+    </div>
+  </section>
