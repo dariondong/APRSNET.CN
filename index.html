@@ -23,7 +23,7 @@
 <meta name="twitter:title" content="APRSNET.CN — APRS 中文入口">
 <meta name="twitter:description" content="面向中文业余无线电爱好者的 APRS 入口：APRS 是什么、怎么发出第一个信标、去哪里找人。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -54,6 +54,7 @@
       <a href="#start">入口</a>
       <a href="#steps">上手</a>
       <a href="#freq">频率</a>
+      <a href="#packets">报文</a>
       <a href="#glossary">名词</a>
       <a href="#faq">问答</a>
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
@@ -233,6 +234,44 @@
     </div>
   </section>
 
+  <section class="section" id="packets">
+    <div class="section-head">
+      <h2>报文长什么样</h2>
+      <p>APRS 的包就是一行纯文本：谁发的、请谁转发、说了什么，全写在这一行里。读懂它，屏幕上的东西就都说得通了。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">一行包的骨架是固定的：<code>呼号&gt;路径:数据</code>。路径里出现 <code>TCPIP*</code>，说明这个包是从互联网上来的，而不是从空中收的。下面几行是常见的样子。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>位置包 —— 每几分钟一次的那种</b>
+          <code>BG7LZQ&gt;APDR16,WIDE1-1,WIDE2-1:!3905.45N/07223.83W&gt;路上</code>
+          冒号后面是位置：北纬 39°05.45′、西经 072°23.83′，度分格式。开头的 <code>!</code> 表示这是个不带时间戳的位置包；纬度经度后面那两个字符是符号表与图标 —— 这里是「汽车」；再往后的「路上」是台站自己写的注释。
+        </li>
+        <li>
+          <b>消息包 —— 一对一的短消息</b>
+          <code>BG7LZQ&gt;APDR16,TCPIP*::BG7AAA&nbsp;&nbsp;&nbsp;:晚上在 144.640 守听吗{001</code>
+          两个冒号之间的收件人固定占 9 个字符宽，不够的用空格补齐；末尾的 <code>{001</code> 是消息序号，对方回 ack 时靠它对上号。消息包不带位置。
+        </li>
+        <li>
+          <b>状态包 —— 「我现在的状态」</b>
+          <code>BG7LZQ&gt;APDR16,TCPIP*:&gt;手机上收听，暂不发射</code>
+          数据段的第一个字符是 <code>&gt;</code>，意思是「我在干什么」，不带经纬度，开销最小。
+        </li>
+        <li>
+          <b>天气包 —— 气象站自己报的数</b>
+          <code>BG7LZQ&gt;APDR16,WIDE2-1:!3905.45N/07223.83W_220/004g012t045</code>
+          <code>_</code> 是气象站符号；接着风向 220°、风速 4、阵风 12、气温 45 —— 风速按英里/小时、气温按华氏度，这是 APRS 天气段的固定单位。
+        </li>
+        <li>
+          <b>对象包 —— 往地图上挂一个点</b>
+          <code>;REPEATER *111111z3905.45N/07223.83W#</code>
+          分号开头：名字固定 9 个字符宽，后面跟时间戳和位置。集合点、活动路线、临时中继都可以这么做，位置随时能改。
+        </li>
+      </ul>
+      <p class="prose">其余的字母，多数客户端会替你翻译成图标和文字；认不出来的时候，回头看一眼上面这几行就够了。</p>
+    </div>
+  </section>
+
   <section class="section alt" id="glossary">
     <div class="section-head">
       <h2>名词小抄</h2>
@@ -304,6 +343,7 @@
         <a href="#about">认识 APRS</a>
         <a href="#steps">上手步骤</a>
         <a href="#freq">频率与路径</a>
+        <a href="#packets">报文长什么样</a>
         <a href="#faq">常见问题</a>
         <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
       </nav>
@@ -319,6 +359,6 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="main.js?v=6"></script>
+<script src="main.js?v=7"></script>
 </body>
 </html>

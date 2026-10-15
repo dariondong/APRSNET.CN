@@ -111,7 +111,7 @@
   /* ── 滚动揭示：脚本自己给条目挂 .reveal，进视野时淡入
         （挂 class 的动作在脚本里，脚本不在时内容照常可见） ── */
   if (!still && "IntersectionObserver" in window) {
-    var items = document.querySelectorAll(".section-head, .fact-list li, .link-list li, .steps li, .glossary dt, .glossary dd, .faq details");
+    var items = document.querySelectorAll(".section-head, .fact-list li, .link-list li, .pkt-list li, .steps li, .glossary dt, .glossary dd, .faq details");
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (!e.isIntersecting) return;
