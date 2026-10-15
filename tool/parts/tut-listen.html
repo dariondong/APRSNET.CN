@@ -1,0 +1,36 @@
+  <section class="section" id="tut-listen">
+    <div class="section-head">
+      <h2>先在手机上听</h2>
+      <p>这一节只要一部手机和网络，先把「收」跑通。手里没有电台、没有呼号也能做一半。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">客户端里最早要填的无非四样：呼号、服务器、端口、passcode。按下面这个顺序填，填完点连接，然后看列表。</p>
+      <ol class="steps">
+        <li>
+          <b>装一个客户端</b>
+          Android 上 APRSdroid、APRSLocus 都行，电脑上可以用 YAAC。都是免费的，挑一个顺眼的装上。
+        </li>
+        <li>
+          <b>没有呼号，先看别人的</b>
+          公开地图（APRS.TV、aprs.fi）不用呼号就能看。连 APRS-IS 要用自己的呼号，所以呼号到手之前，先在地图上熟悉这些点是怎么动的。
+        </li>
+        <li>
+          <b>填服务器和端口</b>
+          服务器写 <code>rotate.aprs2.net</code>，端口 <code>14580</code>。想固定连某一台，去服务器列表里挑离你近的。
+        </li>
+        <li>
+          <b>填 passcode</b>
+          只打算先听着，passcode 填 <code>-1</code>；以后要发射，再去找客户端作者按你的呼号算一个。
+        </li>
+        <li>
+          <b>加一个过滤器</b>
+          不限范围的话包会多到刷屏。客户端里有专门一栏，填 <code>r/23.13/113.26/50</code> 这样的写法，意思是「以 23.13N 113.26E 为中心，五十公里内」。
+        </li>
+        <li>
+          <b>看列表</b>
+          连上以后列表里会不断刷出别人的包，地图上出现一堆有呼号的点。到这一步，接收就通了。
+        </li>
+      </ol>
+      <p class="prose">登录行、端口和过滤器怎么写，细节都在<a href="aprsis.html#aprsis-login">登录行怎么写</a>那一页；这里只是先把动作做完。</p>
+    </div>
+  </section>

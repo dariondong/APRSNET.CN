@@ -59,6 +59,16 @@ PAGES = [
         blocks=["steps", "freq", "gear"],
     ),
     dict(
+        file="tutorial.html", nav="", nav_active="guide.html", h1="从零开始，一步一步",
+        lead="前面几节讲的是怎么回事，这里全是动作：先在手机上听，再接电台发射，最后是没上去时怎么查。",
+        title="APRS 从零上手教程 — 手机只收、接线发射、故障排查",
+        desc="一步一步的 APRS 入门教程：先用手机连 APRS-IS 只收（呼号、服务器、passcode、过滤器怎么填），再接电台设频率与路径发出第一个包，附一份按顺序的故障排查清单。",
+        og="APRS 从零上手：手机只收、接线发射、没上去怎么查，一步一确认。",
+        keywords="APRS 教程,APRS 入门,APRS 怎么用,APRSdroid 设置,声卡线,蓝牙 TNC,"
+                 "APRS 故障排查,APRS 发不出去,APRS-IS 只收,呼号,过滤器",
+        blocks=["tut-listen", "tut-send", "tut-trouble"],
+    ),
+    dict(
         file="packet.html", nav="报文", h1="报文与字段",
         lead="APRS 报文到底长什么样：一条位置包里每一段是什么、字段怎么读，附一份名词小抄。",
         title="APRS 报文与字段 — 位置包逐段拆开看",
@@ -112,6 +122,7 @@ EXTRA_TITLE = {
     "freq": "频率与路径", "packets": "报文长什么样", "fields": "报文字段",
     "glossary": "名词小抄", "gear": "设备与链路", "faq": "常见问题",
     "query": "官方 TOCALL 查询", "docs": "规范与文档",
+    "tut-listen": "先在手机上听", "tut-send": "接线发出第一个包", "tut-trouble": "没上去怎么查",
     "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
     "aprsis-send": "UDP 与只发端口", "contribute": "参与贡献",
 }

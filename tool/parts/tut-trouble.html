@@ -1,0 +1,59 @@
+  <section class="section" id="tut-trouble">
+    <div class="section-head">
+      <h2>没上去，按这个顺序查</h2>
+      <p>排查只有一个原则：从离自己最近的一环开始，一圈一圈往外查，别一上来就怀疑电网。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>客户端连上服务器了吗</b>
+          只收也要先连得上 APRS-IS。列表里一个包都没有，先解决网络、端口和 passcode，别急着查电台。
+        </li>
+        <li>
+          <b>电台到底发射了没有</b>
+          发射时看电流表的指针或发射指示灯。一点动静都没有，问题在 PTT：声卡线的 VOX 阈值、串口线的接口设置，逐个确认。
+        </li>
+        <li>
+          <b>声音进得去吗</b>
+          把电台喇叭口的音频接到另一台设备上录下来听。正常是连续均匀的咝咝声；有杂音、断续或者破音，就是音量或线材的问题。
+        </li>
+        <li>
+          <b>频率和静噪</b>
+          差 5 kHz 就完全听不见。静噪开得太高，会把数据音一起剪掉，先关掉静噪试一次。
+        </li>
+        <li>
+          <b>路径写对了吗</b>
+          <code>WIDE1-1,WIDE2-1</code> 打错一个字符，包就没有人转发。逗号是英文逗号。
+        </li>
+        <li>
+          <b>附近有人在听吗</b>
+          打开地图看看最近的 digipeater 或 iGate 离你多远。山区、郊区经常是真的没人听得到，换个位置或者挪到高处再试。
+        </li>
+        <li>
+          <b>呼号和位置格式</b>
+          位置要写成度分格式，例如 <code>3905.45N/07223.83W</code>。少一个小数点，你的点就会跑到几百公里外。
+        </li>
+      </ul>
+      <p class="prose">都查过还是不行，就把客户端里发射的那一行报文原样复制出来发到群里。报文本身会说话，通常看一眼就知道卡在哪一段。</p>
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="packet.html#packets">
+            <span class="lr-main">
+              <b>回头看看报文长什么样</b>
+              <span>位置包、消息包、状态包各有各的写法，对照一眼就明白自己发出去的是什么。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="index.html#contribute">
+            <span class="lr-main">
+              <b>把你的坑写下来</b>
+              <span>卡住你的地方，多半也卡住别人。报呼号、贴报文，加进这一页。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
