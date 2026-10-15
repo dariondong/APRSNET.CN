@@ -27,7 +27,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "25"        # style.css?v=
+CSS_V = "26"        # style.css?v=
 MAIN_V = "10"       # main.js?v=
 SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "10"}  # 页内脚本的缓存键
 
@@ -219,8 +219,7 @@ HEAD = """<!DOCTYPE html>
 <header class="nav" id="nav">
   <div class="nav-inner">
     <a class="brand" href="./">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-name">APRSNET.CN</span>
+      <span class="brand-name"><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></span>
     </a>
     <nav class="nav-links" id="navLinks" aria-label="页面导航">
 {nav}
@@ -251,7 +250,7 @@ FOOT = """
   <div class="footer-inner">
     <div class="footer-top">
       <div class="footer-brand">
-        <b>APRSNET.CN</b>
+        <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
         <span>业余无线电 · APRS 中文资料站</span>
       </div>
       <nav class="footer-links" aria-label="相关链接">
