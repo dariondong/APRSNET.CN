@@ -119,6 +119,8 @@ PAGES = [
         blocks=["proto-head", "proto-general", "proto-arch", "proto-access",
                 "proto-whitelist", "proto-forward", "proto-filter", "proto-ops",
                 "proto-boundary", "proto-test", "proto-misc"],
+        # 这一页的章节自己编号（第一章…第十章），关掉站点那套装饰序号，免得「03」和「第一章」撞车
+        extra_head='<style>\nmain > section.section .section-head::before { content: none; }\n</style>\n',
     ),
     dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
@@ -198,7 +200,7 @@ HEAD = """<!DOCTYPE html>
   }} catch (e) {{}}
 }})();
 </script>
-</head>
+{extra_head}</head>
 
 <body>
 
@@ -377,7 +379,8 @@ def render(page):
                       for s in page.get("scripts", ()))
     return (HEAD.format(title=page["title"], desc=page["desc"], og=page["og"],
                         keywords=page["keywords"], author=AUTHOR, url=page_url(page),
-                        jsonld=build_jsonld(page), css_v=CSS_V, nav=nav)
+                        jsonld=build_jsonld(page), css_v=CSS_V, nav=nav,
+                        extra_head=page.get("extra_head", ""))
             + "\n\n".join(out) + "\n"
             + FOOT.format(footer_links=footer_links, file=file, author=AUTHOR)
             + scripts
