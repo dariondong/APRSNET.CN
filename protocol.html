@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APRSNET CN 通信协议规范 v1.0（草案）</title>
+<meta name="description" content="APRSNET CN 通信协议规范 v1.0 草案：客户端接入与登录格式、Passcode 与白名单准入、报文处理与转发、APRS-IS 过滤器、安全运维、网络边界与测试要求。">
+<meta name="keywords" content="APRSNET CN,APRS 协议,APRS 服务器,呼号白名单,APRS-IS 接入,Passcode,APRS 过滤器,APRS 转发,业余无线电通信协议,BG7LZQ">
+<meta name="author" content="BG7LZQ (Darion)">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
+<meta name="theme-color" content="#f2f0ea">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="APRSNET.CN">
+<meta property="og:title" content="APRSNET CN 通信协议规范 v1.0（草案）">
+<meta property="og:description" content="APRSNET CN 通信协议规范 v1.0（草案）：接入、授权、转发与运维要求。">
+<meta property="og:url" content="https://aprsnet.cn/protocol.html">
+<meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="APRSNET.CN">
+<meta property="og:locale" content="zh_CN">
+<link rel="canonical" href="https://aprsnet.cn/protocol.html">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="APRSNET CN 通信协议规范 v1.0（草案）">
+<meta name="twitter:description" content="APRSNET CN 通信协议规范 v1.0（草案）：接入、授权、转发与运维要求。">
+<meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
+<link rel="stylesheet" href="style.css?v=25">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRSNET CN 通信协议规范 v1.0（草案）","url":"https://aprsnet.cn/protocol.html","inLanguage":"zh-CN","description":"APRSNET CN 通信协议规范 v1.0 草案：客户端接入与登录格式、Passcode 与白名单准入、报文处理与转发、APRS-IS 过滤器、安全运维、网络边界与测试要求。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script>
+/* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
+   必须在首帧前执行，否则会闪一下深底。 */
+(function () {
+  try {
+    var t = localStorage.getItem('theme');
+    if (t !== 'dark' && t !== 'light') t = 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+  } catch (e) {}
+})();
+</script>
+</head>
+
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="read-bar" id="readBar" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">APRSNET.CN</span>
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="页面导航">
+      <a href="./">认识</a>
+      <a href="guide.html">上手</a>
+      <a href="packet.html">报文</a>
+      <a href="tocall.html">查询</a>
+      <a href="faq.html">问答</a>
+      <a href="docs.html">文档</a>
+      <a href="protocol.html" class="active" aria-current="page">协议</a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
+        <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
+      </button>
+    </nav>
+    <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="section-head">
+      <h1>APRSNET CN 通信协议规范</h1>
+      <p>面向国内 APRS 场景的接入与报文转发规范，v1.0 草案：客户端怎么连进来、谁被放行、报文怎么转发出去。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="proto-head">
+    <div class="section-head">
+      <h2>草案说明</h2>
+      <p>这一版是草案：细节还会动，实现还没验证，暂时不能当作正式规范用。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>文档状态</b>
+          草案（Draft）。协议细节、实现验证和兼容性测试都还没走完，正式发布前只作设计依据。
+        </li>
+        <li>
+          <b>协议版本</b>
+          v1.0。修订时记录版本号、修改日期、主要变更内容和兼容性影响。
+        </li>
+        <li>
+          <b>拟稿</b>
+          BG7LZQ。
+        </li>
+      </ul>
+      <p class="prose">APRSNET CN 是一套面向国内 APRS 应用场景的接入与报文转发服务：统一的服务器接入规范、呼号白名单管理、实时数据分发。它以兼容现有 APRS-IS 客户端的通信方式为基础，尽量降低现有软件的适配成本，并通过独立的管理服务把授权管理和实时转发分成两件事。</p>
+      <p class="prose">本协议规范客户端接入、呼号授权、报文转发、过滤器处理、安全管理及运行维护要求。它属于技术规范草案，不构成监管批准或合规证明；具体部署参数、授权标准和运营规则由运营方另行明确。</p>
+    </div>
+  </section>
+
+  <section class="section" id="proto-general">
+    <div class="section-head">
+      <h2>第一章 总则</h2>
+      <p>先说清楚这套服务是干什么的、这份协议管哪些事、按什么原则做。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>1.1 项目背景</b> APRS（Automatic Packet Reporting System，自动位置报告系统）是一种用于业余无线电位置报告、状态信息及相关数据交换的系统。APRS-IS 为相关客户端提供互联网报文接入与分发服务。</p>
+      <p class="prose">APRSNET CN 旨在建立面向国内 APRS 应用场景的接入与报文转发服务，通过统一的服务器接入规范、呼号白名单管理及实时数据分发机制，为兼容客户端提供稳定、可维护的通信服务。</p>
+      <p class="prose">本项目以兼容现有 APRS-IS 客户端通信方式为基础，尽可能降低现有软件的适配成本，并通过独立的管理服务实现授权管理与实时转发的职责分离。</p>
+      <p class="prose"><b>1.2 制定目的</b> 本协议用于规范 APRSNET CN 的客户端接入、呼号授权、报文转发、过滤器处理、安全管理及运行维护要求。主要目标包括：兼容现有 APRS-IS 客户端通信格式；建立统一的呼号白名单准入机制；实现国内客户端之间的实时 APRS 报文分发；实现授权管理与实时转发的职责分离；明确数据处理、安全管理和网络边界；为 APRSLocus 等兼容客户端提供统一的接入规范。</p>
+      <p class="prose"><b>1.3 核心原则</b> APRSNET CN 遵循以下原则。</p>
+      <ul class="fact-list">
+        <li>
+          <b>协议兼容</b>
+          尽可能兼容标准 APRS-IS 客户端通信格式。
+        </li>
+        <li>
+          <b>白名单准入</b>
+          根据明确的授权规则决定呼号是否具备接入资格。
+        </li>
+        <li>
+          <b>职责分离</b>
+          MANAGER 负责授权管理，SERVER 负责客户端接入和实时转发。
+        </li>
+        <li>
+          <b>国内闭环</b>
+          不主动向国际 APRS-IS 网络转发内部报文。
+        </li>
+        <li>
+          <b>最小化存储</b>
+          实时转发以流式处理为主，避免不必要的数据持久化。
+        </li>
+        <li>
+          <b>安全可控</b>
+          对授权变更、异常连接和管理操作实施必要的安全控制。
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section alt" id="proto-arch">
+    <div class="section-head">
+      <h2>第二章 系统组成</h2>
+      <p>系统里只有两个角色：SERVER 管接入和转发，MANAGER 管谁有资格接入。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>2.1 APRSNET CN SERVER</b> SERVER 是系统的核心接入与转发服务，负责以下工作。</p>
+      <ul class="fact-list">
+        <li>
+          <b>接收连接</b>
+          接收客户端 TCP 连接。
+        </li>
+        <li>
+          <b>解析登录</b>
+          解析客户端登录指令。
+        </li>
+        <li>
+          <b>登录校验</b>
+          执行登录格式和必要的 Passcode 校验。
+        </li>
+        <li>
+          <b>判断授权</b>
+          查询本地白名单并判断呼号授权状态。
+        </li>
+        <li>
+          <b>收发报文</b>
+          接收和检查 APRS 报文。
+        </li>
+        <li>
+          <b>分发数据</b>
+          根据客户端订阅规则分发数据。
+        </li>
+        <li>
+          <b>处理异常</b>
+          处理异常连接、超时和报文格式错误。
+        </li>
+        <li>
+          <b>记录日志</b>
+          维护运行状态并记录必要的安全日志。
+        </li>
+      </ul>
+      <p class="prose">SERVER 应当能够独立完成实时转发，不应要求 MANAGER 参与每条报文的处理。</p>
+      <p class="prose"><b>2.2 APRSNET CN MANAGER</b> MANAGER 是系统的管理服务，负责以下工作。</p>
+      <ul class="fact-list">
+        <li>
+          <b>申请与审核</b>
+          呼号授权申请与审核。
+        </li>
+        <li>
+          <b>维护名单</b>
+          白名单维护及授权状态管理。
+        </li>
+        <li>
+          <b>有效期管理</b>
+          授权生效、过期、暂停和撤销管理。
+        </li>
+        <li>
+          <b>同步名单</b>
+          向 SERVER 同步白名单。
+        </li>
+        <li>
+          <b>查询与审计</b>
+          提供必要的管理查询和操作审计。
+        </li>
+        <li>
+          <b>维护规则</b>
+          维护授权规则及相关配置。
+        </li>
+      </ul>
+      <p class="prose"><b>2.3 职责分离</b> MANAGER 负责决定哪些呼号具有接入资格，SERVER 根据本地有效白名单执行准入判断。</p>
+      <p class="prose">这种设计可以减少实时转发对管理服务可用性的依赖，并降低管理操作对正常通信的影响。</p>
+    </div>
+  </section>
+
+  <section class="section" id="proto-access">
+    <div class="section-head">
+      <h2>第三章 客户端接入规范</h2>
+      <p>从 TCP 连接、登录行写法，到服务器依次检查什么、什么情况下拒绝。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>3.1 连接方式</b> 客户端通过 TCP 连接 APRSNET CN SERVER。正式服务应公布服务器域名、端口及必要的连接参数；客户端必须使用指定的 APRSNET CN 接入地址。</p>
+      <p class="prose"><b>3.2 登录格式</b> 客户端使用兼容 APRS-IS 的登录格式。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>基本登录行</b>
+          <code>user &lt;呼号&gt; pass &lt;Passcode&gt;</code>
+          最常用的形式。
+        </li>
+        <li>
+          <b>带客户端版本</b>
+          <code>user &lt;呼号&gt; pass &lt;Passcode&gt; vers &lt;客户端名称&gt; &lt;版本号&gt;</code>
+          在支持客户端版本字段时使用。
+        </li>
+      </ul>
+      <p class="prose"><b>3.3 登录校验</b> SERVER 收到登录请求后，应依次执行以下检查。</p>
+      <ol class="steps">
+        <li>检查登录指令格式。</li>
+        <li>检查呼号格式。</li>
+        <li>执行当前登录模式要求的 Passcode 校验。</li>
+        <li>查询本地白名单。</li>
+        <li>检查授权状态及有效期。</li>
+        <li>决定是否允许接入。</li>
+      </ol>
+      <p class="prose">未通过必要检查的客户端不得进入正常报文交换阶段。</p>
+      <p class="prose"><b>3.4 Passcode 机制</b> APRSNET CN 保留传统 APRS-IS Passcode 的兼容性设计。</p>
+      <p class="prose">Passcode 校验与白名单授权属于两个独立环节。Passcode 不应被视为完整的身份认证机制，也不能替代白名单准入。</p>
+      <p class="prose">服务器必须明确其实际采用的校验策略，不得在未声明的情况下改变传统登录格式的含义。</p>
+      <p class="prose"><b>3.5 拒绝接入</b> 以下情况应拒绝接入。</p>
+      <ul class="fact-list">
+        <li>
+          <b>格式错误</b>
+          登录格式错误。
+        </li>
+        <li>
+          <b>呼号非法</b>
+          呼号格式非法。
+        </li>
+        <li>
+          <b>校验失败</b>
+          必需的登录校验失败。
+        </li>
+        <li>
+          <b>不在名单</b>
+          呼号不在有效白名单中。
+        </li>
+        <li>
+          <b>授权状态</b>
+          授权已经过期、暂停或撤销。
+        </li>
+        <li>
+          <b>安全问题</b>
+          连接违反明确的安全限制。
+        </li>
+      </ul>
+      <p class="prose">拒绝接入时，SERVER 应根据兼容性要求返回适当响应或关闭连接，不得向客户端泄露内部管理信息。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="proto-whitelist">
+    <div class="section-head">
+      <h2>第四章 白名单管理与同步</h2>
+      <p>哪些呼号能进由 MANAGER 决定，名单怎么记、怎么更新、怎么同步给 SERVER。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>4.1 授权审核</b> MANAGER 负责制定并执行呼号授权审核规则。</p>
+      <p class="prose">涉及操作证、电台执照或其他证明材料时，应结合具体业务和适用规定明确审核要求。社团背书可以在符合审核规则时作为辅助材料，但不得自动替代依法要求的许可或资质。</p>
+      <p class="prose"><b>4.2 白名单记录</b> 白名单记录应至少包含呼号、授权状态、授权生效时间、授权失效时间、记录版本和最近更新时间。</p>
+      <p class="prose"><b>4.3 授权状态</b> 授权状态至少包括待审核、已授权、已过期、已暂停和已撤销五种。只有符合当前授权规则且处于有效期内的记录，才可以用于放行新的客户端连接。</p>
+      <p class="prose"><b>4.4 白名单同步</b> MANAGER 应支持向 SERVER 发布全量或增量白名单更新。更新数据应包含明确的版本信息，并具备完整性校验机制。</p>
+      <p class="prose">SERVER 应验证更新数据的完整性和版本连续性。更新失败时，应保留最后一个有效版本，不得应用不完整的数据。</p>
+      <p class="prose"><b>4.5 授权撤销</b> 授权被撤销或暂停后，MANAGER 应及时发布变更。</p>
+      <p class="prose">SERVER 收到有效变更后，应更新本地授权状态，拒绝相关呼号建立新的未授权会话，并按照规定处理已经建立的连接。</p>
+      <p class="prose"><b>4.6 管理服务不可用</b> MANAGER 暂时不可用时，SERVER 可以在规定期限内使用最后一次成功加载的白名单。运营方应明确白名单有效期及同步超时后的处理策略，不得无限期地将失效授权视为有效。</p>
+    </div>
+  </section>
+
+  <section class="section" id="proto-forward">
+    <div class="section-head">
+      <h2>第五章 APRS 报文处理与转发</h2>
+      <p>报文进来之后：检查什么、怎么分发、源呼号怎么算，以及数据留不留。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>5.1 报文格式</b> SERVER 应尽可能兼容所声明支持的 APRS-IS 文本报文格式。报文处理应遵循相应的 APRS 格式规则，不得假定所有报文均具有完全相同的结构。</p>
+      <p class="prose"><b>5.2 报文检查</b> SERVER 应对接收报文执行必要的格式、长度和异常输入检查。对于非法报文、超长输入或明显异常的报文速率，可以拒绝处理，并在必要时记录安全事件。</p>
+      <p class="prose"><b>5.3 报文转发</b> 通过必要检查的报文，应根据转发规则和客户端订阅条件进行分发。转发过程应避免重复处理相同报文，并限制待发送队列大小，防止异常客户端占用过多资源。</p>
+      <p class="prose"><b>5.4 源呼号管理</b> 客户端登录时声明的呼号与报文中的源标识应分别处理。白名单授权不自动证明客户端提交的所有报文均真实来自对应的无线电发射设备。</p>
+      <p class="prose">如需限制客户端使用的报文源标识，应制定明确的报文授权规则。</p>
+      <p class="prose"><b>5.5 内存转发</b> SERVER 的实时转发应以流式处理为主，尽量避免不必要的报文持久化。但内存转发不代表系统完全不存在数据留存：日志、监控及其他运行组件仍应遵循明确的数据处理规则。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="proto-filter">
+    <div class="section-head">
+      <h2>第六章 APRS-IS 过滤器</h2>
+      <p>客户端要看哪些包，用标准 APRS-IS 过滤器表达；过滤器只管自己这一条连接。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>6.1 过滤器支持</b> SERVER 应支持其明确声明兼容的标准 APRS-IS Filter 规则，使客户端能够按需接收相关 APRS 报文。</p>
+      <p class="prose"><b>6.2 过滤器处理</b> SERVER 应检查过滤器语法、长度及计算开销。对于无法识别或超过资源限制的过滤器，可以拒绝应用。</p>
+      <p class="prose"><b>6.3 过滤器隔离</b> 过滤器仅影响当前客户端的接收范围，不得改变其他客户端的订阅状态。未提交过滤器的客户端，应按照服务器公布的默认订阅策略接收数据。</p>
+    </div>
+  </section>
+
+  <section class="section" id="proto-ops">
+    <div class="section-head">
+      <h2>第七章 安全与运行维护</h2>
+      <p>连接限制、管理接口、日志保存、重启恢复，四件事的下限要求。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>7.1 接入安全</b> SERVER 应设置合理的连接数限制、登录超时、报文长度限制和输入速率限制。对于异常连接，可以实施限速、拒绝或断开处理。</p>
+      <p class="prose"><b>7.2 管理接口安全</b> MANAGER 的管理接口应与普通客户端接入接口相互隔离。管理操作必须经过身份认证和权限检查，管理凭据不得通过未受保护的连接传输。</p>
+      <p class="prose"><b>7.3 日志管理</b> 系统可以记录登录结果、授权变更、白名单同步状态、异常连接和关键运行错误。日志应遵循最小必要原则，并明确访问权限及保存期限。不应默认长期保存全部 APRS 报文内容。</p>
+      <p class="prose"><b>7.4 故障恢复</b> SERVER 应监控白名单版本、最近同步时间及关键运行状态。服务重启后，应先验证配置和授权数据的完整性，再恢复正常接入。当管理服务不可用或授权数据失效时，应按照预先制定的策略处理新连接。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="proto-boundary">
+    <div class="section-head">
+      <h2>第八章 网络边界与合规要求</h2>
+      <p>不往国际 APRS-IS 转发、外部数据怎么接、数据处理与合规审查。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>8.1 国内闭环</b> APRSNET CN 的设计目标是不主动向国际 APRS-IS 网络转发内部报文。运营方应通过明确的网络配置、转发策略和访问控制落实这一目标，并检查实际数据流向。</p>
+      <p class="prose"><b>8.2 外部数据</b> 如未来需要引入外部数据源，应另行明确数据来源、授权、过滤及转发规则。未经明确设计，不得自动将外部数据源纳入内部报文分发流程。</p>
+      <p class="prose"><b>8.3 数据处理要求</b> 运营方应明确数据处理范围、日志保存期限、访问权限及异常事件处理方式。</p>
+      <p class="prose"><b>8.4 合规审查</b> 本协议属于技术规范草案，不构成监管批准或合规证明。正式运营前，应结合实际部署方式、无线电业务类型及适用规定完成必要审查。</p>
+    </div>
+  </section>
+
+  <section class="section" id="proto-test">
+    <div class="section-head">
+      <h2>第九章 测试与版本管理</h2>
+      <p>上线前要测哪些项，协议自己的版本怎么管，什么时候才算能正式发布。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>9.1 兼容性测试</b> 正式部署前，应测试合法登录、非法登录、白名单拒绝、授权撤销、报文收发、过滤器订阅和连接恢复等功能。</p>
+      <p class="prose"><b>9.2 白名单测试</b> 应测试全量同步、增量同步、版本不一致、数据损坏、管理服务不可用及授权撤销等情况。</p>
+      <p class="prose"><b>9.3 安全测试</b> 应测试异常输入、超限连接、未授权管理操作和非预期外部转发等情况。</p>
+      <p class="prose"><b>9.4 版本管理</b> 本协议版本为 v1.0。协议修订应记录版本号、修改日期、主要变更内容及兼容性影响。</p>
+      <p class="prose"><b>9.5 发布条件</b> 本文件当前为设计草案。完成协议细节确定、实现验证及必要的兼容性和安全性测试后，方可作为正式实施规范发布。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="proto-misc">
+    <div class="section-head">
+      <h2>第十章 附则</h2>
+      <p>解释权、修订方式和生效条件。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>10.1 协议解释</b> 本协议用于规范 APRSNET CN 的技术架构和通信行为。具体部署参数、授权标准和运营规则由运营方另行明确。</p>
+      <p class="prose"><b>10.2 修订机制</b> 后续修订应明确版本号及修改内容。涉及登录格式、授权规则或报文处理方式的修改，应进行兼容性评估。</p>
+      <p class="prose"><b>10.3 生效条件</b> 本协议经完善、验证并正式发布后，作为 APRSNET CN 相关服务的技术规范依据。</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <b>APRSNET.CN</b>
+        <span>业余无线电 · APRS 中文资料站</span>
+      </div>
+      <nav class="footer-links" aria-label="相关链接">
+        <a href="index.html#about">认识 APRS</a>
+        <a href="index.html#start">常用工具</a>
+        <a href="guide.html#steps">上手步骤</a>
+        <a href="guide.html#freq">频率与路径</a>
+        <a href="packet.html#packets">报文长什么样</a>
+        <a href="packet.html#fields">报文字段</a>
+        <a href="packet.html#glossary">名词小抄</a>
+        <a href="guide.html#gear">设备与链路</a>
+        <a href="faq.html#faq">常见问题</a>
+        <a href="tocall.html#tocall">官方 TOCALL 查询</a>
+        <a href="tocall.html#tocall-refs">名单与出处</a>
+        <a href="docs.html#docs">中文文档</a>
+        <a href="docs.html#refs">英文原文</a>
+        <a href="tutorial.html#tut-listen">先在手机上听</a>
+        <a href="tutorial.html#tut-send">接线发出第一个包</a>
+        <a href="tutorial.html#tut-trouble">没上去怎么查</a>
+        <a href="aprsis.html#aprsis-connect">连上 APRS-IS</a>
+        <a href="aprsis.html#aprsis-login">登录行怎么写</a>
+        <a href="aprsis.html#aprsis-send">UDP 与只发端口</a>
+        <a href="index.html#contribute">参与贡献</a>
+        <a href="#proto-head">协议说明</a>
+        <a href="#proto-general">总则</a>
+        <a href="#proto-arch">系统组成</a>
+        <a href="#proto-access">接入规范</a>
+        <a href="#proto-whitelist">白名单</a>
+        <a href="#proto-forward">报文转发</a>
+        <a href="#proto-filter">过滤器</a>
+        <a href="#proto-ops">安全与运维</a>
+        <a href="#proto-boundary">网络边界</a>
+        <a href="#proto-test">测试与版本</a>
+        <a href="#proto-misc">附则</a>
+        <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
+      </nav>
+    </div>
+    <p class="footer-note">本站由业余无线电爱好者维护，与任何厂商、组织和项目都没有隶属关系。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
+    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/protocol.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>，或者<a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a>。</p>
+    <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
+  </div>
+</footer>
+
+<a class="backtop" id="backTop" href="#main" aria-label="回到顶部">
+  <svg class="backtop-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="17"/><circle class="ring-fg" id="ringFg" cx="20" cy="20" r="17"/></svg>
+  <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
+</a>
+
+<script src="main.js?v=10"></script>
+</body>
+</html>

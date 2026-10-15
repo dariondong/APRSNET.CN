@@ -109,6 +109,18 @@ PAGES = [
         blocks=["docs", "refs"],
     ),
     dict(
+        file="protocol.html", nav="协议", h1="APRSNET CN 通信协议规范",
+        lead="面向国内 APRS 场景的接入与报文转发规范，v1.0 草案：客户端怎么连进来、谁被放行、报文怎么转发出去。",
+        title="APRSNET CN 通信协议规范 v1.0（草案）",
+        desc="APRSNET CN 通信协议规范 v1.0 草案：客户端接入与登录格式、Passcode 与白名单准入、报文处理与转发、APRS-IS 过滤器、安全运维、网络边界与测试要求。",
+        og="APRSNET CN 通信协议规范 v1.0（草案）：接入、授权、转发与运维要求。",
+        keywords="APRSNET CN,APRS 协议,APRS 服务器,呼号白名单,APRS-IS 接入,Passcode,"
+                 "APRS 过滤器,APRS 转发,业余无线电通信协议,BG7LZQ",
+        blocks=["proto-head", "proto-general", "proto-arch", "proto-access",
+                "proto-whitelist", "proto-forward", "proto-filter", "proto-ops",
+                "proto-boundary", "proto-test", "proto-misc"],
+    ),
+    dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
         lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用；后面的过滤器、网关、q 构造接着补。",
         title="APRS-IS 中文文档 — 连接、登录行、端口与过滤器",
@@ -136,6 +148,10 @@ EXTRA_TITLE = {
     "tut-listen": "先在手机上听", "tut-send": "接线发出第一个包", "tut-trouble": "没上去怎么查",
     "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
     "aprsis-send": "UDP 与只发端口", "contribute": "参与贡献",
+    "proto-head": "协议说明", "proto-general": "总则", "proto-arch": "系统组成",
+    "proto-access": "接入规范", "proto-whitelist": "白名单", "proto-forward": "报文转发",
+    "proto-filter": "过滤器", "proto-ops": "安全与运维", "proto-boundary": "网络边界",
+    "proto-test": "测试与版本", "proto-misc": "附则",
 }
 
 HEAD = """<!DOCTYPE html>

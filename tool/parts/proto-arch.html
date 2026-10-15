@@ -1,0 +1,73 @@
+  <section class="section" id="proto-arch">
+    <div class="section-head">
+      <h2>第二章 系统组成</h2>
+      <p>系统里只有两个角色：SERVER 管接入和转发，MANAGER 管谁有资格接入。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>2.1 APRSNET CN SERVER</b> SERVER 是系统的核心接入与转发服务，负责以下工作。</p>
+      <ul class="fact-list">
+        <li>
+          <b>接收连接</b>
+          接收客户端 TCP 连接。
+        </li>
+        <li>
+          <b>解析登录</b>
+          解析客户端登录指令。
+        </li>
+        <li>
+          <b>登录校验</b>
+          执行登录格式和必要的 Passcode 校验。
+        </li>
+        <li>
+          <b>判断授权</b>
+          查询本地白名单并判断呼号授权状态。
+        </li>
+        <li>
+          <b>收发报文</b>
+          接收和检查 APRS 报文。
+        </li>
+        <li>
+          <b>分发数据</b>
+          根据客户端订阅规则分发数据。
+        </li>
+        <li>
+          <b>处理异常</b>
+          处理异常连接、超时和报文格式错误。
+        </li>
+        <li>
+          <b>记录日志</b>
+          维护运行状态并记录必要的安全日志。
+        </li>
+      </ul>
+      <p class="prose">SERVER 应当能够独立完成实时转发，不应要求 MANAGER 参与每条报文的处理。</p>
+      <p class="prose"><b>2.2 APRSNET CN MANAGER</b> MANAGER 是系统的管理服务，负责以下工作。</p>
+      <ul class="fact-list">
+        <li>
+          <b>申请与审核</b>
+          呼号授权申请与审核。
+        </li>
+        <li>
+          <b>维护名单</b>
+          白名单维护及授权状态管理。
+        </li>
+        <li>
+          <b>有效期管理</b>
+          授权生效、过期、暂停和撤销管理。
+        </li>
+        <li>
+          <b>同步名单</b>
+          向 SERVER 同步白名单。
+        </li>
+        <li>
+          <b>查询与审计</b>
+          提供必要的管理查询和操作审计。
+        </li>
+        <li>
+          <b>维护规则</b>
+          维护授权规则及相关配置。
+        </li>
+      </ul>
+      <p class="prose"><b>2.3 职责分离</b> MANAGER 负责决定哪些呼号具有接入资格，SERVER 根据本地有效白名单执行准入判断。</p>
+      <p class="prose">这种设计可以减少实时转发对管理服务可用性的依赖，并降低管理操作对正常通信的影响。</p>
+    </div>
+  </section>

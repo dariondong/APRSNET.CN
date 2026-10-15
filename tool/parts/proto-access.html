@@ -1,0 +1,63 @@
+  <section class="section" id="proto-access">
+    <div class="section-head">
+      <h2>第三章 客户端接入规范</h2>
+      <p>从 TCP 连接、登录行写法，到服务器依次检查什么、什么情况下拒绝。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose"><b>3.1 连接方式</b> 客户端通过 TCP 连接 APRSNET CN SERVER。正式服务应公布服务器域名、端口及必要的连接参数；客户端必须使用指定的 APRSNET CN 接入地址。</p>
+      <p class="prose"><b>3.2 登录格式</b> 客户端使用兼容 APRS-IS 的登录格式。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>基本登录行</b>
+          <code>user &lt;呼号&gt; pass &lt;Passcode&gt;</code>
+          最常用的形式。
+        </li>
+        <li>
+          <b>带客户端版本</b>
+          <code>user &lt;呼号&gt; pass &lt;Passcode&gt; vers &lt;客户端名称&gt; &lt;版本号&gt;</code>
+          在支持客户端版本字段时使用。
+        </li>
+      </ul>
+      <p class="prose"><b>3.3 登录校验</b> SERVER 收到登录请求后，应依次执行以下检查。</p>
+      <ol class="steps">
+        <li>检查登录指令格式。</li>
+        <li>检查呼号格式。</li>
+        <li>执行当前登录模式要求的 Passcode 校验。</li>
+        <li>查询本地白名单。</li>
+        <li>检查授权状态及有效期。</li>
+        <li>决定是否允许接入。</li>
+      </ol>
+      <p class="prose">未通过必要检查的客户端不得进入正常报文交换阶段。</p>
+      <p class="prose"><b>3.4 Passcode 机制</b> APRSNET CN 保留传统 APRS-IS Passcode 的兼容性设计。</p>
+      <p class="prose">Passcode 校验与白名单授权属于两个独立环节。Passcode 不应被视为完整的身份认证机制，也不能替代白名单准入。</p>
+      <p class="prose">服务器必须明确其实际采用的校验策略，不得在未声明的情况下改变传统登录格式的含义。</p>
+      <p class="prose"><b>3.5 拒绝接入</b> 以下情况应拒绝接入。</p>
+      <ul class="fact-list">
+        <li>
+          <b>格式错误</b>
+          登录格式错误。
+        </li>
+        <li>
+          <b>呼号非法</b>
+          呼号格式非法。
+        </li>
+        <li>
+          <b>校验失败</b>
+          必需的登录校验失败。
+        </li>
+        <li>
+          <b>不在名单</b>
+          呼号不在有效白名单中。
+        </li>
+        <li>
+          <b>授权状态</b>
+          授权已经过期、暂停或撤销。
+        </li>
+        <li>
+          <b>安全问题</b>
+          连接违反明确的安全限制。
+        </li>
+      </ul>
+      <p class="prose">拒绝接入时，SERVER 应根据兼容性要求返回适当响应或关闭连接，不得向客户端泄露内部管理信息。</p>
+    </div>
+  </section>
