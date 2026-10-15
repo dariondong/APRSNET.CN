@@ -266,6 +266,13 @@ main > section.section { counter-increment: sec; }
 }
 .tlq-chip:hover { border-color: var(--hot); color: var(--hot); }
 
+/* 行内链接：全站 a 默认同色无装饰，正文里那种「夹在句子里」的链接要看得出来 */
+.section-body a:not(.link-row):not(.btn):not(.idq-clear) {
+  color: var(--hot); text-decoration: underline; text-underline-offset: 3px;
+  transition: color .2s var(--ease);
+}
+.section-body a:not(.link-row):not(.btn):not(.idq-clear):hover { color: var(--hot-deep); }
+
 /* ── 07. 回到顶部（带滚动进度环） ── */
 .backtop {
   position: fixed; right: 24px; bottom: 24px; z-index: 90; width: 44px; height: 44px;
