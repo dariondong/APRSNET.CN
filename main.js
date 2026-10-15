@@ -54,7 +54,7 @@
     window.addEventListener("resize", onScroll);
   }
 
-  /* ── 顶部阅读进度：一条橙色细线，随页面滚到底而填满 ── */
+  /* ── 顶部阅读进度：一条赤红细线，随页面滚到底而填满 ── */
   var readBar = document.getElementById("readBar");
   if (readBar) {
     var syncBar = function () {

@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════════════════════════
    APRSNET.CN 首页样式 —— 瑞士风格（International Typographic Style）
-   一栏栅格、一律左对齐、直角、细线；强调色只有一支亮橙。
+   一栏栅格、一律左对齐、直角、细线；强调色只有一支赤红。
    浅色是默认皮肤，深色是同义变体。
    规矩：规则里只写 token，不写死颜色。
    目录：01 token / 02 基础 / 03 导航 / 04 首屏 / 05 区块 / 06 清单
@@ -22,12 +22,12 @@
   --text: #15181c;
   --text-dim: #4b535a;
   --text-faint: #6c747a;
-  /* 强调：只有一支亮橙，只给编号、标线、按钮和链路用 */
-  --hot: #b23c00;
-  --hot-deep: #8a2e00;
-  --hot-bright: #ff6a00;
-  --halo-hot: rgba(217, 79, 0, .10);
-  --on-accent: #16110c;
+  /* 强调：只有一支赤红，只给编号、标线、按钮和链路用 */
+  --hot: #b3141f;
+  --hot-deep: #8c0f18;
+  --hot-bright: #d61f26;
+  --halo-hot: rgba(190, 20, 32, .10);
+  --on-accent: #ffffff;
   /* 字体：正文走中立无衬线（Helvetica 一路），等宽只留给代码 */
   --font-sans: Helvetica, "Helvetica Neue", Inter, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -49,10 +49,10 @@
   --text: #dadde0;
   --text-dim: #98a1a7;
   --text-faint: #7d868c;
-  --hot: #ff8a3d;
-  --hot-deep: #ff6a00;
-  --hot-bright: #ffb066;
-  --halo-hot: rgba(255, 138, 61, .12);
+  --hot: #ff8a8a;
+  --hot-deep: #ff6b6b;
+  --hot-bright: #ffb3b3;
+  --halo-hot: rgba(255, 138, 138, .12);
   --on-accent: #12100c;
 }
 
@@ -87,7 +87,7 @@ code {
 .skip-link { position: absolute; left: -9999px; top: 0; z-index: 200; padding: 12px 18px; background: var(--hot-bright); color: var(--on-accent); font-weight: 700; }
 .skip-link:focus { left: 0; }
 
-/* 顶部阅读进度：贴在最上面的一条橙线（transform 由脚本写） */
+/* 顶部阅读进度：贴在最上面的一条赤红线（transform 由脚本写） */
 .read-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 140; height: 3px; background: var(--hot-bright); transform: scaleX(0); transform-origin: left center; }
 
 /* ── 03. 导航 ── */
@@ -95,7 +95,7 @@ code {
 .nav.scrolled { padding: 12px 0; background: var(--bg-1); border-bottom-color: var(--line-strong); }
 .nav-inner { max-width: var(--measure); margin: 0 auto; padding: 0 var(--gut); display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .brand { display: flex; align-items: center; gap: 10px; }
-/* 字标：APRSNET.CN = APRS（墨）+ NET（灰）+ .CN（橙），导航与页脚共用一套 */
+/* 字标：APRSNET.CN = APRS（墨）+ NET（灰）+ .CN（赤红），导航与页脚共用一套 */
 .wm-aprs { color: var(--text); }
 .wm-net { color: var(--text-dim); }
 .wm-cn { color: var(--hot); }
@@ -131,7 +131,7 @@ body.loaded .hero-inner { opacity: 1; }
 .hero-slogan { font-size: clamp(19px, 2.1vw, 30px); font-weight: 400; color: var(--text-dim); }
 /* 一句话说清这是什么：和口号同一栏，压在它下面，不再挤在示意图那一栏 */
 .hero-lead { color: var(--text-dim); font-size: 16.5px; max-width: 46ch; }
-/* 首屏叙述：一个点 → 发一次信标 → 被看见；编号沿用区块编号的橙色 */
+/* 首屏叙述：一个点 → 发一次信标 → 被看见；编号沿用区块编号的赤红 */
 .hero-beats { list-style: none; counter-reset: beat; margin-top: 30px; max-width: 48ch; border-top: 1px solid var(--line-strong); }
 .hero-beats li { position: relative; padding: 15px 0 15px 46px; border-bottom: 1px solid var(--line); }
 .hero-beats li::before { counter-increment: beat; content: counter(beat, decimal-leading-zero); position: absolute; left: 0; top: 16px; color: var(--hot); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -230,7 +230,7 @@ main > section.section { counter-increment: sec; }
 .faq summary:hover, .faq details[open] summary { color: var(--hot); }
 .faq p { padding: 0 0 20px; color: var(--text-dim); font-size: 16px; max-width: 76ch; }
 
-/* 报文示例：一行等宽字，左侧一道橙线，不加底色、不加圆角 */
+/* 报文示例：一行等宽字，左侧一道赤红线，不加底色、不加圆角 */
 .pkt-list { list-style: none; margin: 30px 0; border-top: 1px solid var(--line-strong); }
 .pkt-list li { padding: 20px 0 20px 18px; border-bottom: 1px solid var(--line); border-left: 2px solid var(--hot); color: var(--text-dim); font-size: 16px; }
 .pkt-list b { display: block; margin-bottom: 8px; color: var(--text); }

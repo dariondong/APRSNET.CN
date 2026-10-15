@@ -2,7 +2,7 @@
    手写 Canvas 2D，零依赖、定种子（同一份网，每次打开都一样）。
    900 个点按黄金角铺在球面上，一开始挤成一粒；按下去等于发一次信标，
    点散开成球面，邻点之间自己拉出线来 —— 这才看出是「一张网」；
-   其中一粒是你的（橙的），一圈波纹从你这里漫过整张网。
+   其中一粒是你的（赤红的），一圈波纹从你这里漫过整张网。
 
    为什么换成 2D 画布：原来那版是 WebGL1 点云，在有的浏览器/设备上首屏
    一直是空的（拿不到上下文，或者带 alpha 的画布合成不出来），只剩一张
@@ -108,10 +108,10 @@
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
   /* 网用墨色（不是淡墨）—— 白底上一粒深点才干净，深浅交给前后层次去拉 */
-  var col = [21, 24, 28], hot = [255, 106, 0];
+  var col = [21, 24, 28], hot = [214, 31, 38];
   function readTokens() {
     col = token("--text", [21, 24, 28]);
-    hot = token("--hot-bright", [255, 106, 0]);
+    hot = token("--hot-bright", [214, 31, 38]);
   }
   readTokens();
 
@@ -170,7 +170,7 @@
     var ca = Math.cos(spin), sa = Math.sin(spin);
     var hx = cw / 2, hy = chh / 2;
     var k, b, x, y, z, g, d, tw, bright, pulse, front, vis, f, ln, q, t;
-    /* 散开的过程中点先是橙的（刚发出去的那一粒），落定成墨色 */
+    /* 散开的过程中点先是赤红的（刚发出去的那一粒），落定成墨色 */
     var cloud = [
       Math.round(hot[0] + (col[0] - hot[0]) * gather),
       Math.round(hot[1] + (col[1] - hot[1]) * gather),
@@ -233,7 +233,7 @@
       ctx.stroke();
     }
 
-    /* 再画点：颜色两种（墨 / 橙）× 明暗四档，一桶一次 fill */
+    /* 再画点：颜色两种（墨 / 赤红）× 明暗四档，一桶一次 fill */
     for (b = 0; b < 4; b++) {
       ctx.fillStyle = rgba(cloud, DOT_A[b]);
       ctx.beginPath();
@@ -254,7 +254,7 @@
       }
       ctx.fill();
     }
-    /* 「你」那一粒单独画：最亮，橙的 */
+    /* 「你」那一粒单独画：最亮，赤红的 */
     ctx.fillStyle = rgba(hot, 1);
     ctx.beginPath();
     k = sza[youIndex];
