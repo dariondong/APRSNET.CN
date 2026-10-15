@@ -147,10 +147,10 @@ PAGES = [
         file="links.html", nav="友链", h1="友链",
         lead="同一条电波上的站，互相留个门牌。",
         title="友链 — APRS 相关的项目与站点",
-        desc="APRSNET.CN 的友链：APRSLocus 客户端与它的源码仓库，以及换链接的做法。",
+        desc="APRSNET.CN 的友链：APRSLocus 客户端与它的源码仓库、同行协会的站点，以及换链接的做法。",
         og="APRS 相关的项目与站点，都列在这一页。",
-        keywords="友链,APRSNET.CN,APRSLocus,APRS 客户端,业余无线电,APRS 相关站点,链接交换",
-        blocks=["links", "links-swap"],
+        keywords="友链,APRSNET.CN,APRSLocus,APRS 客户端,业余无线电协会,APRS 相关站点,链接交换",
+        blocks=["links", "links-friends", "links-swap"],
     ),
     dict(
         file="about.html", nav="关于", h1="关于 APRSNET.CN",
@@ -184,7 +184,7 @@ EXTRA_TITLE = {
     "proto-filter": "过滤器", "proto-ops": "安全与运维", "proto-boundary": "网络边界",
     "proto-test": "测试与版本", "proto-misc": "附则",
     "about-origin": "这个站从哪来", "about-site": "站上有什么", "about-upkeep": "谁在维护",
-    "links": "站与项目", "links-swap": "换链接",
+    "links": "站与项目", "links-friends": "同行的站", "links-swap": "换链接",
 }
 
 # 页脚目录的分栏名：默认用导航里的名字，不在导航里的子页在这里自己报个名
