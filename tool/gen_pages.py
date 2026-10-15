@@ -109,8 +109,9 @@ PAGES = [
         blocks=["docs", "refs"],
     ),
     dict(
-        file="protocol.html", nav="APRSNET CN 通信协议规范", h1="APRSNET CN 通信协议规范",
-        lead="面向国内 APRS 场景的接入与报文转发规范，v0.1.0 草案：客户端怎么连进来、谁被放行、报文怎么转发出去。",
+        file="protocol.html", nav="APRSNET CN 通信协议规范",
+        h1="APRSNET CN 通信协议规范 v0.1.0（草案）",
+        lead="面向国内 APRS 场景的接入与报文转发规范：客户端怎么连进来、谁被放行、报文怎么转发出去。",
         title="APRSNET CN 通信协议规范 v0.1.0（草案）",
         desc="APRSNET CN 通信协议规范 v0.1.0 草案：客户端接入与登录格式、Passcode 与白名单准入、报文处理与转发、APRS-IS 过滤器、安全运维、网络边界与测试要求。",
         og="APRSNET CN 通信协议规范 v0.1.0（草案）：接入、授权、转发与运维要求。",
