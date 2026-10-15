@@ -91,8 +91,8 @@ code {
 .read-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 140; height: 3px; background: var(--hot-bright); transform: scaleX(0); transform-origin: left center; }
 
 /* ── 03. 导航 ── */
-.nav { position: fixed; inset: 0 0 auto 0; z-index: 100; padding: 14px 0; border-bottom: 1px solid transparent; transition: padding .25s var(--ease), background .25s var(--ease), border-color .25s var(--ease); }
-.nav.scrolled { padding: 8px 0; background: var(--bg-1); border-bottom-color: var(--line-strong); }
+.nav { position: fixed; inset: 0 0 auto 0; z-index: 100; padding: 10px 0; border-bottom: 1px solid transparent; transition: padding .25s var(--ease), background .25s var(--ease), border-color .25s var(--ease); }
+.nav.scrolled { padding: 6px 0; background: var(--bg-1); border-bottom-color: var(--line-strong); }
 .nav-inner { max-width: var(--measure); margin: 0 auto; padding: 0 var(--gut); display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .brand { display: flex; align-items: center; gap: 10px; }
 /* 字标：APRSNET.CN = APRS（墨）+ NET（灰）+ .CN（赤红），导航与页脚共用一套 */
@@ -317,7 +317,7 @@ main > section.section { counter-increment: sec; }
   .nav-links {
     position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 84vw); z-index: 120;
     flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0;
-    padding: 84px 24px 30px; background: var(--surface-1); border-left: 1px solid var(--line-strong);
+    padding: 92px 24px 30px; background: var(--surface-1); border-left: 1px solid var(--line-strong);
     transform: translateX(100%); transition: transform .3s var(--ease); visibility: hidden;
   }
   .nav-links.open { transform: none; visibility: visible; }
@@ -329,7 +329,7 @@ main > section.section { counter-increment: sec; }
     display: flex; align-items: center; margin-top: auto;
     padding: 22px 0 0; border-top: 1px solid var(--line); border-bottom: 0;
   }
-  .nav-links a.nav-brand-aside img { width: 52px; height: 52px; }
+  .nav-links a.nav-brand-aside img { width: 64px; height: 64px; }
   .theme-toggle { width: 100%; margin-top: 20px; justify-content: flex-start; gap: 8px; padding: 10px 12px; }
   .nav-burger { display: flex; z-index: 130; }
 }

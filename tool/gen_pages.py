@@ -27,7 +27,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "30"        # style.css?v=
+CSS_V = "31"        # style.css?v=
 MAIN_V = "12"       # main.js?v=
 SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
@@ -229,7 +229,7 @@ HEAD = """<!DOCTYPE html>
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a class="brand" href="./"><img class="brand-mark" src="assets/icon.png?v={icon_v}" alt="APRSNET.CN" width="48" height="48"></a>
+    <a class="brand" href="./"><img class="brand-mark" src="assets/icon.png?v={icon_v}" alt="APRSNET.CN" width="64" height="64"></a>
     <nav class="nav-links" id="navLinks" aria-label="页面导航">
 {nav}
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
@@ -237,7 +237,7 @@ HEAD = """<!DOCTYPE html>
         <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
       </button>
       <a class="nav-brand-aside" href="about.html" aria-label="关于本站">
-        <img src="assets/icon.png?v={icon_v}" alt="" width="52" height="52">
+        <img src="assets/icon.png?v={icon_v}" alt="" width="64" height="64">
       </a>
     </nav>
     <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
