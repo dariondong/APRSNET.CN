@@ -29,7 +29,7 @@ PARTS = HERE / "parts"
 
 CSS_V = "27"        # style.css?v=
 MAIN_V = "11"       # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "11"}  # 页内脚本的缓存键
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12"}  # 页内脚本的缓存键
 ICON_V = "2"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
 
 SITE = "https://aprsnet.cn/"
