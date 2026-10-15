@@ -46,7 +46,7 @@ PAGES = [
         keywords="APRS,APRS 中文,APRS 教程,业余无线电,自动分组报告系统,APRSNET,"
                  "APRS 是什么,信标,中继,网关,iGate,TOCALL 查询",
         scripts=("tocalls.js", "hero-field.js"),
-        blocks=["hero", "about", "start", "query"],
+        blocks=["hero", "about", "start", "query", "contribute"],
     ),
     dict(
         file="guide.html", nav="上手", h1="上手与设备",
@@ -113,7 +113,7 @@ EXTRA_TITLE = {
     "glossary": "名词小抄", "gear": "设备与链路", "faq": "常见问题",
     "query": "官方 TOCALL 查询", "docs": "规范与文档",
     "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
-    "aprsis-send": "UDP 与只发端口",
+    "aprsis-send": "UDP 与只发端口", "contribute": "参与贡献",
 }
 
 HEAD = """<!DOCTYPE html>
