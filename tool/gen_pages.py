@@ -144,12 +144,12 @@ PAGES = [
         blocks=["aprsis-connect", "aprsis-login", "aprsis-send"],
     ),
     dict(
-        file="about.html", nav="关于", h1="关于本站",
-        lead="一个从 APRSLocus 客户端里长出来的中文资料站：谁在做、站上有什么、怎么参与。",
-        title="关于本站 — 由 APRSLocus 衍生来的 APRS 中文资料站",
-        desc="APRSNET.CN 由 APRSLocus 客户端项目衍生而来：本站整理 APRS 中文资料、TOCALL 查询与协议规范，由 BG7LZQ 维护，源码与投稿入口都在 GitHub。",
-        og="本站由 APRSLocus 项目衍生而来，整理 APRS 中文资料、查询工具和协议规范。",
-        keywords="APRSNET.CN,关于本站,APRSLocus,APRS 中文资料,APRS 客户端,开源,BG7LZQ",
+        file="about.html", nav="关于", h1="关于 APRSNET.CN",
+        lead="信标不止，归途不息。",
+        title="关于 APRSNET.CN — APRS 中文资料站",
+        desc="APRSNET.CN 是一份中文 APRS 资料站：APRS 是什么、参数与频率怎么设、报文怎么读、官方 TOCALL 查询、APRS-IS 文档与协议规范，由 BG7LZQ 维护，源码与投稿入口都在 GitHub。",
+        og="一份中文 APRS 资料站：资料、TOCALL 查询与协议规范都在这里。",
+        keywords="APRSNET.CN,关于本站,APRS 中文资料,APRS 资料站,业余无线电,APRS 查询,开源,BG7LZQ",
         blocks=["about-origin", "about-site", "about-upkeep"],
     ),
 ]
