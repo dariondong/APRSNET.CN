@@ -329,7 +329,7 @@ main > section.section { counter-increment: sec; }
     display: flex; align-items: center; margin-top: auto;
     padding: 22px 0 0; border-top: 1px solid var(--line); border-bottom: 0;
   }
-  .nav-links a.nav-brand-aside .brand-name { font-size: 21px; }
+  .nav-links a.nav-brand-aside img { width: 52px; height: 52px; }
   .theme-toggle { width: 100%; margin-top: 20px; justify-content: flex-start; gap: 8px; padding: 10px 12px; }
   .nav-burger { display: flex; z-index: 130; }
 }

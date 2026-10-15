@@ -27,7 +27,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "28"        # style.css?v=
+CSS_V = "29"        # style.css?v=
 MAIN_V = "12"       # main.js?v=
 SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
@@ -142,6 +142,15 @@ PAGES = [
                  "APRS-IS 文档,只发端口,呼号 SSID,WebSocket",
         blocks=["aprsis-connect", "aprsis-login", "aprsis-send"],
     ),
+    dict(
+        file="about.html", nav="关于", h1="关于本站",
+        lead="一个从 APRSLocus 客户端里长出来的中文资料站：谁在做、站上有什么、怎么参与。",
+        title="关于本站 — 由 APRSLocus 衍生来的 APRS 中文资料站",
+        desc="APRSNET.CN 由 APRSLocus 客户端项目衍生而来：本站整理 APRS 中文资料、TOCALL 查询与协议规范，由 BG7LZQ 维护，源码与投稿入口都在 GitHub。",
+        og="本站由 APRSLocus 项目衍生而来，整理 APRS 中文资料、查询工具和协议规范。",
+        keywords="APRSNET.CN,关于本站,APRSLocus,APRS 中文资料,APRS 客户端,开源,BG7LZQ",
+        blocks=["about-origin", "about-site", "about-upkeep"],
+    ),
 ]
 
 # 区块 → 所在页面（跨页链接、页脚链接都靠这张表算，不用手写）
@@ -164,6 +173,7 @@ EXTRA_TITLE = {
     "proto-access": "接入规范", "proto-whitelist": "白名单", "proto-forward": "报文转发",
     "proto-filter": "过滤器", "proto-ops": "安全与运维", "proto-boundary": "网络边界",
     "proto-test": "测试与版本", "proto-misc": "附则",
+    "about-origin": "这个站从哪来", "about-site": "站上有什么", "about-upkeep": "谁在维护",
 }
 
 HEAD = """<!DOCTYPE html>
@@ -219,17 +229,15 @@ HEAD = """<!DOCTYPE html>
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a class="brand" href="./">
-      <span class="brand-name"><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></span>
-    </a>
+    <a class="brand" href="./"><img class="brand-mark" src="assets/icon.png?v={icon_v}" alt="APRSNET.CN" width="38" height="38"></a>
     <nav class="nav-links" id="navLinks" aria-label="页面导航">
 {nav}
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
         <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
         <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
       </button>
-      <a class="nav-brand-aside" href="{about_href}" aria-label="关于我们">
-        <span class="brand-name"><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></span>
+      <a class="nav-brand-aside" href="about.html" aria-label="关于本站">
+        <img src="assets/icon.png?v={icon_v}" alt="" width="52" height="52">
       </a>
     </nav>
     <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
@@ -370,9 +378,6 @@ def render(page):
         '      <a href="%s"%s>%s</a>' % (
             "./" if p["file"] == "index.html" else p["file"], nav_state(p), p["nav"])
         for p in PAGES if p.get("nav"))
-    # 抽屉底部那个字标：指向首页的 #about（「认识 APRS」那一块），本页就是原地跳
-    about_owner = BLOCK_PAGE.get("about", "index.html")
-    about_href = "#about" if about_owner == file else "%s#about" % about_owner
     footer_links = "\n".join(
         '        <a href="%s#%s">%s</a>' % (BLOCK_PAGE[b], b, EXTRA_TITLE[b])
         if BLOCK_PAGE[b] != file else '        <a href="#%s">%s</a>' % (b, EXTRA_TITLE[b])
@@ -395,7 +400,6 @@ def render(page):
     return (HEAD.format(title=page["title"], desc=page["desc"], og=page["og"],
                         keywords=page["keywords"], author=AUTHOR, url=page_url(page),
                         jsonld=build_jsonld(page), css_v=CSS_V, icon_v=ICON_V, nav=nav,
-                        about_href=about_href,
                         extra_head=page.get("extra_head", ""))
             + "\n\n".join(out) + "\n"
             + FOOT.format(footer_links=footer_links, file=file, author=AUTHOR)

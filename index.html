@@ -27,8 +27,8 @@
 <meta name="twitter:title" content="APRSNET.CN — APRS 中文资料站">
 <meta name="twitter:description" content="面向中文业余无线电爱好者的 APRS 资料站：从认识 APRS 开始，附常用工具与官方 TOCALL 查询。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
-<link rel="stylesheet" href="style.css?v=28">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/","inLanguage":"zh-CN","description":"APRSNET.CN 是中文业余无线电 APRS（自动分组报告系统）资料站：APRS 是什么、常用工具、官方 TOCALL 查询，一处查完。","publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/","alternateName":"APRS 中文资料站","hasPart":[{"@type":"WebPage","name":"APRS 上手与设备","url":"https://aprsnet.cn/guide.html"},{"@type":"WebPage","name":"APRS 从零上手教程","url":"https://aprsnet.cn/tutorial.html"},{"@type":"WebPage","name":"APRS 报文与字段","url":"https://aprsnet.cn/packet.html"},{"@type":"WebPage","name":"APRS TOCALL 查询","url":"https://aprsnet.cn/tocall.html"},{"@type":"WebPage","name":"APRS 常见问题","url":"https://aprsnet.cn/faq.html"},{"@type":"WebPage","name":"APRS 规范与文档","url":"https://aprsnet.cn/docs.html"},{"@type":"WebPage","name":"APRSNET CN 通信协议规范 v0.1.0（草案）","url":"https://aprsnet.cn/protocol.html"},{"@type":"WebPage","name":"APRS-IS 中文文档","url":"https://aprsnet.cn/aprsis.html"}]}</script>
+<link rel="stylesheet" href="style.css?v=29">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/","inLanguage":"zh-CN","description":"APRSNET.CN 是中文业余无线电 APRS（自动分组报告系统）资料站：APRS 是什么、常用工具、官方 TOCALL 查询，一处查完。","publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/","alternateName":"APRS 中文资料站","hasPart":[{"@type":"WebPage","name":"APRS 上手与设备","url":"https://aprsnet.cn/guide.html"},{"@type":"WebPage","name":"APRS 从零上手教程","url":"https://aprsnet.cn/tutorial.html"},{"@type":"WebPage","name":"APRS 报文与字段","url":"https://aprsnet.cn/packet.html"},{"@type":"WebPage","name":"APRS TOCALL 查询","url":"https://aprsnet.cn/tocall.html"},{"@type":"WebPage","name":"APRS 常见问题","url":"https://aprsnet.cn/faq.html"},{"@type":"WebPage","name":"APRS 规范与文档","url":"https://aprsnet.cn/docs.html"},{"@type":"WebPage","name":"APRSNET CN 通信协议规范 v0.1.0（草案）","url":"https://aprsnet.cn/protocol.html"},{"@type":"WebPage","name":"APRS-IS 中文文档","url":"https://aprsnet.cn/aprsis.html"},{"@type":"WebPage","name":"关于本站","url":"https://aprsnet.cn/about.html"}]}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -51,9 +51,7 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a class="brand" href="./">
-      <span class="brand-name"><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></span>
-    </a>
+    <a class="brand" href="./"><img class="brand-mark" src="assets/icon.png?v=5" alt="APRSNET.CN" width="38" height="38"></a>
     <nav class="nav-links" id="navLinks" aria-label="页面导航">
       <a href="./" class="active" aria-current="page">认识</a>
       <a href="guide.html">上手</a>
@@ -62,12 +60,13 @@
       <a href="faq.html">问答</a>
       <a href="docs.html">文档</a>
       <a href="protocol.html">APRSNET CN 通信协议规范</a>
+      <a href="about.html">关于</a>
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
         <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
         <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
       </button>
-      <a class="nav-brand-aside" href="#about" aria-label="关于我们">
-        <span class="brand-name"><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></span>
+      <a class="nav-brand-aside" href="about.html" aria-label="关于本站">
+        <img src="assets/icon.png?v=5" alt="" width="52" height="52">
       </a>
     </nav>
     <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
@@ -302,6 +301,9 @@
         <a href="protocol.html#proto-boundary">网络边界</a>
         <a href="protocol.html#proto-test">测试与版本</a>
         <a href="protocol.html#proto-misc">附则</a>
+        <a href="about.html#about-origin">这个站从哪来</a>
+        <a href="about.html#about-site">站上有什么</a>
+        <a href="about.html#about-upkeep">谁在维护</a>
         <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
       </nav>
     </div>
