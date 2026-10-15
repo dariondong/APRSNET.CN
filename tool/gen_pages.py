@@ -113,7 +113,7 @@ PAGES = [
     dict(
         file="protocol.html", nav="APRSNET CN CONNECT",
         h1="APRSNET CN CONNECT v0.1.0（草案）",
-        lead="APRSNET CN CONNECT 是这套服务器自己的协议：客户端怎么连进来、谁被放行、报文怎么转发出去。这一版是 v0.1.0，还是草案。",
+        lead="APRSNET CN CONNECT 是一份 APRS 服务器的接入与转发规范：客户端怎么连进来、谁被放行、报文怎么转发出去。这一版是 v0.1.0，还是草案。",
         title="APRSNET CN CONNECT v0.1.0（草案）— 接入与报文转发规范",
         desc="APRSNET CN CONNECT v0.1.0 草案：客户端接入与登录格式、Passcode 与白名单准入、报文处理与转发、APRS-IS 过滤器、安全运维、网络边界与测试要求。",
         og="APRSNET CN CONNECT v0.1.0（草案）：接入、授权、转发与运维要求。",
