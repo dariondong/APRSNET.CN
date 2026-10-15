@@ -1,0 +1,33 @@
+  <section class="section" id="aprsis-connect">
+    <div class="section-head">
+      <h2>连上 APRS-IS</h2>
+      <p>用法其实就一件事：拿一个客户端，连到某台服务器的一个端口上。端口选哪个，决定你能收到多少、以及能不能发。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">APRS-IS 是互联网那一侧的那张网：世界各地的服务器互相转发收到的包，你只要连上其中一台，就等于站在整张网里 —— 收得到别人的包，验证通过之后，自己发的包也会被转发出去。每台服务器都有状态页，用浏览器打开 <code>http://服务器地址:14501</code>，它开了哪些端口就一目了然。</p>
+      <ul class="fact-list">
+        <li>
+          <b>14501</b>
+          HTTP 状态页。javAPRSSrvr 系的服务器在这上面还可能顺带开着 HTTP 只发端口与 WebSocket。
+        </li>
+        <li>
+          <b>10152</b>
+          TCP 全量 feed：所有包都推给你。每秒几十个包、带宽很快顶满，多数客户端撑不住，别长期挂着 —— 真要接，先想清楚拿来干什么。
+        </li>
+        <li>
+          <b>14580</b>
+          自定义过滤 feed，日常最常用。默认只给你「发给你的消息」和「你的网关收上来的包」，其余靠 filter 命令一条条加。这是双向端口：验证通过后你发的包也会进 APRS-IS（FireNet 的服务器除外）。
+        </li>
+        <li>
+          <b>23000</b>
+          TCP 全量 feed，但客户端必须在登录行里声明自己收包的 UDP 端口。核心服务器都支持。
+        </li>
+        <li>
+          <b>8080</b>
+          HTTP 和/或 UDP 只发端口，标准 HTTP 端口；javAPRSSrvr 系在这上面还支持 WebSocket。
+        </li>
+      </ul>
+      <p class="prose">两个常踩的坑：双向客户端连 APRS-IS 时要关掉 Nagle（<code>TCP_NODELAY</code>），不然收发会明显延迟；只想先看看、不打算发射，也要用自己的呼号，passcode 填 <code>-1</code> 就表示只收。</p>
+      <p class="prose">本页按 APRS-IS 官方文档（<a href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">Connecting to APRS-IS</a>）整理翻译。端口、参数这些跟着官方走，措辞按中文习惯重写；两边对不上时，以<a href="https://www.aprs-is.net/" target="_blank" rel="noopener">原文</a>为准。</p>
+    </div>
+  </section>

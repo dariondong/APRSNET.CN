@@ -1,0 +1,47 @@
+  <section class="section" id="aprsis-login">
+    <div class="section-head">
+      <h2>登录行怎么写</h2>
+      <p>连上之后服务器先给一行 <code>#</code> 开头的声明，接着轮到你报名字。这一行写对了，服务器才认你，也才决定给不给你发包的权限。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">登录行就是一行纯文本，关键字后面跟参数，方括号里的部分可以省，但顺序不能换。只有 <code>user</code> 和 <code>pass</code> 是必须的。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>格式</b>
+          <code>user 呼号[-SSID] pass passcode [vers 软件名 版本 [UDP 端口][服务器命令]]</code>
+          <code>user</code> 是你自己的呼号（连 SSID），<code>pass</code> 是算出来的 passcode；<code>vers</code> 后面跟软件名和版本号，各写一个词、不能有空格。
+        </li>
+        <li>
+          <b>一个只收的例子（连 14580）</b>
+          <code>user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50</code>
+          <code>pass -1</code> 表示只收不发；末尾那段是服务器命令，这里让服务器把 33.25N 96.5W 五十公里内的台站包都推过来（过滤器写法见下一节）。
+        </li>
+      </ul>
+      <ul class="fact-list">
+        <li>
+          <b>user</b>
+          呼号与 SSID。SSID 可以省，省掉就等于 0 —— 别写成 <code>-0</code>。整个 APRS / AX.25 里，这个标记必须是唯一的。
+        </li>
+        <li>
+          <b>pass</b>
+          用呼号算出来的 passcode。<code>-1</code> 只收不发；要发数据就必须填有效 passcode，否则服务器只批你收。
+        </li>
+        <li>
+          <b>vers</b>
+          客户端软件名与版本号，各一个词、不能有空格。服务器靠它统计谁在连，也靠它找你。
+        </li>
+        <li>
+          <b>UDP</b>
+          想让服务器用 UDP 给你发包，这里写本机监听的端口号。
+        </li>
+        <li>
+          <b>服务器命令</b>
+          给服务器看的指令，最常见的就是 <code>filter</code>。可以带空格。
+        </li>
+      </ul>
+      <p class="prose">呼号和 SSID 有几条硬规矩：只能用 ASCII 字母数字，中间最多一个连字符加一两位 SSID；呼号本体至少 3 位，含 SSID 在内不超过 9 位。大小写虽然允许，但服务器按大写算同一个台站 —— 发消息、上 RF 直发、给 Yaesu 电台发消息，都要求大写和 AX.25 的 SSID（0–15，同样不用 <code>-0</code>）。拿不准就一律大写。</p>
+      <p class="prose">passcode 的算法官方文档没有公布，这个站也不转抄：需要 passcode 就找你在用的软件作者，他们按呼号算给你。这道门槛的作用，是让 APRS-IS 只留给业余无线电使用。</p>
+      <p class="prose">服务器回的每一行都以 <code>#</code> 开头的是注释，客户端直接忽略；登录成功失败的结论也在里面（例如 <code>#login AE5PL-TS unverified</code> 就是只收）。空闲一阵子服务器还会周期性发 <code>#</code> 开头的行探活。</p>
+      <p class="prose">最后一条：发进 APRS-IS 的包必须是 TNC2 格式、以回车换行结尾，一整行不超过 512 字节（含回车换行）。没有效 passcode 的客户端发什么都没人收。</p>
+    </div>
+  </section>

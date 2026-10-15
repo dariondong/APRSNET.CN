@@ -88,6 +88,16 @@ PAGES = [
                  "APRS 服务器列表,过滤器语法",
         blocks=["docs"],
     ),
+    dict(
+        file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
+        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用；后面的过滤器、网关、q 构造接着补。",
+        title="APRS-IS 中文文档 — 连接、登录行、端口与过滤器",
+        desc="APRS-IS 官方文档的中文整理：TCP/UDP 端口怎么选（14501 / 10152 / 14580 / 23000）、登录行与 passcode、呼号与 SSID 规则、只发端口与 HTTP/WebSocket 返回码，附原文入口。",
+        og="APRS-IS 中文文档：连上网络、登录行、UDP 与只发端口。",
+        keywords="APRS-IS,APRS-IS 连接,APRS-IS 端口,14580,10152,登录行,passcode,"
+                 "APRS-IS 文档,只发端口,呼号 SSID,WebSocket",
+        blocks=["aprsis-connect", "aprsis-login", "aprsis-send"],
+    ),
 ]
 
 # 区块 → 所在页面（跨页链接、页脚链接都靠这张表算，不用手写）
@@ -102,6 +112,8 @@ EXTRA_TITLE = {
     "freq": "频率与路径", "packets": "报文长什么样", "fields": "报文字段",
     "glossary": "名词小抄", "gear": "设备与链路", "faq": "常见问题",
     "query": "官方 TOCALL 查询", "docs": "规范与文档",
+    "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
+    "aprsis-send": "UDP 与只发端口",
 }
 
 HEAD = """<!DOCTYPE html>
@@ -294,12 +306,18 @@ def relink(block, page_file):
 
 def render(page):
     file = page["file"]
+    # nav_active：不在导航里的子页（如 aprsis.html）也能把归属的那一项点亮
+    def nav_state(p):
+        if p["file"] == file:
+            return ' class="active" aria-current="page"'
+        if p["file"] == page.get("nav_active"):
+            return ' class="active"'
+        return ""
+
     nav = "\n".join(
         '      <a href="%s"%s>%s</a>' % (
-            "./" if p["file"] == "index.html" else p["file"],
-            ' class="active" aria-current="page"' if p["file"] == file else "",
-            p["nav"])
-        for p in PAGES)
+            "./" if p["file"] == "index.html" else p["file"], nav_state(p), p["nav"])
+        for p in PAGES if p.get("nav"))
     footer_links = "\n".join(
         '        <a href="%s#%s">%s</a>' % (BLOCK_PAGE[b], b, EXTRA_TITLE[b])
         if BLOCK_PAGE[b] != file else '        <a href="#%s">%s</a>' % (b, EXTRA_TITLE[b])

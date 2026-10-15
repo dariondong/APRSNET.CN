@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APRS-IS 中文文档 — 连接、登录行、端口与过滤器</title>
+<meta name="description" content="APRS-IS 官方文档的中文整理：TCP/UDP 端口怎么选（14501 / 10152 / 14580 / 23000）、登录行与 passcode、呼号与 SSID 规则、只发端口与 HTTP/WebSocket 返回码，附原文入口。">
+<meta name="keywords" content="APRS-IS,APRS-IS 连接,APRS-IS 端口,14580,10152,登录行,passcode,APRS-IS 文档,只发端口,呼号 SSID,WebSocket">
+<meta name="author" content="BG7LZQ (Darion)">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
+<meta name="theme-color" content="#f2f0ea">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="APRSNET.CN">
+<meta property="og:title" content="APRS-IS 中文文档 — 连接、登录行、端口与过滤器">
+<meta property="og:description" content="APRS-IS 中文文档：连上网络、登录行、UDP 与只发端口。">
+<meta property="og:url" content="https://aprsnet.cn/aprsis.html">
+<meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="APRSNET.CN">
+<meta property="og:locale" content="zh_CN">
+<link rel="canonical" href="https://aprsnet.cn/aprsis.html">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="APRS-IS 中文文档 — 连接、登录行、端口与过滤器">
+<meta name="twitter:description" content="APRS-IS 中文文档：连上网络、登录行、UDP 与只发端口。">
+<meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
+<link rel="stylesheet" href="style.css?v=23">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRS-IS 中文文档 — 连接、登录行、端口与过滤器","url":"https://aprsnet.cn/aprsis.html","inLanguage":"zh-CN","description":"APRS-IS 官方文档的中文整理：TCP/UDP 端口怎么选（14501 / 10152 / 14580 / 23000）、登录行与 passcode、呼号与 SSID 规则、只发端口与 HTTP/WebSocket 返回码，附原文入口。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script>
+/* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
+   必须在首帧前执行，否则会闪一下深底。 */
+(function () {
+  try {
+    var t = localStorage.getItem('theme');
+    if (t !== 'dark' && t !== 'light') t = 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+  } catch (e) {}
+})();
+</script>
+</head>
+
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="read-bar" id="readBar" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">APRSNET.CN</span>
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="页面导航">
+      <a href="./">认识</a>
+      <a href="guide.html">上手</a>
+      <a href="packet.html">报文</a>
+      <a href="faq.html">问答</a>
+      <a href="docs.html" class="active">文档</a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
+        <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
+      </button>
+    </nav>
+    <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="section-head">
+      <h1>APRS-IS 文档（中文）</h1>
+      <p>APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用；后面的过滤器、网关、q 构造接着补。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="aprsis-connect">
+    <div class="section-head">
+      <h2>连上 APRS-IS</h2>
+      <p>用法其实就一件事：拿一个客户端，连到某台服务器的一个端口上。端口选哪个，决定你能收到多少、以及能不能发。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">APRS-IS 是互联网那一侧的那张网：世界各地的服务器互相转发收到的包，你只要连上其中一台，就等于站在整张网里 —— 收得到别人的包，验证通过之后，自己发的包也会被转发出去。每台服务器都有状态页，用浏览器打开 <code>http://服务器地址:14501</code>，它开了哪些端口就一目了然。</p>
+      <ul class="fact-list">
+        <li>
+          <b>14501</b>
+          HTTP 状态页。javAPRSSrvr 系的服务器在这上面还可能顺带开着 HTTP 只发端口与 WebSocket。
+        </li>
+        <li>
+          <b>10152</b>
+          TCP 全量 feed：所有包都推给你。每秒几十个包、带宽很快顶满，多数客户端撑不住，别长期挂着 —— 真要接，先想清楚拿来干什么。
+        </li>
+        <li>
+          <b>14580</b>
+          自定义过滤 feed，日常最常用。默认只给你「发给你的消息」和「你的网关收上来的包」，其余靠 filter 命令一条条加。这是双向端口：验证通过后你发的包也会进 APRS-IS（FireNet 的服务器除外）。
+        </li>
+        <li>
+          <b>23000</b>
+          TCP 全量 feed，但客户端必须在登录行里声明自己收包的 UDP 端口。核心服务器都支持。
+        </li>
+        <li>
+          <b>8080</b>
+          HTTP 和/或 UDP 只发端口，标准 HTTP 端口；javAPRSSrvr 系在这上面还支持 WebSocket。
+        </li>
+      </ul>
+      <p class="prose">两个常踩的坑：双向客户端连 APRS-IS 时要关掉 Nagle（<code>TCP_NODELAY</code>），不然收发会明显延迟；只想先看看、不打算发射，也要用自己的呼号，passcode 填 <code>-1</code> 就表示只收。</p>
+      <p class="prose">本页按 APRS-IS 官方文档（<a href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">Connecting to APRS-IS</a>）整理翻译。端口、参数这些跟着官方走，措辞按中文习惯重写；两边对不上时，以<a href="https://www.aprs-is.net/" target="_blank" rel="noopener">原文</a>为准。</p>
+    </div>
+  </section>
+
+  <section class="section" id="aprsis-login">
+    <div class="section-head">
+      <h2>登录行怎么写</h2>
+      <p>连上之后服务器先给一行 <code>#</code> 开头的声明，接着轮到你报名字。这一行写对了，服务器才认你，也才决定给不给你发包的权限。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">登录行就是一行纯文本，关键字后面跟参数，方括号里的部分可以省，但顺序不能换。只有 <code>user</code> 和 <code>pass</code> 是必须的。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>格式</b>
+          <code>user 呼号[-SSID] pass passcode [vers 软件名 版本 [UDP 端口][服务器命令]]</code>
+          <code>user</code> 是你自己的呼号（连 SSID），<code>pass</code> 是算出来的 passcode；<code>vers</code> 后面跟软件名和版本号，各写一个词、不能有空格。
+        </li>
+        <li>
+          <b>一个只收的例子（连 14580）</b>
+          <code>user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50</code>
+          <code>pass -1</code> 表示只收不发；末尾那段是服务器命令，这里让服务器把 33.25N 96.5W 五十公里内的台站包都推过来（过滤器写法见下一节）。
+        </li>
+      </ul>
+      <ul class="fact-list">
+        <li>
+          <b>user</b>
+          呼号与 SSID。SSID 可以省，省掉就等于 0 —— 别写成 <code>-0</code>。整个 APRS / AX.25 里，这个标记必须是唯一的。
+        </li>
+        <li>
+          <b>pass</b>
+          用呼号算出来的 passcode。<code>-1</code> 只收不发；要发数据就必须填有效 passcode，否则服务器只批你收。
+        </li>
+        <li>
+          <b>vers</b>
+          客户端软件名与版本号，各一个词、不能有空格。服务器靠它统计谁在连，也靠它找你。
+        </li>
+        <li>
+          <b>UDP</b>
+          想让服务器用 UDP 给你发包，这里写本机监听的端口号。
+        </li>
+        <li>
+          <b>服务器命令</b>
+          给服务器看的指令，最常见的就是 <code>filter</code>。可以带空格。
+        </li>
+      </ul>
+      <p class="prose">呼号和 SSID 有几条硬规矩：只能用 ASCII 字母数字，中间最多一个连字符加一两位 SSID；呼号本体至少 3 位，含 SSID 在内不超过 9 位。大小写虽然允许，但服务器按大写算同一个台站 —— 发消息、上 RF 直发、给 Yaesu 电台发消息，都要求大写和 AX.25 的 SSID（0–15，同样不用 <code>-0</code>）。拿不准就一律大写。</p>
+      <p class="prose">passcode 的算法官方文档没有公布，这个站也不转抄：需要 passcode 就找你在用的软件作者，他们按呼号算给你。这道门槛的作用，是让 APRS-IS 只留给业余无线电使用。</p>
+      <p class="prose">服务器回的每一行都以 <code>#</code> 开头的是注释，客户端直接忽略；登录成功失败的结论也在里面（例如 <code>#login AE5PL-TS unverified</code> 就是只收）。空闲一阵子服务器还会周期性发 <code>#</code> 开头的行探活。</p>
+      <p class="prose">最后一条：发进 APRS-IS 的包必须是 TNC2 格式、以回车换行结尾，一整行不超过 512 字节（含回车换行）。没有效 passcode 的客户端发什么都没人收。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="aprsis-send">
+    <div class="section-head">
+      <h2>UDP 收包、只发端口、HTTP 与 WebSocket</h2>
+      <p>除了老老实实走 TCP 收发，还有几种接法：收包可以走 UDP，发包可以走只发端口，网页端和自建台站还能用 HTTP 或 WebSocket。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">收包走 UDP：在登录行里写上 <code>UDP 端口</code>，服务器就把每个包单独装进一个 UDP 报文发给你（包尾不带回车换行），同时留着那条 TCP 连接判断你还在不在。这条通道是单向的 —— 客户端从不通过 UDP 往服务器发东西。万一服务器不支持，它会忽略这个参数，照旧用 TCP 发给你。</p>
+      <p class="prose">只发端口是给气象站、信标机这类只往外报数的台站用的，HTTP POST/PUT、UDP、WebSocket 都有。它一个包也收不到，所以过滤器用不上；从这类端口进来的包会带 <code>qAO</code> 或 <code>qAU</code> 这两个构造。内容很简单：登录行（或者 <code>Authorization</code> 头）后面跟一行或多行 TNC2 格式的报文。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>HTTP 只发的一个例子</b>
+          <code>user TEST-1 pass -1 vers TestSoftware 1.0</code>
+          <code>TEST-1&gt;APRS,TCPIP*:&gt;This is a test packet</code>
+          官方文档里的例子。它演示的是反面：passcode 写 <code>-1</code>，包不会被 APRS-IS 接受 —— 只发端口同样要有效 passcode。
+        </li>
+      </ul>
+      <p class="prose">认证有两种放法：登录行写在 HTTP 内容里，或者放进 <code>Authorization</code> 头（Base64 编码的登录行，或 RFC 7617 的 Basic 认证：用户名是呼号-SSID、密码是 passcode）。Base64 不是加密，要安全就配合 HTTPS 用。</p>
+      <ul class="fact-list">
+        <li>
+          <b>200 / 204</b>
+          200 是状态页取到了；204 是登录与报文都通过，包已经进服务器，响应头 <code>X-Packetsrcvd</code> 会告诉你成功收下几条。
+        </li>
+        <li>
+          <b>401 / 403</b>
+          401 是认证方式或数据不对，403 是 passcode 不对。
+        </li>
+        <li>
+          <b>409</b>
+          这个呼号已经在这台服务器上登录了，先断开旧连接再来。
+        </li>
+        <li>
+          <b>411 / 413 / 415 / 417</b>
+          内容长度缺失、超过 8192 字节、Content-type 不是 <code>application/octet-stream</code>、长度和实际收到的对不上。
+        </li>
+        <li>
+          <b>405 / 404</b>
+          405 是方法不支持（只认 HEAD / GET / POST / PUT），404 是路径不存在。
+        </li>
+      </ul>
+      <p class="prose">WebSocket 只有 javAPRSSrvr 系的服务器支持，用起来和普通 TCP 端口一样：不写协议名就是 readwrite，等于 14580 那种自定义过滤；要退历史包就声明 history，并在登录行里带 filter。服务器只发二进制消息（包里可能出现非 UTF-8 内容），客户端发文本或二进制都行。从网页发起连接时，官方希望软件名填站点名、版本号填页面名或脚本名，方便服务器知道包从哪来。</p>
+      <p class="prose">本页按官方 <a href="https://www.aprs-is.net/ClientUDP.aspx" target="_blank" rel="noopener">Client UDP</a>、<a href="https://www.aprs-is.net/SendOnlyPorts.aspx" target="_blank" rel="noopener">Send-only Ports</a> 与 <a href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">Connecting to APRS-IS</a> 三篇整理翻译；端口与返回码以原文为准。</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <b>APRSNET.CN</b>
+        <span>业余无线电 · APRS 中文资料站</span>
+      </div>
+      <nav class="footer-links" aria-label="相关链接">
+        <a href="index.html#about">认识 APRS</a>
+        <a href="index.html#start">常用工具</a>
+        <a href="guide.html#steps">上手步骤</a>
+        <a href="guide.html#freq">频率与路径</a>
+        <a href="packet.html#packets">报文长什么样</a>
+        <a href="packet.html#fields">报文字段</a>
+        <a href="packet.html#glossary">名词小抄</a>
+        <a href="guide.html#gear">设备与链路</a>
+        <a href="faq.html#faq">常见问题</a>
+        <a href="index.html#query">官方 TOCALL 查询</a>
+        <a href="docs.html#docs">规范与文档</a>
+        <a href="#aprsis-connect">连上 APRS-IS</a>
+        <a href="#aprsis-login">登录行怎么写</a>
+        <a href="#aprsis-send">UDP 与只发端口</a>
+        <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
+      </nav>
+    </div>
+    <p class="footer-note">本站由业余无线电爱好者维护，与任何厂商、组织和项目都没有隶属关系。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
+    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/aprsis.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>，或者<a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a>。</p>
+    <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
+  </div>
+</footer>
+
+<a class="backtop" id="backTop" href="#main" aria-label="回到顶部">
+  <svg class="backtop-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="17"/><circle class="ring-fg" id="ringFg" cx="20" cy="20" r="17"/></svg>
+  <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
+</a>
+
+<script src="main.js?v=9"></script>
+</body>
+</html>
