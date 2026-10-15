@@ -1,0 +1,42 @@
+  <section class="section" id="faq">
+    <div class="section-head">
+      <h2>常见问题</h2>
+      <p>刚上手最容易卡住的几个地方，先把它们说清楚。</p>
+    </div>
+    <div class="section-body">
+      <div class="faq">
+        <details>
+          <summary>没有呼号能玩吗？</summary>
+          <p>看，可以。APRS-IS 和各家公开地图都是开放浏览的，不用呼号也能看别人。发，不可以：发射和上中继一样，需要有本地的操作证书和电台执照。</p>
+        </details>
+        <details>
+          <summary>需要哪些设备？</summary>
+          <p>一台能收发 APRS 的电台（手台也行），加一个终端：手机或电脑。中间那条链路可以是蓝牙 / 串口 TNC、声卡线，也可以直接连 APRS-IS —— 那种玩法只用互联网，不发射。</p>
+        </details>
+        <details>
+          <summary>手台直连能传多远？</summary>
+          <p>视距，通常几公里到几十公里，取决于天线高度和地形。想更远就得靠高处的 digipeater 接力，或者由附近的 iGate 把包送进互联网。</p>
+        </details>
+        <details>
+          <summary>为什么地图上搜不到我？</summary>
+          <p>最常见的是三种：包根本没发出去（频率、连线、PTT 设置），附近没有 digipeater 或 iGate 接力，或者呼号与位置格式写错了。先把「只接收」跑通，再一段一段查发射链路。</p>
+        </details>
+        <details>
+          <summary>我的位置是公开的吗？</summary>
+          <p>是。发出去的包会进入公开的 APRS 网络，也会出现在各家地图上。不想公开就别发位置信标，或者只用它接收。</p>
+        </details>
+        <details>
+          <summary>信标多久发一次合适？</summary>
+          <p>城市里两到五分钟一次比较常见，移动中的车台可以更勤一点；停着不动时把间隔调长，或者只在移动时发，能省下不少频率。一个频点上所有人轮流发，你少占一次，别人就早听到一次。</p>
+        </details>
+        <details>
+          <summary>中继和网关是谁在维护，我能自己架吗？</summary>
+          <p>多数是爱好者自己出钱出力架的，架在楼顶、山头或家里。自己架也可以：需要执照、合适的位置和一点电费；动手之前先在群里说一声，避免和已有的台重复覆盖同一片地方。</p>
+        </details>
+        <details>
+          <summary>APRS 和 LoRa、北斗短报文有什么区别？</summary>
+          <p>APRS 跑在业余频率上、靠业余台站接力，谁都能收、谁都能转发，代价是慢、话少，只在有台站听得见的地方通。LoRa 是另一种调制方式，适合自己组一张小范围的网；北斗短报文走卫星，覆盖最广，但依赖卫星链路。三者解决的问题不一样，常被放在一起互相补位。</p>
+        </details>
+      </div>
+    </div>
+  </section>

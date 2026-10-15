@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNET.CN — APRS 中文资料站</title>
-<meta name="description" content="APRSNET.CN —— 中文业余无线电 APRS（自动分组报告系统）资料站：名词、频率与路径、报文格式、设备链路、常见问题，一处查完。">
+<meta name="description" content="APRSNET.CN —— 中文业余无线电 APRS（自动分组报告系统）资料站：APRS 是什么、常用工具、官方 TOCALL 查询，一处查完。">
 <meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
 <meta name="theme-color" content="#f2f0ea">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="APRSNET.CN">
 <meta property="og:title" content="APRSNET.CN — APRS 中文资料站">
-<meta property="og:description" content="面向中文业余无线电爱好者的 APRS 资料站：名词、频率与路径、报文格式、设备链路与常见问题。">
+<meta property="og:description" content="面向中文业余无线电爱好者的 APRS 资料站：从认识 APRS 开始，附常用工具与官方 TOCALL 查询。">
 <meta property="og:url" content="https://aprsnet.cn/">
 <meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
 <meta property="og:image:width" content="512">
@@ -22,9 +22,9 @@
 <link rel="apple-touch-icon" href="assets/icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="APRSNET.CN — APRS 中文资料站">
-<meta name="twitter:description" content="面向中文业余无线电爱好者的 APRS 资料站：名词、频率与路径、报文格式、设备链路与常见问题。">
+<meta name="twitter:description" content="面向中文业余无线电爱好者的 APRS 资料站：从认识 APRS 开始，附常用工具与官方 TOCALL 查询。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=19">
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -39,6 +39,7 @@
 })();
 </script>
 </head>
+
 <body>
 
 <a class="skip-link" href="#main">跳到主要内容</a>
@@ -51,16 +52,11 @@
       <span class="brand-name">APRSNET.CN</span>
     </a>
     <nav class="nav-links" id="navLinks" aria-label="页面导航">
-      <a href="#about">认识</a>
-      <a href="#start">工具</a>
-      <a href="#steps">上手</a>
-      <a href="#freq">频率</a>
-      <a href="#packets">报文</a>
-      <a href="#glossary">名词</a>
-      <a href="#gear">设备</a>
-      <a href="#faq">问答</a>
-      <a href="#query">查询</a>
-      <a href="#docs">文档</a>
+      <a href="./" class="active" aria-current="page">认识</a>
+      <a href="guide.html">上手</a>
+      <a href="packet.html">报文</a>
+      <a href="faq.html">问答</a>
+      <a href="docs.html">文档</a>
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
         <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
         <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
@@ -71,7 +67,6 @@
 </header>
 
 <main id="main">
-
   <section class="hero" id="hero">
     <div class="hero-inner">
       <p class="hero-kicker">业余无线电 · APRS 中文资料站</p>
@@ -131,7 +126,7 @@
         <p class="hero-sub">这个站只讲 APRS 本身：它是什么、信标怎么发、频率与参数怎么填、卡住了怎么查。</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#about">先看看 APRS 是什么</a>
-          <a class="btn btn-ghost" href="#steps">看看怎么上手</a>
+          <a class="btn btn-ghost" href="guide.html#steps">看看怎么上手</a>
         </div>
       </div>
     </div>
@@ -248,282 +243,8 @@
       </ul>
     </div>
   </section>
-  <section class="section" id="steps">
-    <div class="section-head">
-      <h2>发出第一个信标</h2>
-      <p>门槛不在软件，而在那张执照和一根能发射的线。按这个顺序走，最快当天就能在地图上看见自己。</p>
-    </div>
-    <div class="section-body">
-      <ol class="steps">
-        <li>
-          <b>拿到资格</b>
-          考取业余无线电操作证书、办下电台执照，拿到属于自己的呼号 —— APRS 包的第一段就是它。
-        </li>
-        <li>
-          <b>备好链路</b>
-          一台能收发 APRS 的电台，加一个终端（手机或电脑），中间用蓝牙 / 串口 TNC 或声卡线连起来。只想先熟悉界面，也可以只连 APRS-IS，不发射。
-        </li>
-        <li>
-          <b>装个客户端</b>
-          手机或电脑上都有现成的客户端，挑一个顺手的：填呼号、挑连接方式，先把「接收」跑通，在屏幕上看见别人。
-        </li>
-        <li>
-          <b>发一次信标</b>
-          按当地约定选好频率和路径，发一次位置包；没听到回应就回头查线、PTT 和路径设置。
-        </li>
-        <li>
-          <b>上地图确认</b>
-          打开 APRS.TV 或客户端里的地图，搜自己的呼号。那个点出现的时候，你就已经在这张网里了。
-        </li>
-      </ol>
-    </div>
-  </section>
 
-  <section class="section alt" id="freq">
-    <div class="section-head">
-      <h2>频率与路径</h2>
-      <p>发射之前先定两件事：用哪个频率，路径里写什么。这两样差一点，别人就听不见你。</p>
-    </div>
-    <div class="section-body">
-      <p class="prose">APRS 占一个频点，速率只有 1200 bps：一个频点上所有人轮流发，没有重传，也没有服务器替你排队，所以话说得越短越好，发得越少越好。频率不是全国统一的，由各地爱好者约定，下面几个是常听到的，发射前先问一句当地在用哪个。</p>
-      <dl class="glossary">
-        <dt>144.640 MHz</dt>
-        <dd>中国大陆最常听到的 APRS 频点，多数城市的中继台与网关守在这里。</dd>
-        <dt>144.800 MHz</dt>
-        <dd>欧洲多国的 APRS 信道，跨过去用之前同样先问当地。</dd>
-        <dt>144.390 MHz</dt>
-        <dd>北美洲最常用的 APRS 频率。</dd>
-        <dt>145.825 MHz</dt>
-        <dd>国际空间站上的 APRS 转发器，偶尔能收到它转下来的包。</dd>
-      </dl>
-      <p class="prose">频率之后是路径（path）：写在呼号后面，用逗号隔开，等于告诉中继台「请你们帮忙转发」。最通用的一条是 <code>WIDE1-1,WIDE2-1</code>。</p>
-      <ul class="fact-list">
-        <li>
-          <b>WIDE1-1</b>
-          请附近的中继补一跳 —— 通常是家里、车里的小网关，把自己听到的包再推一次。
-        </li>
-        <li>
-          <b>WIDE2-1</b>
-          再往前推一跳，让更远的台站也看得见你。两跳基本就到头了。
-        </li>
-        <li>
-          <b>具体呼号</b>
-          有的地区会约定专用的中继台，直接写它的呼号（例如 <code>BG7XXX-3</code>）比 WIDE 更省频率。
-        </li>
-      </ul>
-      <p class="prose">跳数不是越多越好：每多一跳，这个包就多占一次频率，别人就多等一会儿。<b>写三跳以上通常没有意义</b>，只在特殊活动里才需要。</p>
-    </div>
-  </section>
-
-  <section class="section" id="packets">
-    <div class="section-head">
-      <h2>报文长什么样</h2>
-      <p>APRS 的包就是一行纯文本：谁发的、请谁转发、说了什么，全写在这一行里。读懂它，屏幕上的东西就都说得通了。</p>
-    </div>
-    <div class="section-body">
-      <p class="prose">一行包的骨架是固定的：<code>呼号&gt;路径:数据</code>。路径里出现 <code>TCPIP*</code>，说明这个包是从互联网上来的，而不是从空中收的。下面几行是常见的样子。</p>
-      <ul class="pkt-list">
-        <li>
-          <b>位置包 —— 每几分钟一次的那种</b>
-          <code>BG7LZQ&gt;APDR16,WIDE1-1,WIDE2-1:!3905.45N/07223.83W&gt;路上</code>
-          冒号后面是位置：北纬 39°05.45′、西经 072°23.83′，度分格式。开头的 <code>!</code> 表示这是个不带时间戳的位置包；纬度经度后面那两个字符是符号表与图标 —— 这里是「汽车」；再往后的「路上」是台站自己写的注释。
-        </li>
-        <li>
-          <b>消息包 —— 一对一的短消息</b>
-          <code>BG7LZQ&gt;APDR16,TCPIP*::BG7AAA&nbsp;&nbsp;&nbsp;:晚上在 144.640 守听吗{001</code>
-          两个冒号之间的收件人固定占 9 个字符宽，不够的用空格补齐；末尾的 <code>{001</code> 是消息序号，对方回 ack 时靠它对上号。消息包不带位置。
-        </li>
-        <li>
-          <b>状态包 —— 「我现在的状态」</b>
-          <code>BG7LZQ&gt;APDR16,TCPIP*:&gt;手机上收听，暂不发射</code>
-          数据段的第一个字符是 <code>&gt;</code>，意思是「我在干什么」，不带经纬度，开销最小。
-        </li>
-        <li>
-          <b>天气包 —— 气象站自己报的数</b>
-          <code>BG7LZQ&gt;APDR16,WIDE2-1:!3905.45N/07223.83W_220/004g012t045</code>
-          <code>_</code> 是气象站符号；接着风向 220°、风速 4、阵风 12、气温 45 —— 风速按英里/小时、气温按华氏度，这是 APRS 天气段的固定单位。
-        </li>
-        <li>
-          <b>对象包 —— 往地图上挂一个点</b>
-          <code>;REPEATER *111111z3905.45N/07223.83W#</code>
-          分号开头：名字固定 9 个字符宽，后面跟时间戳和位置。集合点、活动路线、临时中继都可以这么做，位置随时能改。
-        </li>
-      </ul>
-      <p class="prose">其余的字母，多数客户端会替你翻译成图标和文字；认不出来的时候，回头看一眼上面这几行就够了。</p>
-    </div>
-  </section>
-
-  <section class="section alt" id="fields">
-    <div class="section-head">
-      <h2>位置包拆开看</h2>
-      <p>一行位置报文其实只有固定的几段。对着这张表，从头到尾一个字一个字对得上。</p>
-    </div>
-    <div class="section-body">
-      <p class="prose">拿 <code>!3905.45N/07223.83W&gt;路上</code> 举例，从左到右正好六段：</p>
-      <dl class="glossary">
-        <dt>!</dt>
-        <dd>数据标识（DTI）：<code>!</code> 是「位置包、不带时间戳」，<code>=</code> 同样不带时间戳但表示该台支持短消息；带时间戳的两个是 <code>/</code> 与 <code>@</code>。</dd>
-        <dt>3905.45N</dt>
-        <dd>纬度，度分格式：39°05.45′ 北纬。分的小数点后两位，精度大约 18 米。</dd>
-        <dt>/</dt>
-        <dd>符号表：<code>/</code> 是主表，<code>\</code> 是替补表。同一个字符放在两张表里，是两个不同的图标。</dd>
-        <dt>07223.83W</dt>
-        <dd>经度，度分格式：072°23.83′ 西经。纬度和经度之间夹着的那个字符，就是它上面的符号表。</dd>
-        <dt>&gt;</dt>
-        <dd>符号码（图标）：<code>&gt;</code> 是汽车。两张表里能用的图标，各家客户端里都翻得到。</dd>
-        <dt>路上</dt>
-        <dd>注释：台站自己写的自由文本。能短就短，它是最后一段，也最占频率。</dd>
-      </dl>
-      <p class="prose">常听到的几个图标：</p>
-      <ul class="fact-list">
-        <li>
-          <b><code>&gt;</code> 汽车</b>
-          车台，或者把手机放在车上用的移动台，大多是它。
-        </li>
-        <li>
-          <b><code>-</code> 房子</b>
-          固定台站、装在家的台，位置常年不动。
-        </li>
-        <li>
-          <b><code>#</code> 数字中继</b>
-          digipeater 用的图标，地图上那些覆盖一大片的点就是。
-        </li>
-        <li>
-          <b><code>_</code> 气象站</b>
-          带天气数据的台站，报文后面跟着风向、风速和气温。
-        </li>
-        <li>
-          <b><code>k</code> 卡车</b>
-          货车、物流车上常见。
-        </li>
-        <li>
-          <b><code>b</code> 自行车</b>
-          骑行时的移动台，位置跳得比汽车快。
-        </li>
-      </ul>
-      <p class="prose">位置也能写成压缩格式（13 个字符一行），客户端两种都认；自己填表格的时候，用上面的度分格式最不容易出错。</p>
-    </div>
-  </section>
-
-  <section class="section" id="glossary">
-    <div class="section-head">
-      <h2>名词小抄</h2>
-      <p>第一次见这些词，扫一眼，大多数 APRS 页面上的话就都能读懂了。</p>
-    </div>
-    <div class="section-body">
-      <dl class="glossary">
-        <dt>呼号</dt>
-        <dd>业余电台的唯一标识，字母加数字，例如 BG7LZQ。APRS 包的第一段就是它，收到包的人靠它认出你。</dd>
-        <dt>信标</dt>
-        <dd>台站定时发出的一个数据包，通常带经纬度，也可能带速度、方向、天气或遥测。</dd>
-        <dt>中继</dt>
-        <dd>digipeater：收到包就原样再发一遍的台站，通常架在高处；路径里的每一跳都要靠它。</dd>
-        <dt>TNC</dt>
-        <dd>Terminal Node Controller，把电台和电脑 / 手机连起来的小盒子；现在也常用声卡软件或蓝牙模块代替。</dd>
-        <dt>iGate</dt>
-        <dd>联网的接收台：把空中收到的包送进 APRS-IS，也把互联网来的包发回空中。附近有没有 iGate，决定了外面能不能看见你。</dd>
-        <dt>APRS-IS</dt>
-        <dd>互联网上互相转发 APRS 包的服务器组成的网络，各家地图网站读的就是它。</dd>
-        <dt>路径</dt>
-        <dd>path：包头里写明「请这几个中继帮忙转发」的那一串台站。跳数写多了，会把频率占满。</dd>
-        <dt>位置格式</dt>
-        <dd>APRS 用度分格式，长这样：<code>3905.45N/07223.83W</code>。</dd>
-        <dt>对象</dt>
-        <dd>地图上除台站之外还能挂的点：集合点、活动路线、临时中继。有名字、有位置，谁都能建，也能随时改。</dd>
-        <dt>状态包</dt>
-        <dd>以 <code>&gt;</code> 开头、只说「我现在在干什么」的包，不带经纬度，开销最小。</dd>
-        <dt>遥测</dt>
-        <dd>台站定时上报的一串数字：电压、温度、太阳能电流……偏远的中继和气象站常用它报平安。</dd>
-        <dt>符号表</dt>
-        <dd>位置包里那个决定图标的小字符：汽车、家里、中继、气象站……各家客户端读的是同一张表。</dd>
-        <dt>APRS-IS 端口</dt>
-        <dd>连互联网侧服务器的常用端口 14580，连上就能收发全网的包，也可以只收不发。</dd>
-        <dt>过滤器</dt>
-        <dd>filter：告诉服务器「只要我附近多少公里内的包」。装在手机上的客户端尤其需要，省流量也省眼力。</dd>
-      </dl>
-    </div>
-  </section>
-
-  <section class="section alt" id="gear">
-    <div class="section-head">
-      <h2>设备与链路</h2>
-      <p>软件可以随便换，空中那一侧永远是三样：电台、天线，和把电台接给终端的那一段。</p>
-    </div>
-    <div class="section-body">
-      <ul class="fact-list">
-        <li>
-          <b>电台</b>
-          手台、车台、固定台都行，能跑 1200 bps 的音频数据包（AFSK）就够。手台功率小、天线矮，适合先在家把「只接收」跑通。
-        </li>
-        <li>
-          <b>天线</b>
-          VHF 是视距传播，架得多高比买得多贵重要：把天线挪到窗外或楼顶，通常比换一根增益更高的立竿见影。
-        </li>
-        <li>
-          <b>TNC（蓝牙 / 串口）</b>
-          夹在终端和电台之间，把数据调成音频送到电台，再把收到的音频解回数据。蓝牙模块现在最省事，手机能直接连。
-        </li>
-        <li>
-          <b>声卡线</b>
-          最省的一条路：两根音频线把电台和手机 / 电脑连起来，调制解调都交给软件。音量和静噪要调准，否则发出去的是一串噪声。
-        </li>
-        <li>
-          <b>只用 APRS-IS</b>
-          不出门也能玩：终端直接连互联网侧的服务器，收全网的包、发短消息。但那不是发射，也不算「在空中上线」。
-        </li>
-        <li>
-          <b>移动台</b>
-          车里除了电台，还要一根装到车顶的天线和固定手机 / 平板的支架；供电从点烟器取，注意电流和线径。
-        </li>
-      </ul>
-      <p class="prose">一台手台加一根转接头或一个蓝牙 TNC，就能把「接收」跑通；想真正发出去，天线高度和那本执照才是分水岭。</p>
-    </div>
-  </section>
-
-  <section class="section" id="faq">
-    <div class="section-head">
-      <h2>常见问题</h2>
-      <p>刚上手最容易卡住的几个地方，先把它们说清楚。</p>
-    </div>
-    <div class="section-body">
-      <div class="faq">
-        <details>
-          <summary>没有呼号能玩吗？</summary>
-          <p>看，可以。APRS-IS 和各家公开地图都是开放浏览的，不用呼号也能看别人。发，不可以：发射和上中继一样，需要有本地的操作证书和电台执照。</p>
-        </details>
-        <details>
-          <summary>需要哪些设备？</summary>
-          <p>一台能收发 APRS 的电台（手台也行），加一个终端：手机或电脑。中间那条链路可以是蓝牙 / 串口 TNC、声卡线，也可以直接连 APRS-IS —— 那种玩法只用互联网，不发射。</p>
-        </details>
-        <details>
-          <summary>手台直连能传多远？</summary>
-          <p>视距，通常几公里到几十公里，取决于天线高度和地形。想更远就得靠高处的 digipeater 接力，或者由附近的 iGate 把包送进互联网。</p>
-        </details>
-        <details>
-          <summary>为什么地图上搜不到我？</summary>
-          <p>最常见的是三种：包根本没发出去（频率、连线、PTT 设置），附近没有 digipeater 或 iGate 接力，或者呼号与位置格式写错了。先把「只接收」跑通，再一段一段查发射链路。</p>
-        </details>
-        <details>
-          <summary>我的位置是公开的吗？</summary>
-          <p>是。发出去的包会进入公开的 APRS 网络，也会出现在各家地图上。不想公开就别发位置信标，或者只用它接收。</p>
-        </details>
-        <details>
-          <summary>信标多久发一次合适？</summary>
-          <p>城市里两到五分钟一次比较常见，移动中的车台可以更勤一点；停着不动时把间隔调长，或者只在移动时发，能省下不少频率。一个频点上所有人轮流发，你少占一次，别人就早听到一次。</p>
-        </details>
-        <details>
-          <summary>中继和网关是谁在维护，我能自己架吗？</summary>
-          <p>多数是爱好者自己出钱出力架的，架在楼顶、山头或家里。自己架也可以：需要执照、合适的位置和一点电费；动手之前先在群里说一声，避免和已有的台重复覆盖同一片地方。</p>
-        </details>
-        <details>
-          <summary>APRS 和 LoRa、北斗短报文有什么区别？</summary>
-          <p>APRS 跑在业余频率上、靠业余台站接力，谁都能收、谁都能转发，代价是慢、话少，只在有台站听得见的地方通。LoRa 是另一种调制方式，适合自己组一张小范围的网；北斗短报文走卫星，覆盖最广，但依赖卫星链路。三者解决的问题不一样，常被放在一起互相补位。</p>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <section class="section alt" id="query">
+  <section class="section" id="query">
     <div class="section-head">
       <h2>官方 TOCALL 查询</h2>
       <p>每个 APRS 设备或软件都会在自己的包上盖一个记号 —— 呼号后面那段 TOCALL。查一下它，就知道对面用的是什么机器。</p>
@@ -604,90 +325,6 @@
     </div>
   </section>
 
-  <section class="section" id="docs">
-    <div class="section-head">
-      <h2>规范与文档</h2>
-      <p>讲 APRS 的文章很多，真要调参数、写解析，靠的还是这几份原始文档。</p>
-    </div>
-    <div class="section-body">
-      <ul class="link-list">
-        <li>
-          <a class="link-row" href="http://www.aprs.org/doc/APRS101.PDF" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>APRS 规范 APRS101</b>
-              <span>报文格式、符号表与路径规则的原始出处；想自己写解析或客户端，先翻它（英文 PDF）。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="http://www.aprs.org/" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>aprs.org</b>
-              <span>APRS 的源头站点：规范修订、历史文档与各种说明书都从这里发布（英文）。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/Specification.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>APRS-IS 规范</b>
-              <span>互联网侧的包怎么传、怎么去重、日志怎么写，服务端就照这一页办事。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>连接与端口</b>
-              <span>登录格式、常用端口，连「只收不发」的端口也在这里列明。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/APRSServers.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>服务器列表</b>
-              <span>全球可连的服务器地址，优先挑离自己近的那个。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/q.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>过滤器语法</b>
-              <span>filter：「只给我附近多少公里」这类条件怎么写，全在这页。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/IGateDetails.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>iGate 实施细则</b>
-              <span>想自己架一个网关，先照这份细则逐条对一遍，别把重复包灌回全网。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.tapr.org/" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>TAPR</b>
-              <span>APRS 规范的出版方，历年文档与会议资料的出处（英文）。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-      </ul>
-      <p class="prose">这些都是英文原文；中文入门可以看 APRS.TV 的指南。本站的「报文」「字段」两节是照着 APRS101 整理的，遇到对不上的地方，以规范为准。</p>
-    </div>
-  </section>
-
 </main>
 
 <footer class="footer">
@@ -699,15 +336,16 @@
       </div>
       <nav class="footer-links" aria-label="相关链接">
         <a href="#about">认识 APRS</a>
-        <a href="#steps">上手步骤</a>
-        <a href="#freq">频率与路径</a>
-        <a href="#packets">报文长什么样</a>
-        <a href="#fields">报文字段</a>
-        <a href="#glossary">名词小抄</a>
-        <a href="#gear">设备与链路</a>
-        <a href="#faq">常见问题</a>
+        <a href="#start">常用工具</a>
+        <a href="guide.html#steps">上手步骤</a>
+        <a href="guide.html#freq">频率与路径</a>
+        <a href="packet.html#packets">报文长什么样</a>
+        <a href="packet.html#fields">报文字段</a>
+        <a href="packet.html#glossary">名词小抄</a>
+        <a href="guide.html#gear">设备与链路</a>
+        <a href="faq.html#faq">常见问题</a>
         <a href="#query">官方 TOCALL 查询</a>
-        <a href="#docs">规范与文档</a>
+        <a href="docs.html#docs">规范与文档</a>
         <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
       </nav>
     </div>
@@ -717,13 +355,13 @@
   </div>
 </footer>
 
-<a class="backtop" id="backTop" href="#hero" aria-label="回到顶部">
+<a class="backtop" id="backTop" href="#main" aria-label="回到顶部">
   <svg class="backtop-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="17"/><circle class="ring-fg" id="ringFg" cx="20" cy="20" r="17"/></svg>
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
 <script src="tocalls.js?v=1"></script>
-<script src="main.js?v=9"></script>
 <script src="hero-field.js?v=1"></script>
+<script src="main.js?v=9"></script>
 </body>
 </html>

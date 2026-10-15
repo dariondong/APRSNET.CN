@@ -1,0 +1,80 @@
+  <section class="section alt" id="query">
+    <div class="section-head">
+      <h2>官方 TOCALL 查询</h2>
+      <p>每个 APRS 设备或软件都会在自己的包上盖一个记号 —— 呼号后面那段 TOCALL。查一下它，就知道对面用的是什么机器。</p>
+    </div>
+    <div class="section-body">
+      <form class="idq" id="tlqForm" novalidate>
+        <label class="idq-label" for="tlqInput">TOCALL，或者整行报文</label>
+        <p class="idq-hint">例如 <code>BG7LZQ&gt;APDR16</code> 里的那段；把整行报文粘进来也行。查表就在浏览器里做：本站不发请求，也不存任何东西（手边有官方登记 <span id="tlqCount">—</span> 条）。</p>
+        <div class="idq-row">
+          <input class="idq-input" id="tlqInput" name="tlqInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="APDR16" aria-describedby="tlqOut">
+          <button class="btn btn-primary idq-btn" type="submit">查设备</button>
+          <button class="idq-clear" type="reset">清空</button>
+        </div>
+        <p class="idq-out" id="tlqOut" role="status" aria-live="polite"></p>
+      </form>
+      <ul class="fact-list">
+        <li>
+          <b>TOCALL 是什么</b>
+          报文头部「呼号 &gt; TOCALL,路径:」里的那一段，是设备或软件自己的标识：APRSdroid 是 APDR，各家车台、手台、网关也各有记号。
+        </li>
+        <li>
+          <b>为什么认得出来</b>
+          厂商和作者在 APRS.org 的官方名单里登记自己的 TOCALL —— 带 <code>?</code> 的表示该位可变；各家客户端和地图站读的是同一张表。
+        </li>
+        <li>
+          <b>查不到怎么办</b>
+          名单里没有，多半是自制程序或还没登记，也可能是拄错了一两位。以官方名单为准，别拿猜的结论去判断对面是什么设备。
+        </li>
+      </ul>
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="http://www.aprs.org/aprs11/tocalls.txt" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>官方 TOCALL 名单</b>
+              <span>APRS.org 维护的原始清单，纯文本；带 ? 的条目表示该位可变。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://github.com/aprsorg/aprs-deviceid" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>aprs-deviceid</b>
+              <span>同一份名单的机器可读版（YAML / JSON）；本页这张查表就是它生成的。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://ythzxfw.miit.gov.cn/" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>工信部政务服务平台</b>
+              <span>「无线电发射设备型号核准」的查询与备案在这里办；政府站点要用浏览器打开，脚本和命令行会被挡。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.miit.gov.cn/" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>工业和信息化部</b>
+              <span>《业余无线电台管理办法》等法规原文、政策发布与解读的出处。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.crac.org.cn/" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>中国无线电协会业余无线电分会</b>
+              <span>CRAC：呼号、考试与业余无线电政策通知的官方渠道。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ul>
+      <p class="prose">查表数据来自官方 aprs-deviceid 名单（维护者 OH7LZB，<b>CC BY-SA 2.0</b>），随站点一起发布；它是设备名册，不是判断设备好坏的依据。国内买机器，型号核准还是绕不开工信部。</p>
+    </div>
+  </section>

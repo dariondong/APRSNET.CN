@@ -1,0 +1,51 @@
+  <section class="section alt" id="fields">
+    <div class="section-head">
+      <h2>位置包拆开看</h2>
+      <p>一行位置报文其实只有固定的几段。对着这张表，从头到尾一个字一个字对得上。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">拿 <code>!3905.45N/07223.83W&gt;路上</code> 举例，从左到右正好六段：</p>
+      <dl class="glossary">
+        <dt>!</dt>
+        <dd>数据标识（DTI）：<code>!</code> 是「位置包、不带时间戳」，<code>=</code> 同样不带时间戳但表示该台支持短消息；带时间戳的两个是 <code>/</code> 与 <code>@</code>。</dd>
+        <dt>3905.45N</dt>
+        <dd>纬度，度分格式：39°05.45′ 北纬。分的小数点后两位，精度大约 18 米。</dd>
+        <dt>/</dt>
+        <dd>符号表：<code>/</code> 是主表，<code>\</code> 是替补表。同一个字符放在两张表里，是两个不同的图标。</dd>
+        <dt>07223.83W</dt>
+        <dd>经度，度分格式：072°23.83′ 西经。纬度和经度之间夹着的那个字符，就是它上面的符号表。</dd>
+        <dt>&gt;</dt>
+        <dd>符号码（图标）：<code>&gt;</code> 是汽车。两张表里能用的图标，各家客户端里都翻得到。</dd>
+        <dt>路上</dt>
+        <dd>注释：台站自己写的自由文本。能短就短，它是最后一段，也最占频率。</dd>
+      </dl>
+      <p class="prose">常听到的几个图标：</p>
+      <ul class="fact-list">
+        <li>
+          <b><code>&gt;</code> 汽车</b>
+          车台，或者把手机放在车上用的移动台，大多是它。
+        </li>
+        <li>
+          <b><code>-</code> 房子</b>
+          固定台站、装在家的台，位置常年不动。
+        </li>
+        <li>
+          <b><code>#</code> 数字中继</b>
+          digipeater 用的图标，地图上那些覆盖一大片的点就是。
+        </li>
+        <li>
+          <b><code>_</code> 气象站</b>
+          带天气数据的台站，报文后面跟着风向、风速和气温。
+        </li>
+        <li>
+          <b><code>k</code> 卡车</b>
+          货车、物流车上常见。
+        </li>
+        <li>
+          <b><code>b</code> 自行车</b>
+          骑行时的移动台，位置跳得比汽车快。
+        </li>
+      </ul>
+      <p class="prose">位置也能写成压缩格式（13 个字符一行），客户端两种都认；自己填表格的时候，用上面的度分格式最不容易出错。</p>
+    </div>
+  </section>

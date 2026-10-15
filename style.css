@@ -183,7 +183,7 @@ main > section.section { counter-increment: sec; }
   font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--hot);
 }
 .section-head > * { grid-column: 2; }
-.section-head h2 { font-size: clamp(28px, 3.4vw, 46px); font-weight: 700; letter-spacing: -.025em; line-height: 1.08; }
+.section-head h1, .section-head h2 { font-size: clamp(28px, 3.4vw, 46px); font-weight: 700; letter-spacing: -.025em; line-height: 1.08; }
 .section-head p { margin-top: 14px; color: var(--text-dim); font-size: 17px; max-width: 62ch; }
 .section-body { max-width: 940px; }
 .prose { color: var(--text-dim); font-size: 17px; max-width: 70ch; }
