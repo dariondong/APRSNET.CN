@@ -88,6 +88,7 @@ PAGES = [
         keywords="TOCALL,TOCALL 查询,APRS 设备识别,APRS 报文头,APDR16,APRS 设备名单,"
                  "aprs-deviceid,APRSDroid,呼号",
         blocks=["tocall", "tocall-refs"],
+        scripts=("tocalls.js",),
     ),
     dict(
         file="faq.html", nav="问答", h1="常见问题",
