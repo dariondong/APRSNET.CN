@@ -436,6 +436,12 @@ def selfcheck(files):
             sys.exit("FAIL: %s 没有 h1" % page["file"])
         if text.count("<h1") != 1:
             sys.exit("FAIL: %s 的 h1 不止一个" % page["file"])
+        # 标题不能重样：子页的 h2 跟自己的 h1 撞名过一次（常见问题 / 官方 TOCALL 查询）
+        heads = [re.sub(r"<[^>]+>", "", s).strip()
+                 for s in re.findall(r"<h([12])[^>]*>(.*?)</h\1>", text, re.S)]
+        repeat = sorted(set(h for h in heads if heads.count(h) > 1))
+        if repeat:
+            sys.exit("FAIL: %s 里有重名的标题：%s" % (page["file"], repeat))
         for target, anchor in re.findall(r'href="([\w-]+\.html)#([\w-]+)"', text):
             if target not in by_file:
                 sys.exit("FAIL: %s 链到了不存在的页面 %s" % (page["file"], target))
