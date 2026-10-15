@@ -81,10 +81,10 @@
   <section class="section alt" id="aprsis-connect">
     <div class="section-head">
       <h2>连上 APRS-IS</h2>
-      <p>用法其实就一件事：拿一个客户端，连到某台服务器的一个端口上。端口选哪个，决定你能收到多少、以及能不能发。</p>
+      <p>用法就一件事：拿一个客户端，连到某台服务器的一个端口上。端口选哪个，决定你能收到多少、以及能不能发。</p>
     </div>
     <div class="section-body">
-      <p class="prose">APRS-IS 是互联网那一侧的那张网：世界各地的服务器互相转发收到的包，你只要连上其中一台，就等于站在整张网里 —— 收得到别人的包，验证通过之后，自己发的包也会被转发出去。每台服务器都有状态页，用浏览器打开 <code>http://服务器地址:14501</code>，它开了哪些端口就一目了然。</p>
+      <p class="prose">APRS-IS 是互联网那一侧的那张网：世界各地的服务器互相转发收到的包，你只要连上其中一台，就等于站在整张网里：收得到别人的包，验证通过之后，自己发的包也会被转发出去。每台服务器都有状态页，用浏览器打开 <code>http://服务器地址:14501</code>，它开了哪些端口就一目了然。</p>
       <ul class="fact-list">
         <li>
           <b>14501</b>
@@ -92,7 +92,7 @@
         </li>
         <li>
           <b>10152</b>
-          TCP 全量 feed：所有包都推给你。每秒几十个包、带宽很快顶满，多数客户端撑不住，别长期挂着 —— 真要接，先想清楚拿来干什么。
+          TCP 全量 feed：所有包都推给你。每秒几十个包，带宽很快顶满，多数客户端撑不住，别长期挂着；真要接，先想清楚拿来干什么。
         </li>
         <li>
           <b>14580</b>
@@ -134,7 +134,7 @@
       <ul class="fact-list">
         <li>
           <b>user</b>
-          呼号与 SSID。SSID 可以省，省掉就等于 0 —— 别写成 <code>-0</code>。整个 APRS / AX.25 里，这个标记必须是唯一的。
+          呼号与 SSID。SSID 可以省，省掉就等于 0，别写成 <code>-0</code>。整个 APRS / AX.25 里，这个标记必须是唯一的。
         </li>
         <li>
           <b>pass</b>
@@ -153,7 +153,7 @@
           给服务器看的指令，最常见的就是 <code>filter</code>。可以带空格。
         </li>
       </ul>
-      <p class="prose">呼号和 SSID 有几条硬规矩：只能用 ASCII 字母数字，中间最多一个连字符加一两位 SSID；呼号本体至少 3 位，含 SSID 在内不超过 9 位。大小写虽然允许，但服务器按大写算同一个台站 —— 发消息、上 RF 直发、给 Yaesu 电台发消息，都要求大写和 AX.25 的 SSID（0–15，同样不用 <code>-0</code>）。拿不准就一律大写。</p>
+      <p class="prose">呼号和 SSID 有几条硬规矩：只能用 ASCII 字母数字，中间最多一个连字符加一两位 SSID；呼号本体至少 3 位，含 SSID 在内不超过 9 位。大小写虽然允许，但服务器按大写算同一个台站；发消息、上 RF 直发、给 Yaesu 电台发消息，都要求大写和 AX.25 的 SSID（0–15，同样不用 <code>-0</code>）。拿不准就一律大写。</p>
       <p class="prose">passcode 的算法官方文档没有公布，这个站也不转抄：需要 passcode 就找你在用的软件作者，他们按呼号算给你。这道门槛的作用，是让 APRS-IS 只留给业余无线电使用。</p>
       <p class="prose">服务器回的每一行都以 <code>#</code> 开头的是注释，客户端直接忽略；登录成功失败的结论也在里面（例如 <code>#login AE5PL-TS unverified</code> 就是只收）。空闲一阵子服务器还会周期性发 <code>#</code> 开头的行探活。</p>
       <p class="prose">最后一条：发进 APRS-IS 的包必须是 TNC2 格式、以回车换行结尾，一整行不超过 512 字节（含回车换行）。没有效 passcode 的客户端发什么都没人收。</p>
@@ -166,14 +166,14 @@
       <p>除了老老实实走 TCP 收发，还有几种接法：收包可以走 UDP，发包可以走只发端口，网页端和自建台站还能用 HTTP 或 WebSocket。</p>
     </div>
     <div class="section-body">
-      <p class="prose">收包走 UDP：在登录行里写上 <code>UDP 端口</code>，服务器就把每个包单独装进一个 UDP 报文发给你（包尾不带回车换行），同时留着那条 TCP 连接判断你还在不在。这条通道是单向的 —— 客户端从不通过 UDP 往服务器发东西。万一服务器不支持，它会忽略这个参数，照旧用 TCP 发给你。</p>
+      <p class="prose">收包走 UDP：在登录行里写上 <code>UDP 端口</code>，服务器就把每个包单独装进一个 UDP 报文发给你（包尾不带回车换行），同时留着那条 TCP 连接判断你还在不在。这条通道是单向的：客户端从不通过 UDP 往服务器发东西。万一服务器不支持，它会忽略这个参数，照旧用 TCP 发给你。</p>
       <p class="prose">只发端口是给气象站、信标机这类只往外报数的台站用的，HTTP POST/PUT、UDP、WebSocket 都有。它一个包也收不到，所以过滤器用不上；从这类端口进来的包会带 <code>qAO</code> 或 <code>qAU</code> 这两个构造。内容很简单：登录行（或者 <code>Authorization</code> 头）后面跟一行或多行 TNC2 格式的报文。</p>
       <ul class="pkt-list">
         <li>
           <b>HTTP 只发的一个例子</b>
           <code>user TEST-1 pass -1 vers TestSoftware 1.0</code>
           <code>TEST-1&gt;APRS,TCPIP*:&gt;This is a test packet</code>
-          官方文档里的例子。它演示的是反面：passcode 写 <code>-1</code>，包不会被 APRS-IS 接受 —— 只发端口同样要有效 passcode。
+          官方文档里的例子。它演示的是反面：passcode 写 <code>-1</code>，包不会被 APRS-IS 接受；只发端口同样要有效 passcode。
         </li>
       </ul>
       <p class="prose">认证有两种放法：登录行写在 HTTP 内容里，或者放进 <code>Authorization</code> 头（Base64 编码的登录行，或 RFC 7617 的 Basic 认证：用户名是呼号-SSID、密码是 passcode）。Base64 不是加密，要安全就配合 HTTPS 用。</p>

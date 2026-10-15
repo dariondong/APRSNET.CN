@@ -41,7 +41,7 @@ PAGES = [
     dict(
         file="index.html", nav="认识",
         title="APRSNET.CN — APRS 中文资料站",
-        desc="APRSNET.CN —— 中文业余无线电 APRS（自动分组报告系统）资料站：APRS 是什么、常用工具、官方 TOCALL 查询，一处查完。",
+        desc="APRSNET.CN 是中文业余无线电 APRS（自动分组报告系统）资料站：APRS 是什么、常用工具、官方 TOCALL 查询，一处查完。",
         og="面向中文业余无线电爱好者的 APRS 资料站：从认识 APRS 开始，附常用工具与官方 TOCALL 查询。",
         keywords="APRS,APRS 中文,APRS 教程,业余无线电,自动分组报告系统,APRSNET,"
                  "APRS 是什么,信标,中继,网关,iGate,TOCALL 查询",
@@ -80,7 +80,7 @@ PAGES = [
     ),
     dict(
         file="docs.html", nav="文档", h1="规范与文档",
-        lead="规范原文与官方文档入口 —— APRS101、APRS-IS 实施细则，以及 TAPR 的历年资料（英文）。",
+        lead="规范原文与官方文档入口：APRS101、APRS-IS 实施细则，以及 TAPR 的历年资料（英文）。",
         title="APRS 规范与文档 — APRS101、APRS-IS 实施细则",
         desc="APRS 规范与官方文档入口：APRS101、APRS-IS 规范与实施细则、服务器列表与过滤器语法、TAPR 历年资料（英文原文）。",
         og="APRS 规范与文档：APRS101、APRS-IS 实施细则与官方入口。",
