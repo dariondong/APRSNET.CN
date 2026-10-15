@@ -135,7 +135,7 @@ PAGES = [
     ),
     dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
-        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用。过滤器和网关细则另有专篇，q 构造接着补。",
+        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用。过滤器、网关细则和 q 构造各有专篇。",
         title="APRS-IS 中文文档 — 连接、登录行、端口与过滤器",
         desc="APRS-IS 官方文档的中文整理：TCP/UDP 端口怎么选（14501 / 10152 / 14580 / 23000）、登录行与 passcode、呼号与 SSID 规则、只发端口与 HTTP/WebSocket 返回码，附原文入口。",
         og="APRS-IS 中文文档：连上网络、登录行、UDP 与只发端口。",
@@ -164,6 +164,16 @@ PAGES = [
                  "网关搭建,APRS 中文文档",
         blocks=["igate-duty", "igate-up", "igate-down", "igate-path",
                 "igate-query", "igate-refs"],
+    ),
+    dict(
+        file="qconstruct.html", nav="", nav_active="docs.html", h1="q 构造",
+        lead="包进了 APRS-IS 之后，末尾会多出一小段 q 开头的标记。这一页把每个标记是谁写的、什么意思讲清。",
+        title="q 构造 — APRS-IS 包里那段 q 标记是什么（中文）",
+        desc="APRS-IS 的 q 构造中文整理：qAC、qAX、qAU、qAo、qAO、qAS、qAr、qAR、qAZ、qAI 各自是谁写上去的、什么意思，登录名与跟踪的几条规矩，附两个例子与官方原文。",
+        og="q 构造中文整理：从 qAC 到 qAI，每个标记是谁写的、什么意思。",
+        keywords="q 构造,qAC,qAR,qAO,qAr,APRS-IS q construct,qAS,qAI,"
+                 "APRS-IS 中文文档,iGate 转发",
+        blocks=["q-what", "q-server", "q-client", "q-rules", "q-examples", "q-refs"],
     ),
     dict(
         file="links.html", nav="友链", h1="友链",
@@ -207,6 +217,9 @@ EXTRA_TITLE = {
     "igate-duty": "网关干的活", "igate-up": "收上来的包",
     "igate-down": "发回空中的消息", "igate-path": "路径与第三方格式",
     "igate-query": "查询怎么答", "igate-refs": "原文与相关",
+    "q-what": "什么是 q 构造", "q-server": "服务器写上的",
+    "q-client": "网关写上的", "q-rules": "几条规矩",
+    "q-examples": "两个例子", "q-refs": "原文与相关",
     "proto-head": "协议说明", "proto-general": "总则", "proto-arch": "系统组成",
     "proto-access": "接入规范", "proto-whitelist": "白名单", "proto-forward": "报文转发",
     "proto-filter": "过滤器", "proto-ops": "安全与运维", "proto-boundary": "网络边界",
@@ -219,6 +232,7 @@ EXTRA_TITLE = {
 FOOT_GROUP = {
     "tutorial.html": "教程", "aprsis.html": "APRS-IS 文档",
     "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
+    "qconstruct.html": "q 构造",
     "protocol.html": "协议规范", "about.html": "关于本站",
 }
 # 页脚目录最后一栏：仓库与反馈

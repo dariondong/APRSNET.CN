@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>q 构造 — APRS-IS 包里那段 q 标记是什么（中文）</title>
+<meta name="description" content="APRS-IS 的 q 构造中文整理：qAC、qAX、qAU、qAo、qAO、qAS、qAr、qAR、qAZ、qAI 各自是谁写上去的、什么意思，登录名与跟踪的几条规矩，附两个例子与官方原文。">
+<meta name="keywords" content="q 构造,qAC,qAR,qAO,qAr,APRS-IS q construct,qAS,qAI,APRS-IS 中文文档,iGate 转发">
+<meta name="author" content="BG7LZQ (Darion)">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
+<meta name="theme-color" content="#f2f0ea">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="APRSNET.CN">
+<meta property="og:title" content="q 构造 — APRS-IS 包里那段 q 标记是什么（中文）">
+<meta property="og:description" content="q 构造中文整理：从 qAC 到 qAI，每个标记是谁写的、什么意思。">
+<meta property="og:url" content="https://aprsnet.cn/qconstruct.html">
+<meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="APRSNET.CN">
+<meta property="og:locale" content="zh_CN">
+<link rel="canonical" href="https://aprsnet.cn/qconstruct.html">
+<link rel="icon" type="image/png" href="assets/favicon.png?v=5">
+<link rel="apple-touch-icon" href="assets/icon.png?v=5">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="q 构造 — APRS-IS 包里那段 q 标记是什么（中文）">
+<meta name="twitter:description" content="q 构造中文整理：从 qAC 到 qAI，每个标记是谁写的、什么意思。">
+<meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
+<link rel="stylesheet" href="style.css?v=34">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"q 构造 — APRS-IS 包里那段 q 标记是什么（中文）","url":"https://aprsnet.cn/qconstruct.html","inLanguage":"zh-CN","description":"APRS-IS 的 q 构造中文整理：qAC、qAX、qAU、qAo、qAO、qAS、qAr、qAR、qAZ、qAI 各自是谁写上去的、什么意思，登录名与跟踪的几条规矩，附两个例子与官方原文。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script>
+/* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
+   必须在首帧前执行，否则会闪一下深底。 */
+(function () {
+  try {
+    var t = localStorage.getItem('theme');
+    if (t !== 'dark' && t !== 'light') t = 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+  } catch (e) {}
+})();
+</script>
+</head>
+
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="read-bar" id="readBar" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./"><img class="brand-mark" src="assets/icon.png?v=5" alt="APRSNET.CN" width="64" height="64"></a>
+    <nav class="nav-links" id="navLinks" aria-label="页面导航">
+      <a href="./">认识</a>
+      <a href="guide.html">上手</a>
+      <a href="packet.html">报文</a>
+      <a href="tocall.html">查询</a>
+      <a href="faq.html">问答</a>
+      <a href="docs.html" class="active">文档</a>
+      <a href="protocol.html">APRSNET CN CONNECT</a>
+      <a href="links.html">友链</a>
+      <a href="about.html">关于</a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
+        <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
+      </button>
+      <a class="nav-brand-aside" href="about.html" aria-label="关于本站">
+        <img src="assets/icon.png?v=5" alt="" width="64" height="64">
+        <span>信标不止，回响不息。</span>
+      </a>
+    </nav>
+    <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="section-head">
+      <h1>q 构造</h1>
+      <p>包进了 APRS-IS 之后，末尾会多出一小段 q 开头的标记。这一页把每个标记是谁写的、什么意思讲清。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="q-what">
+    <div class="section-head">
+      <h2>什么是 q 构造</h2>
+      <p>包在互联网上转一圈，末尾会多出一小段 <code>,qXX,呼号</code>。那是服务器替它记的账：从哪个口进来、由谁送进来。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">APRS-IS 加这一套东西，为的是几件事：认出包是从哪台服务器或者网关进的网；给将来的授权算法留个位置；发现环，并且自动把环挡掉。老的客户端和网关不用改任何东西，服务器那边自己认这套记号。</p>
+      <p class="prose">要分清两类：一种由服务器自己写上去，记录包是怎么到它手里的；另一种由客户端或者网关写上去，说明包是从空中转上来的。同一个记号在两边可能出现，含义略有不同，下面分开列。</p>
+    </div>
+  </section>
+
+  <section class="section" id="q-server">
+    <div class="section-head">
+      <h2>服务器写上去的</h2>
+      <p>包到了服务器手里，服务器在后面补一段，说明它从哪儿来。这一段里的呼号，写的是服务器自己。</p>
+    </div>
+    <div class="section-body">
+      <dl class="glossary">
+        <dt>qAC</dt>
+        <dd>登录验证过，走双向端口。包是这个客户端直接从那条验证过的连接上发上来的，发信呼号等于登录呼号。后面那个呼号是服务器的呼号与 SSID。它跟包头里那段 <code>TCPIP*</code> 各记各的，两个都会在。</dd>
+        <dt>qAX</dt>
+        <dd>登录没验证过，其余和 qAC 一样。这个构造跟 TCPXX 一起在 APRS-IS 上淘汰了。</dd>
+        <dt>qAU</dt>
+        <dd>客户端直接用 UDP 把包送上来。后面那个呼号是服务器的呼号与 SSID。</dd>
+        <dt>qAo</dt>
+        <dd>用的是字母 O。包从 client-only 端口进来，发信呼号不等于登录呼号，包里带着 <code>,I</code> 或者 qAR 构造，而那个网关正好就是这次登录的呼号，说明这是个转发包。</dd>
+        <dt>qAO</dt>
+        <dd>也是字母 O，分两种情形。一种是从 client-only 端口进来、发信呼号不等于登录呼号、包里又没有 <code>,I</code> 也没有 qAR 或者 qAo，那就不是转发包。另一种是从只发端口进来、发信呼号正好等于登录呼号。</dd>
+        <dt>qAS</dt>
+        <dd>包来自另一台服务器，或者干脆就是这台服务器自己生成的。服务器自己发信标这件事，官方明确不鼓励。后面那个呼号是它能认出来的第一台服务器的登录名或者 IP 地址。</dd>
+        <dt>qAr</dt>
+        <dd>用 <code>,I</code> 构造的转发包，来自远处的网关，中间还过了别的服务器。后面那个呼号是网关的呼号与 SSID。</dd>
+        <dt>qAR</dt>
+        <dd>同样是用 <code>,I</code> 构造的转发包，但这台网关是直接连上来、登录验证过的。后面那个呼号是网关的呼号与 SSID。</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section alt" id="q-client">
+    <div class="section-head">
+      <h2>网关写上去的</h2>
+      <p>网关把空中的包放上互联网时，自己在末尾补一段，说明这台网关是谁。</p>
+    </div>
+    <div class="section-body">
+      <dl class="glossary">
+        <dt>qAR</dt>
+        <dd>网关从空中收上来、放上 APRS-IS 的包。后面那个呼号是网关自己的呼号与 SSID。</dd>
+        <dt>qAO</dt>
+        <dd>网关从空中收上来、但它不会往空中发消息的包，字母 O。只收不发的网关，送上互联网的每个包都用这个构造。双向网关也能用它，标出自己不会发消息过去的台站：落在设定范围外的，或者根本不是 APRS 设备、要靠网关翻译的。D-STAR 台站发的 GPS 字符串经 D-PRS 转成 APRS，就是后面这种。</dd>
+        <dt>qAZ</dt>
+        <dd>服务器、客户端或者网关自己生成的命令包，不该再被转出去。一般用在连上之后的会话消息上，比如给 USERLIST 发的那条。</dd>
+        <dt>qAI</dt>
+        <dd>跟踪包。它是在告诉沿路的每台服务器：把你的登录信息也加进包里。qAI 后面第一个呼号，是最初发这个包的台站。</dd>
+      </dl>
+      <p class="prose">这几个标记是客户端写上去的，将来如果有了新的授权算法，会一并纳入验证。另外一句忠告：只收不发的网关在标准 APRS 频率上不被鼓励。更好的做法是架双向网关，只把消息发回那些直接听得到的台站。</p>
+    </div>
+  </section>
+
+  <section class="section" id="q-rules">
+    <div class="section-head">
+      <h2>几条规矩</h2>
+      <p>这套记号靠登录名认人，所以登录名不能重，也不能长得像 IP 地址。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>登录名不能重</b>
+          任何一台往 APRS-IS 里塞数据的服务器、网关或者客户端，登录名都得跟别人不一样。假设一台服务器登录名是 AE5PL，同一个人的气象客户端也叫 AE5PL，服务器看到 <code>,qAC,AE5PL</code> 就会当成环包。登录名可以是九位以内的字母数字组合，避开重名不难。
+        </li>
+        <li>
+          <b>八位十六进制不能当登录名</b>
+          恰好八位、而且全是 0-9 或者 A-F 的登录名不许用，那个形状会被当成服务器生成的 IP 地址。
+        </li>
+        <li>
+          <b>网关写的那段会被服务器改写</b>
+          习惯在包尾加 <code>呼号,I</code> 的网关，如果连的服务器支持 q 构造，服务器会把它换成 <code>qAR,呼号</code> 或者 <code>qAr,呼号</code> 或者 <code>qAo,呼号</code>，把这套能力用起来。
+        </li>
+        <li>
+          <b>跟踪要慎用</b>
+          服务器可以开跟踪，让每个包都带上沿途的登录信息，查环的时候很有用。平时别开，包会明显变长，带宽也跟着涨。
+        </li>
+        <li>
+          <b>只在互联网上</b>
+          q 构造只出现在 APRS-IS 里，别的场合都不要用，空中的一个都不该有。多加几个字节就多占一段带宽。
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section alt" id="q-examples">
+    <div class="section-head">
+      <h2>两个例子</h2>
+      <p>同一个台站，从客户端直接上来和从空中被网关收上来，末尾补的东西不一样。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">先看客户端从验证过的连接直接发上来的包，没带 q 构造。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>原来的包</b>
+          <code>AE5PL&gt;APRS,TCPIP*:payload</code>
+          客户端发上去的原样。
+        </li>
+        <li>
+          <b>服务器发出去，没开跟踪</b>
+          <code>AE5PL&gt;APRS,TCPIP*,qAC,AE5PL-JS:payload</code>
+          服务器补上自己：包是从 AE5PL-JS 这条验证过的连接进来的。
+        </li>
+        <li>
+          <b>开了跟踪</b>
+          <code>AE5PL&gt;APRS,TCPIP*,qAI,AE5PL,AE5PL-JS:payload</code>
+          换成 qAI，后面把最初发信的台站也带上。
+        </li>
+      </ul>
+      <p class="prose">再看同样的台站，这次是从空中被网关收上来的。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>原来的包</b>
+          <code>AE5PL&gt;APRS,WIDE1*:payload</code>
+          空中听到的样子，最后一跳是 WIDE1。
+        </li>
+        <li>
+          <b>送上互联网之后</b>
+          <code>AE5PL&gt;APRS,WIDE1*,qAR,AE5PL-10:payload</code>
+          网关 AE5PL-10 收的，它把自己补在末尾。
+        </li>
+        <li>
+          <b>开了跟踪</b>
+          <code>AE5PL&gt;APRS,WIDE1*,qAI,AE5PL-10,AE5PL-JS:payload</code>
+          再往后还经过服务器，服务器也留下了名字。
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="q-refs">
+    <div class="section-head">
+      <h2>原文与相关</h2>
+      <p>这一页按 APRS-IS 官方文档整理，不逐句照搬。两边对不上时以原文为准。</p>
+    </div>
+    <div class="section-body">
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="https://www.aprs-is.net/q.aspx" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>q Construct</b>
+              <span>本页的出处：每个构造的原始定义与那两个例子（英文）。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="filter.html#filter-symbol">
+            <span class="lr-main">
+              <b>用 q 构造挑包</b>
+              <span>过滤器里的 <code>q/</code>，只收某几个构造的包。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="igate.html#igate-path">
+            <span class="lr-main">
+              <b>网关为什么加这一段</b>
+              <span>iGate 细则里的路径一节，qAR 与 qAO 就是网关自己写的。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="aprsis.html#aprsis-login">
+            <span class="lr-main">
+              <b>登录行怎么写</b>
+              <span>呼号、SSID 和登录名的规矩都在这一节。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
+      <span>业余无线电 · APRS 中文资料站</span>
+      <span>信标不止，回响不息。</span>
+    </div>
+    <nav class="footer-index" aria-label="站内目录">
+      <div class="footer-group">
+        <b>认识</b>
+        <ul>
+          <li><a href="index.html#about">认识 APRS</a></li>
+          <li><a href="index.html#start">常用工具</a></li>
+          <li><a href="index.html#contribute">参与贡献</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>上手</b>
+        <ul>
+          <li><a href="guide.html#steps">上手步骤</a></li>
+          <li><a href="guide.html#freq">频率与路径</a></li>
+          <li><a href="guide.html#gear">设备与链路</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>教程</b>
+        <ul>
+          <li><a href="tutorial.html#tut-listen">先在手机上听</a></li>
+          <li><a href="tutorial.html#tut-send">接线发出第一个包</a></li>
+          <li><a href="tutorial.html#tut-trouble">没上去怎么查</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>报文</b>
+        <ul>
+          <li><a href="packet.html#packets">报文长什么样</a></li>
+          <li><a href="packet.html#fields">报文字段</a></li>
+          <li><a href="packet.html#glossary">名词小抄</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>查询</b>
+        <ul>
+          <li><a href="tocall.html#tocall">官方 TOCALL 查询</a></li>
+          <li><a href="tocall.html#tocall-refs">名单与出处</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>问答</b>
+        <ul>
+          <li><a href="faq.html#faq">常见问题</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>文档</b>
+        <ul>
+          <li><a href="docs.html#docs">中文文档</a></li>
+          <li><a href="docs.html#refs">英文原文</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>协议规范</b>
+        <ul>
+          <li><a href="protocol.html#proto-head">协议说明</a></li>
+          <li><a href="protocol.html#proto-general">总则</a></li>
+          <li><a href="protocol.html#proto-arch">系统组成</a></li>
+          <li><a href="protocol.html#proto-access">接入规范</a></li>
+          <li><a href="protocol.html#proto-whitelist">白名单</a></li>
+          <li><a href="protocol.html#proto-forward">报文转发</a></li>
+          <li><a href="protocol.html#proto-filter">过滤器</a></li>
+          <li><a href="protocol.html#proto-ops">安全与运维</a></li>
+          <li><a href="protocol.html#proto-boundary">网络边界</a></li>
+          <li><a href="protocol.html#proto-test">测试与版本</a></li>
+          <li><a href="protocol.html#proto-misc">附则</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>APRS-IS 文档</b>
+        <ul>
+          <li><a href="aprsis.html#aprsis-connect">连上 APRS-IS</a></li>
+          <li><a href="aprsis.html#aprsis-login">登录行怎么写</a></li>
+          <li><a href="aprsis.html#aprsis-send">UDP 与只发端口</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>APRS-IS 过滤器</b>
+        <ul>
+          <li><a href="filter.html#filter-basics">怎么写</a></li>
+          <li><a href="filter.html#filter-place">按位置挑</a></li>
+          <li><a href="filter.html#filter-station">按台站挑</a></li>
+          <li><a href="filter.html#filter-type">按类型挑</a></li>
+          <li><a href="filter.html#filter-symbol">按符号挑</a></li>
+          <li><a href="filter.html#filter-refs">原文与相关</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>iGate 细则</b>
+        <ul>
+          <li><a href="igate.html#igate-duty">网关干的活</a></li>
+          <li><a href="igate.html#igate-up">收上来的包</a></li>
+          <li><a href="igate.html#igate-down">发回空中的消息</a></li>
+          <li><a href="igate.html#igate-path">路径与第三方格式</a></li>
+          <li><a href="igate.html#igate-query">查询怎么答</a></li>
+          <li><a href="igate.html#igate-refs">原文与相关</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>q 构造</b>
+        <ul>
+          <li><a href="#q-what">什么是 q 构造</a></li>
+          <li><a href="#q-server">服务器写上的</a></li>
+          <li><a href="#q-client">网关写上的</a></li>
+          <li><a href="#q-rules">几条规矩</a></li>
+          <li><a href="#q-examples">两个例子</a></li>
+          <li><a href="#q-refs">原文与相关</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>友链</b>
+        <ul>
+          <li><a href="links.html#links">站与项目</a></li>
+          <li><a href="links.html#links-friends">同行的站</a></li>
+          <li><a href="links.html#links-swap">换链接</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>关于本站</b>
+        <ul>
+          <li><a href="about.html#about-origin">这个站从哪来</a></li>
+          <li><a href="about.html#about-site">站上有什么</a></li>
+          <li><a href="about.html#about-upkeep">谁在维护</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>本站</b>
+        <ul>
+          <li><a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">源码仓库</a></li>
+          <li><a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a></li>
+        </ul>
+      </div>
+    </nav>
+    <p class="footer-note">本站由业余无线电爱好者维护，与任何厂商、组织和项目都没有隶属关系。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
+    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/qconstruct.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>。</p>
+    <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
+  </div>
+</footer>
+
+<a class="backtop" id="backTop" href="#main" aria-label="回到顶部">
+  <svg class="backtop-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="17"/><circle class="ring-fg" id="ringFg" cx="20" cy="20" r="17"/></svg>
+  <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
+</a>
+
+<script src="main.js?v=13"></script>
+</body>
+</html>

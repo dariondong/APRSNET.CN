@@ -1,0 +1,44 @@
+  <section class="section" id="q-examples">
+    <div class="section-head">
+      <h2>两个例子</h2>
+      <p>同一个台站，从客户端直接上来和从空中被网关收上来，末尾补的东西不一样。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">先看客户端从验证过的连接直接发上来的包，没带 q 构造。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>原来的包</b>
+          <code>AE5PL&gt;APRS,TCPIP*:payload</code>
+          客户端发上去的原样。
+        </li>
+        <li>
+          <b>服务器发出去，没开跟踪</b>
+          <code>AE5PL&gt;APRS,TCPIP*,qAC,AE5PL-JS:payload</code>
+          服务器补上自己：包是从 AE5PL-JS 这条验证过的连接进来的。
+        </li>
+        <li>
+          <b>开了跟踪</b>
+          <code>AE5PL&gt;APRS,TCPIP*,qAI,AE5PL,AE5PL-JS:payload</code>
+          换成 qAI，后面把最初发信的台站也带上。
+        </li>
+      </ul>
+      <p class="prose">再看同样的台站，这次是从空中被网关收上来的。</p>
+      <ul class="pkt-list">
+        <li>
+          <b>原来的包</b>
+          <code>AE5PL&gt;APRS,WIDE1*:payload</code>
+          空中听到的样子，最后一跳是 WIDE1。
+        </li>
+        <li>
+          <b>送上互联网之后</b>
+          <code>AE5PL&gt;APRS,WIDE1*,qAR,AE5PL-10:payload</code>
+          网关 AE5PL-10 收的，它把自己补在末尾。
+        </li>
+        <li>
+          <b>开了跟踪</b>
+          <code>AE5PL&gt;APRS,WIDE1*,qAI,AE5PL-10,AE5PL-JS:payload</code>
+          再往后还经过服务器，服务器也留下了名字。
+        </li>
+      </ul>
+    </div>
+  </section>

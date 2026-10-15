@@ -1,0 +1,26 @@
+  <section class="section" id="q-server">
+    <div class="section-head">
+      <h2>服务器写上去的</h2>
+      <p>包到了服务器手里，服务器在后面补一段，说明它从哪儿来。这一段里的呼号，写的是服务器自己。</p>
+    </div>
+    <div class="section-body">
+      <dl class="glossary">
+        <dt>qAC</dt>
+        <dd>登录验证过，走双向端口。包是这个客户端直接从那条验证过的连接上发上来的，发信呼号等于登录呼号。后面那个呼号是服务器的呼号与 SSID。它跟包头里那段 <code>TCPIP*</code> 各记各的，两个都会在。</dd>
+        <dt>qAX</dt>
+        <dd>登录没验证过，其余和 qAC 一样。这个构造跟 TCPXX 一起在 APRS-IS 上淘汰了。</dd>
+        <dt>qAU</dt>
+        <dd>客户端直接用 UDP 把包送上来。后面那个呼号是服务器的呼号与 SSID。</dd>
+        <dt>qAo</dt>
+        <dd>用的是字母 O。包从 client-only 端口进来，发信呼号不等于登录呼号，包里带着 <code>,I</code> 或者 qAR 构造，而那个网关正好就是这次登录的呼号，说明这是个转发包。</dd>
+        <dt>qAO</dt>
+        <dd>也是字母 O，分两种情形。一种是从 client-only 端口进来、发信呼号不等于登录呼号、包里又没有 <code>,I</code> 也没有 qAR 或者 qAo，那就不是转发包。另一种是从只发端口进来、发信呼号正好等于登录呼号。</dd>
+        <dt>qAS</dt>
+        <dd>包来自另一台服务器，或者干脆就是这台服务器自己生成的。服务器自己发信标这件事，官方明确不鼓励。后面那个呼号是它能认出来的第一台服务器的登录名或者 IP 地址。</dd>
+        <dt>qAr</dt>
+        <dd>用 <code>,I</code> 构造的转发包，来自远处的网关，中间还过了别的服务器。后面那个呼号是网关的呼号与 SSID。</dd>
+        <dt>qAR</dt>
+        <dd>同样是用 <code>,I</code> 构造的转发包，但这台网关是直接连上来、登录验证过的。后面那个呼号是网关的呼号与 SSID。</dd>
+      </dl>
+    </div>
+  </section>
