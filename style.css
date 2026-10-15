@@ -302,8 +302,10 @@ main > section.section { counter-increment: sec; }
 }
 @media (max-width: 720px) {
   .fact-list li, .lr-main { grid-template-columns: minmax(0, 1fr); row-gap: 4px; }
-  .link-row { gap: 14px; }
-  .lr-tag { display: none; }
+  .link-row { gap: 14px; flex-wrap: wrap; }
+  /* 群号是内容，不是装饰：窄屏让它换到下一行，别再 display:none 藏掉 */
+  .link-row.is-static .lr-main { flex: 1 1 100%; }
+  .lr-tag { align-self: flex-start; }
   .footer-top { grid-template-columns: minmax(0, 1fr); row-gap: 22px; }
 }
 @media (max-width: 640px) {
