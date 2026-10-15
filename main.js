@@ -125,6 +125,43 @@
     });
   }
 
+  /* ── 型号核准代码：本机校验 + 复制（不发请求、不存数据） ── */
+  var idForm = document.getElementById("cmiitForm");
+  if (idForm) {
+    var idInput = document.getElementById("cmiitId");
+    var idOut = document.getElementById("cmiitOut");
+    var idSay = function (msg, kind) {
+      idOut.textContent = msg;
+      idOut.className = kind ? "idq-out " + kind : "idq-out";
+    };
+    idForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var raw = String(idInput.value || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
+      if (raw.indexOf("CMIITID") === 0) raw = raw.slice(7);
+      if (!raw) { idSay("先把手上的代码填进去。", "bad"); return; }
+      var m = /^(\d{4})([A-Z]{2})(\d{2,6})$/.exec(raw);
+      if (!m) {
+        idSay("这不像型号核准代码：它是「4 位年份 + 两个字母 + 几位数字」，例如 2023DJ1234。", "bad");
+        return;
+      }
+      idInput.value = raw;
+      var parts = m[1] + " 年核准、" + m[2] + " 类别、编号 " + m[3];
+      var good = function () {
+        idSay("格式看着对：" + parts + "。已经复制，到下面的官方入口粘贴查询。", "good");
+      };
+      var manual = function () {
+        idSay("格式看着对：" + parts + "。复制没成功，手动选中输入框里的代码，再去官方入口查询。", "good");
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(raw).then(good, manual);
+      } else {
+        manual();
+      }
+    });
+    var idReset = idForm.querySelector("button[type=reset]");
+    if (idReset) idReset.addEventListener("click", function () { idSay(""); });
+  }
+
   /* ── 首屏入场：等字体与样式就位后再亮起来 ── */
   var markLoaded = function () { document.body.classList.add("loaded"); };
   if (document.readyState === "complete") markLoaded();

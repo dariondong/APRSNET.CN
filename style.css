@@ -218,6 +218,24 @@ main > section.section { counter-increment: sec; }
 .pkt-list b { display: block; margin-bottom: 8px; color: var(--text); }
 .pkt-list code { display: block; margin-bottom: 10px; padding: 0; background: none; color: var(--text); font-size: 14.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
 
+/* 设备查询：方角细线的小表单，一格输入 + 两个按钮，不做卡片 */
+.idq { margin: 30px 0 34px; padding-top: 22px; border-top: 2px solid var(--text); max-width: 760px; }
+.idq-label { display: block; font-size: 17px; font-weight: 700; }
+.idq-hint { margin-top: 6px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
+.idq-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.idq-input {
+  flex: 1 1 220px; min-width: 0; padding: 14px 16px;
+  border: 1px solid var(--line-strong); background: var(--surface-1); color: var(--text);
+  font-family: var(--font-mono); font-size: 16px; letter-spacing: .06em; text-transform: uppercase;
+}
+.idq-input:focus { border-color: var(--hot); outline: none; }
+.idq-btn, .idq-clear { flex: none; font-family: inherit; cursor: pointer; }
+.idq-clear { padding: 15px 20px; border: 1px solid var(--line-strong); background: transparent; color: var(--text-dim); font-size: 15px; font-weight: 700; transition: border-color .2s var(--ease), color .2s var(--ease); }
+.idq-clear:hover { border-color: var(--text); color: var(--text); }
+.idq-out { margin-top: 12px; min-height: 1.5em; font-size: 15px; color: var(--text-dim); max-width: 76ch; }
+.idq-out.good { color: var(--text); }
+.idq-out.bad { color: var(--hot); }
+
 /* ── 07. 回到顶部（带滚动进度环） ── */
 .backtop {
   position: fixed; right: 24px; bottom: 24px; z-index: 90; width: 44px; height: 44px;
