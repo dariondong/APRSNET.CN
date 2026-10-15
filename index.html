@@ -60,6 +60,7 @@
       <a href="#gear">设备</a>
       <a href="#faq">问答</a>
       <a href="#query">查询</a>
+      <a href="#docs">文档</a>
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
         <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
         <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
@@ -117,8 +118,8 @@
 
   <section class="section alt" id="start">
     <div class="section-head">
-      <h2>工具与资源</h2>
-      <p>工具不多，够用就行：地图、客户端、数据查询，还有放在手边的规范文档。</p>
+      <h2>常用工具</h2>
+      <p>工具不多，够用就行：地图、客户端、数据查询，和一个能找到人的地方。</p>
     </div>
     <div class="section-body">
       <ul class="link-list">
@@ -181,24 +182,6 @@
             <span class="lr-main">
               <b>APRS-IS 服务器列表</b>
               <span>互联网侧的服务器、端口与过滤器说明；想自己写个客户端，从这里看起。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="http://www.aprs.org/doc/APRS101.PDF" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>APRS 规范 APRS101</b>
-              <span>报文格式、符号表与路径规则的原始出处；想自己写解析或客户端，先翻它（英文 PDF）。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="http://www.aprs.org/" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>aprs.org</b>
-              <span>APRS 的源头站点：规范修订、历史文档与各种说明书都从这里发布（英文）。</span>
             </span>
             <span class="lr-go" aria-hidden="true">↗</span>
           </a>
@@ -557,6 +540,90 @@
     </div>
   </section>
 
+  <section class="section" id="docs">
+    <div class="section-head">
+      <h2>规范与文档</h2>
+      <p>讲 APRS 的文章很多，真要调参数、写解析，靠的还是这几份原始文档。</p>
+    </div>
+    <div class="section-body">
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="http://www.aprs.org/doc/APRS101.PDF" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>APRS 规范 APRS101</b>
+              <span>报文格式、符号表与路径规则的原始出处；想自己写解析或客户端，先翻它（英文 PDF）。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="http://www.aprs.org/" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>aprs.org</b>
+              <span>APRS 的源头站点：规范修订、历史文档与各种说明书都从这里发布（英文）。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.aprs-is.net/Specification.aspx" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>APRS-IS 规范</b>
+              <span>互联网侧的包怎么传、怎么去重、日志怎么写，服务端就照这一页办事。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>连接与端口</b>
+              <span>登录格式、常用端口，连「只收不发」的端口也在这里列明。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.aprs-is.net/APRSServers.aspx" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>服务器列表</b>
+              <span>全球可连的服务器地址，优先挑离自己近的那个。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.aprs-is.net/q.aspx" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>过滤器语法</b>
+              <span>filter：「只给我附近多少公里」这类条件怎么写，全在这页。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.aprs-is.net/IGateDetails.aspx" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>iGate 实施细则</b>
+              <span>想自己架一个网关，先照这份细则逐条对一遍，别把重复包灌回全网。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="https://www.tapr.org/" target="_blank" rel="noopener">
+            <span class="lr-main">
+              <b>TAPR</b>
+              <span>APRS 规范的出版方，历年文档与会议资料的出处（英文）。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ul>
+      <p class="prose">这些都是英文原文；中文入门可以看 APRS.TV 的指南。本站的「报文」「字段」两节是照着 APRS101 整理的，遇到对不上的地方，以规范为准。</p>
+    </div>
+  </section>
+
 </main>
 
 <footer class="footer">
@@ -576,6 +643,7 @@
         <a href="#gear">设备与链路</a>
         <a href="#faq">常见问题</a>
         <a href="#query">官方设备查询</a>
+        <a href="#docs">规范与文档</a>
         <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
       </nav>
     </div>
