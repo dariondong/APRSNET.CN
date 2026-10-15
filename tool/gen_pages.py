@@ -29,7 +29,7 @@ PARTS = HERE / "parts"
 
 CSS_V = "22"        # style.css?v=
 MAIN_V = "9"        # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "9"}   # 页内脚本的缓存键
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "10"}  # 页内脚本的缓存键
 
 SITE = "https://aprsnet.cn/"
 SITE_NAME = "APRSNET.CN"
