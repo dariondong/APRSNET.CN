@@ -7,8 +7,10 @@
    同一个 program 画两遍：先连线（uMode=1），再点（uMode=0），
    省掉第二套 uniform。点云里连的是最近邻，一眼能看出网格结构。
 
-   没有 WebGL、或者上下文丢了，就什么都不做 —— 画布一直是那块空白，
-   不再顶一张静态图（那张方块格子 SVG 已经删掉）。 */
+   没有 WebGL、或者着色器没编出来，就什么都不做 —— 画布一直是那块空白，
+   不再顶一张静态图（那张方块格子 SVG 已经删掉）；
+   上下文被系统收走再还回来（切 App、锁屏回来）会把 GL 对象全作废，
+   这里重跑一遍 setup() 接着画，不会留一块黑。 */
 (function () {
   "use strict";
 
@@ -113,24 +115,45 @@
     return sh;
   }
 
-  var vs = compile(gl.VERTEX_SHADER, VS);
-  var fs = compile(gl.FRAGMENT_SHADER, FS);
-  if (!vs || !fs) return;
-  var prog = gl.createProgram();
-  if (!prog) return;
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
-
   /* 每个 uniform 都在这里点一次名 —— .scratch/cn_field_check.py 会拿它和着色器里的声明对表 */
   var UNIFORMS = [
     "uSpin", "uGather", "uTime", "uDist", "uProj", "uAspect",
     "uPxScale", "uMinPx", "uMaxSize", "uRing", "uMode", "uCloud", "uHot", "uYou"
   ];
-  var u = {};
+
+  /* ── GL 那半边的东西：程序、uniform 位置、顶点缓冲。
+     上下文被系统收走（切到别的 App、内存吃紧）一次，这些就全作废了，
+     所以都收在这里；还回来时把 setup() 重跑一遍就能接着画。 ── */
+  var prog = null, u = {}, aPos = 0, aMeta = 0, aKind = 0;
+  var pointVbo = null, lineVbo = null;
   var i;
-  for (i = 0; i < UNIFORMS.length; i++) u[UNIFORMS[i]] = gl.getUniformLocation(prog, UNIFORMS[i]);
+
+  function setup() {
+    var vs = compile(gl.VERTEX_SHADER, VS);
+    var fs = compile(gl.FRAGMENT_SHADER, FS);
+    if (!vs || !fs) return false;
+    prog = gl.createProgram();
+    if (!prog) return false;
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+    gl.useProgram(prog);
+    for (i = 0; i < UNIFORMS.length; i++) u[UNIFORMS[i]] = gl.getUniformLocation(prog, UNIFORMS[i]);
+    aPos = gl.getAttribLocation(prog, "aPos");
+    aMeta = gl.getAttribLocation(prog, "aMeta");
+    aKind = gl.getAttribLocation(prog, "aKind");
+    pointVbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointVbo);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    lineVbo = null;
+    if (segs.length) {
+      lineVbo = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, lineVbo);
+      gl.bufferData(gl.ARRAY_BUFFER, lineData, gl.STATIC_DRAW);
+    }
+    return true;
+  }
 
   /* ── 几何：球面上的等距点（黄金角螺旋），壳薄一点球面才清楚 ── */
   var N = 900;
@@ -169,10 +192,6 @@
   }
   data[youIndex * 6 + 3] = 0.052;
   data[youIndex * 6 + 5] = 1;
-
-  var pointVbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, pointVbo);
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 
   /* ── 邻点之间拉线：先量出近邻尺度，再按 1.7 倍连边（只看 i<j，天然不重复） ── */
   var near2 = new Float32Array(N);
@@ -222,17 +241,10 @@
     lineData[to + 4] = data[so + 4];
     lineData[to + 5] = data[so + 5];
   }
-  var lineVbo = null;
-  if (segs.length) {
-    lineVbo = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, lineVbo);
-    gl.bufferData(gl.ARRAY_BUFFER, lineData, gl.STATIC_DRAW);
-  }
 
-  gl.useProgram(prog);
-  var aPos = gl.getAttribLocation(prog, "aPos");
-  var aMeta = gl.getAttribLocation(prog, "aMeta");
-  var aKind = gl.getAttribLocation(prog, "aKind");
+  /* 几何备好了，上 GPU（上下文丢过之后走的也是这里） */
+  if (!setup()) return;
+
   function bindAttribs(buf) {
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.enableVertexAttribArray(aPos);
@@ -408,10 +420,15 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   } catch (e) { /* 老浏览器没有 MutationObserver 也没关系 */ }
 
-  /* 上下文丢了就先停手；浏览器把上下文还回来之前，画布就空着 */
+  /* 上下文丢了就先停手；浏览器把上下文还回来时，GL 对象已经全部作废，
+     得把 setup() 重跑一遍（几何还在 CPU 上，不用重算）再接着画。 */
   canvas.addEventListener("webglcontextlost", function (ev) {
     ev.preventDefault();
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  }, false);
+
+  canvas.addEventListener("webglcontextrestored", function () {
+    if (setup()) { ensure(); schedule(); }
   }, false);
 
   /* 给以后的自检留个口子（同页面脚本可读） */
