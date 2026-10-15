@@ -7,11 +7,11 @@
       <div class="faq">
         <details>
           <summary>没有呼号能玩吗？</summary>
-          <p>看，可以。APRS-IS 和各家公开地图都是开放浏览的，不用呼号也能看别人。发，不可以：发射和上中继一样，需要有本地的操作证书和电台执照。</p>
+          <p>看，可以。APRS-IS 和各家公开地图都是开放浏览的，不用呼号也能看别人。连 APRS-IS 只收时也要填自己的呼号，passcode 写 <code>-1</code>（见<a href="aprsis.html#aprsis-login">登录行怎么写</a>）。发，不可以：发射和上中继一样，需要有本地的操作证书和电台执照。</p>
         </details>
         <details>
           <summary>需要哪些设备？</summary>
-          <p>一台能收发 APRS 的电台（手台也行），加一个终端：手机或电脑。中间那条链路可以是蓝牙 / 串口 TNC 或声卡线，也可以直接连 APRS-IS，那种玩法只用互联网，不发射。</p>
+          <p>一台能收发 APRS 的电台（手台也行），加一个终端：手机或电脑。中间那条链路可以是蓝牙 / 串口 TNC 或声卡线，也可以直接连 APRS-IS，那种玩法只用互联网，不发射。接线和调试的顺序在<a href="tutorial.html#tut-send">接线发出第一个包</a>那一节。</p>
         </details>
         <details>
           <summary>手台直连能传多远？</summary>
@@ -19,7 +19,7 @@
         </details>
         <details>
           <summary>为什么地图上搜不到我？</summary>
-          <p>最常见的是三种：包根本没发出去（频率、连线、PTT 设置），附近没有 digipeater 或 iGate 接力，或者呼号与位置格式写错了。先把「只接收」跑通，再一段一段查发射链路。</p>
+          <p>最常见的是三种：包根本没发出去（频率、连线、PTT 设置），附近没有 digipeater 或 iGate 接力，或者呼号与位置格式写错了。先把「只接收」跑通，再一段一段查发射链路，一条一条查的顺序在<a href="tutorial.html#tut-trouble">没上去怎么查</a>。</p>
         </details>
         <details>
           <summary>我的位置是公开的吗？</summary>
