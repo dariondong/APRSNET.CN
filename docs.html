@@ -74,17 +74,64 @@
   <section class="section">
     <div class="section-head">
       <h1>规范与文档</h1>
-      <p>规范原文与官方文档入口：APRS101、APRS-IS 实施细则，以及 TAPR 的历年资料（英文）。</p>
+      <p>中文整理和英文原文分开列：自己重写的几篇在上面，官方 PDF 与规范原文在下面。</p>
     </div>
   </section>
 
   <section class="section alt" id="docs">
     <div class="section-head">
-      <h2>规范与文档</h2>
+      <h2>中文整理</h2>
+      <p>官方的英文文档，这里按中文习惯重写了一遍：网上那一侧怎么连，教程怎么一步步走。读不懂原文时先看这几篇。</p>
+    </div>
+    <div class="section-body">
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="aprsis.html#aprsis-connect">
+            <span class="lr-main">
+              <b>连上 APRS-IS</b>
+              <span>14501、10152、14580、23000、8080 这几个端口分别能拿到什么，先看这一节。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="aprsis.html#aprsis-login">
+            <span class="lr-main">
+              <b>登录行怎么写</b>
+              <span>user、pass、vers 各填什么，呼号和 SSID 有什么规矩，只收不发怎么写。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="aprsis.html#aprsis-send">
+            <span class="lr-main">
+              <b>UDP 收包、只发端口、HTTP 与 WebSocket</b>
+              <span>不走 TCP 的几种接法，以及只发端口那几个返回码是什么意思。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="tutorial.html#tut-listen">
+            <span class="lr-main">
+              <b>从零开始，一步一步</b>
+              <span>先在手机上只收，再接电台发第一个包，最后是没上去时的排查顺序。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+      <p class="prose">这几篇是按官方原文重写的，不逐句照搬；每节末尾都留了原文链接，两边对不上时以原文为准。过滤器、iGate 细则和 q 构造还在整理。</p>
+    </div>
+  </section>
+
+  <section class="section" id="refs">
+    <div class="section-head">
+      <h2>英文原文</h2>
       <p>讲 APRS 的文章很多，真要调参数、写解析，靠的还是这几份原始文档。</p>
     </div>
     <div class="section-body">
-      <p class="prose">下面都是原文，英文。APRS-IS 那几篇已经收成中文：连上网络、登录行怎么写、UDP 与只发端口，见<a href="aprsis.html">APRS-IS 文档（中文）</a>。过滤器、网关、q 构造这几篇接着补。</p>
       <ul class="link-list">
         <li>
           <a class="link-row" href="http://www.aprs.org/doc/APRS101.PDF" target="_blank" rel="noopener">
@@ -183,7 +230,8 @@
         <a href="guide.html#gear">设备与链路</a>
         <a href="faq.html#faq">常见问题</a>
         <a href="index.html#query">官方 TOCALL 查询</a>
-        <a href="#docs">规范与文档</a>
+        <a href="#docs">中文文档</a>
+        <a href="#refs">英文原文</a>
         <a href="tutorial.html#tut-listen">先在手机上听</a>
         <a href="tutorial.html#tut-send">接线发出第一个包</a>
         <a href="tutorial.html#tut-trouble">没上去怎么查</a>

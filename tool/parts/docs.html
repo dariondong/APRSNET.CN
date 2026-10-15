@@ -1,84 +1,47 @@
   <section class="section" id="docs">
     <div class="section-head">
-      <h2>规范与文档</h2>
-      <p>讲 APRS 的文章很多，真要调参数、写解析，靠的还是这几份原始文档。</p>
+      <h2>中文整理</h2>
+      <p>官方的英文文档，这里按中文习惯重写了一遍：网上那一侧怎么连，教程怎么一步步走。读不懂原文时先看这几篇。</p>
     </div>
     <div class="section-body">
-      <p class="prose">下面都是原文，英文。APRS-IS 那几篇已经收成中文：连上网络、登录行怎么写、UDP 与只发端口，见<a href="aprsis.html">APRS-IS 文档（中文）</a>。过滤器、网关、q 构造这几篇接着补。</p>
       <ul class="link-list">
         <li>
-          <a class="link-row" href="http://www.aprs.org/doc/APRS101.PDF" target="_blank" rel="noopener">
+          <a class="link-row" href="aprsis.html#aprsis-connect">
             <span class="lr-main">
-              <b>APRS 规范 APRS101</b>
-              <span>报文格式、符号表与路径规则的原始出处；想自己写解析或客户端，先翻它（英文 PDF）。</span>
+              <b>连上 APRS-IS</b>
+              <span>14501、10152、14580、23000、8080 这几个端口分别能拿到什么，先看这一节。</span>
             </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
+            <span class="lr-go" aria-hidden="true">→</span>
           </a>
         </li>
         <li>
-          <a class="link-row" href="http://www.aprs.org/" target="_blank" rel="noopener">
+          <a class="link-row" href="aprsis.html#aprsis-login">
             <span class="lr-main">
-              <b>aprs.org</b>
-              <span>APRS 的源头站点：规范修订、历史文档与各种说明书都从这里发布（英文）。</span>
+              <b>登录行怎么写</b>
+              <span>user、pass、vers 各填什么，呼号和 SSID 有什么规矩，只收不发怎么写。</span>
             </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
+            <span class="lr-go" aria-hidden="true">→</span>
           </a>
         </li>
         <li>
-          <a class="link-row" href="https://www.aprs-is.net/Specification.aspx" target="_blank" rel="noopener">
+          <a class="link-row" href="aprsis.html#aprsis-send">
             <span class="lr-main">
-              <b>APRS-IS 规范</b>
-              <span>互联网侧的包怎么传、怎么去重、日志怎么写，服务端就照这一页办事。</span>
+              <b>UDP 收包、只发端口、HTTP 与 WebSocket</b>
+              <span>不走 TCP 的几种接法，以及只发端口那几个返回码是什么意思。</span>
             </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
+            <span class="lr-go" aria-hidden="true">→</span>
           </a>
         </li>
         <li>
-          <a class="link-row" href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">
+          <a class="link-row" href="tutorial.html#tut-listen">
             <span class="lr-main">
-              <b>连接与端口</b>
-              <span>登录格式、常用端口，连「只收不发」的端口也在这里列明。</span>
+              <b>从零开始，一步一步</b>
+              <span>先在手机上只收，再接电台发第一个包，最后是没上去时的排查顺序。</span>
             </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/APRSServers.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>服务器列表</b>
-              <span>全球可连的服务器地址，优先挑离自己近的那个。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/q.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>过滤器语法</b>
-              <span>filter：「只给我附近多少公里」这类条件怎么写，全在这页。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.aprs-is.net/IGateDetails.aspx" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>iGate 实施细则</b>
-              <span>想自己架一个网关，先照这份细则逐条对一遍，别把重复包灌回全网。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="https://www.tapr.org/" target="_blank" rel="noopener">
-            <span class="lr-main">
-              <b>TAPR</b>
-              <span>APRS 规范的出版方，历年文档与会议资料的出处（英文）。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">↗</span>
+            <span class="lr-go" aria-hidden="true">→</span>
           </a>
         </li>
       </ul>
-      <p class="prose">这些都是英文原文；中文入门可以看 APRS.TV 的指南。本站的「报文」「字段」两节是照着 APRS101 整理的，遇到对不上的地方，以规范为准。</p>
+      <p class="prose">这几篇是按官方原文重写的，不逐句照搬；每节末尾都留了原文链接，两边对不上时以原文为准。过滤器、iGate 细则和 q 构造还在整理。</p>
     </div>
   </section>

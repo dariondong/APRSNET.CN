@@ -90,13 +90,13 @@ PAGES = [
     ),
     dict(
         file="docs.html", nav="文档", h1="规范与文档",
-        lead="规范原文与官方文档入口：APRS101、APRS-IS 实施细则，以及 TAPR 的历年资料（英文）。",
+        lead="中文整理和英文原文分开列：自己重写的几篇在上面，官方 PDF 与规范原文在下面。",
         title="APRS 规范与文档 — APRS101、APRS-IS 实施细则",
         desc="APRS 规范与官方文档入口：APRS101、APRS-IS 规范与实施细则、服务器列表与过滤器语法、TAPR 历年资料（英文原文）。",
         og="APRS 规范与文档：APRS101、APRS-IS 实施细则与官方入口。",
         keywords="APRS101,APRS-IS,APRS 规范,APRS 实施细则,APRS 官方文档,TAPR,"
                  "APRS 服务器列表,过滤器语法",
-        blocks=["docs"],
+        blocks=["docs", "refs"],
     ),
     dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
@@ -121,7 +121,7 @@ EXTRA_TITLE = {
     "about": "认识 APRS", "start": "常用工具", "steps": "上手步骤",
     "freq": "频率与路径", "packets": "报文长什么样", "fields": "报文字段",
     "glossary": "名词小抄", "gear": "设备与链路", "faq": "常见问题",
-    "query": "官方 TOCALL 查询", "docs": "规范与文档",
+    "query": "官方 TOCALL 查询", "docs": "中文文档", "refs": "英文原文",
     "tut-listen": "先在手机上听", "tut-send": "接线发出第一个包", "tut-trouble": "没上去怎么查",
     "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
     "aprsis-send": "UDP 与只发端口", "contribute": "参与贡献",
