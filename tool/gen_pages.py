@@ -119,8 +119,16 @@ PAGES = [
         blocks=["proto-head", "proto-general", "proto-arch", "proto-access",
                 "proto-whitelist", "proto-forward", "proto-filter", "proto-ops",
                 "proto-boundary", "proto-test", "proto-misc"],
-        # 这一页的章节自己编号（第一章…第十章），关掉站点那套装饰序号，免得「03」和「第一章」撞车
-        extra_head='<style>\nmain > section.section .section-head::before { content: none; }\n</style>\n',
+        # 这一页正文自己分十章：序号栏就当章号用（总则 = 01 … 附则 = 10），
+        # 标题块和「草案说明」不占号，否则 03 和第 N 章会撞车
+        extra_head=('<style>\n'
+                    "main > section.section:first-child .section-head::before,\n"
+                    "main > section#proto-head .section-head::before { content: none; }\n"
+                    "main > section#proto-head { counter-reset: chap; }\n"
+                    "main > section.section:not(:first-child):not(#proto-head) { counter-increment: chap; }\n"
+                    "main > section.section:not(:first-child):not(#proto-head) "
+                    ".section-head::before { content: counter(chap, decimal-leading-zero); }\n"
+                    "</style>\n"),
     ),
     dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
