@@ -20,8 +20,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "19"        # style.css?v=
+CSS_V = "20"        # style.css?v=
 MAIN_V = "9"        # main.js?v=
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "2"}   # 页内脚本的缓存键
 
 # ── 页面表：file / 导航名 / 标题 / 描述 / 区块顺序 ──
 # blocks 里的名字 = tool/parts/<名字>.html；hero 只在首页。
@@ -240,7 +241,7 @@ def render(page):
             sec_no += 1
         out.append(relink(chunk, file))
 
-    scripts = "".join('\n<script src="%s?v=%s"></script>' % (s, "1")
+    scripts = "".join('\n<script src="%s?v=%s"></script>' % (s, SCRIPT_V[s])
                       for s in page.get("scripts", ()))
     return (HEAD.format(title=page["title"], desc=page["desc"], og=page["og"],
                         url="" if file == "index.html" else file,

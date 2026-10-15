@@ -1,7 +1,11 @@
 /* APRSNET.CN 首屏：一个点 → 发一次信标 → 一张网
-   手写 WebGL1 点云，零依赖、定种子（同一份球面，每次打开都一样）。
-   讲的是同一件事：一开始所有点都塌在一个点上，按下去发一次信标，
-   点散成一张网点阵，其中一粒是你；一圈波纹从你这里漫过整张网。
+   手写 WebGL1，零依赖、定种子（同一份网，每次打开都一样）。
+   一开始 900 个点塌在一个点上，按下去发一次信标，点散开成球面，
+   邻点之间自己拉出线来 —— 这才看出是「一张网」而不是一团雾；
+   其中一粒是你的（橙的），一圈波纹从你这里漫过整张网。
+
+   同一个 program 画两遍：先连线（uMode=1），再点（uMode=0），
+   省掉第二套 uniform。点云里连的是最近邻，一眼能看出网格结构。
 
    没有 WebGL、关掉动效、或者上下文丢了，就什么都不做 ——
    留在 <figure class="hero-net"> 里的那张静态 SVG 顶上。 */
@@ -34,7 +38,8 @@
   /* ── 着色器 ──
      aPos  单位球面上的位置（物体空间）
      aMeta x = 尺寸系数, y = 错峰相位（同一次广播里各点先后不一样）
-     aKind 1 = 你自己那一粒 */
+     aKind 1 = 你自己那一粒
+     uMode 1 = 画线（不取样 gl_PointCoord），0 = 画点 */
   var VS = [
     "precision highp float;",
     "attribute vec3 aPos;",
@@ -50,6 +55,7 @@
     "uniform float uMinPx;",
     "uniform float uMaxSize;",
     "uniform float uRing;",
+    "uniform float uMode;",
     "uniform vec3 uCloud;",
     "uniform vec3 uHot;",
     "uniform vec3 uYou;",
@@ -71,7 +77,7 @@
     "  bright *= mix(1.0, 0.72 + 0.78 * pulse, you);",
     "  float q = (distance(normalize(home), normalize(uYou)) - uRing) * 3.4;",
     "  bright *= 1.0 + exp(-q * q) * 2.2 * g;",
-    "  float vis = mix(1.0, 0.14 + 0.86 * front, g);",
+    "  float vis = mix(1.0, 0.10 + 0.90 * front, g);",
     "  vis = max(vis, you * 0.5);",
     "  vFade = clamp(vis * bright, 0.0, 1.0);",
     "  vec3 base = mix(uCloud, uHot, you);",
@@ -86,11 +92,17 @@
     "precision mediump float;",
     "varying vec3 vCol;",
     "varying float vFade;",
+    "uniform float uMode;",
     "void main() {",
-    "  vec2 c = gl_PointCoord - vec2(0.5);",
-    "  float r2 = dot(c, c);",
-    "  if (r2 > 0.25) discard;",
-    "  float a = vFade * (1.0 - smoothstep(0.09, 0.25, r2));",
+    "  float a = vFade;",
+    "  if (uMode < 0.5) {",
+    "    vec2 c = gl_PointCoord - vec2(0.5);",
+    "    float r2 = dot(c, c);",
+    "    if (r2 > 0.25) discard;",
+    "    a *= 1.0 - smoothstep(0.18, 0.25, r2);",
+    "  } else {",
+    "    a *= 0.22;",
+    "  }",
     "  gl_FragColor = vec4(vCol, a);",
     "}"
   ].join("\n");
@@ -117,17 +129,16 @@
   /* 每个 uniform 都在这里点一次名 —— .scratch/cn_field_check.py 会拿它和着色器里的声明对表 */
   var UNIFORMS = [
     "uSpin", "uGather", "uTime", "uDist", "uProj", "uAspect",
-    "uPxScale", "uMinPx", "uMaxSize", "uRing", "uCloud", "uHot", "uYou"
+    "uPxScale", "uMinPx", "uMaxSize", "uRing", "uMode", "uCloud", "uHot", "uYou"
   ];
   var u = {};
   var i;
   for (i = 0; i < UNIFORMS.length; i++) u[UNIFORMS[i]] = gl.getUniformLocation(prog, UNIFORMS[i]);
 
-  /* ── 几何：球面上的等距点（黄金角螺旋），半径抖一抖就有厚度 ── */
+  /* ── 几何：球面上的等距点（黄金角螺旋），壳薄一点球面才清楚 ── */
   var N = 900;
   var GA = 2.399963229728653;
-  var SEED = 0x41504e53; /* "APNS" */
-  var seed = SEED >>> 0;
+  var seed = 0x41504e53; /* "APNS" */
   function rnd() {
     seed = (seed * 1664525 + 1013904223) >>> 0;
     return seed / 4294967296;
@@ -137,6 +148,7 @@
   var youLen = Math.sqrt(YOU[0] * YOU[0] + YOU[1] * YOU[1] + YOU[2] * YOU[2]);
   YOU[0] /= youLen; YOU[1] /= youLen; YOU[2] /= youLen;
 
+  var STRIDE = 24;
   var data = new Float32Array(N * 6);
   var youIndex = 0, youBest = -2;
   for (i = 0; i < N; i++) {
@@ -144,9 +156,10 @@
     var r = Math.sqrt(Math.max(0, 1 - y * y));
     var a = i * GA;
     var dx = Math.cos(a) * r, dz = Math.sin(a) * r;
-    var rad = 0.84 + 0.30 * rnd();
+    var rad = 0.96 + 0.07 * rnd();
     var ph = rnd();
-    var size = 0.014 + 0.010 * rnd();
+    /* 每隔十来个点给一粒稍大的，看上去像地图上的台站，不是均匀的一团 */
+    var size = (0.019 + 0.007 * rnd()) * (i % 11 === 0 ? 1.5 : 1);
     var dot = dx * YOU[0] + y * YOU[1] + dz * YOU[2];
     if (dot > youBest) { youBest = dot; youIndex = i; }
     var o = i * 6;
@@ -157,24 +170,81 @@
     data[o + 4] = ph;
     data[o + 5] = 0;
   }
-  data[youIndex * 6 + 3] = 0.046;
+  data[youIndex * 6 + 3] = 0.052;
   data[youIndex * 6 + 5] = 1;
 
-  var vbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  var pointVbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, pointVbo);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 
-  var STRIDE = 24;
+  /* ── 邻点之间拉线：先量出近邻尺度，再按 1.7 倍连边（只看 i<j，天然不重复） ── */
+  var near2 = new Float32Array(N);
+  var a2, b2, d2, j, k, dx2, dy2, dz2;
+  for (i = 0; i < N; i++) near2[i] = 8;
+  for (i = 0; i < N; i++) {
+    var oi = i * 6;
+    for (j = i + 1; j < N; j++) {
+      var oj = j * 6;
+      dx2 = data[oi] - data[oj];
+      dy2 = data[oi + 1] - data[oj + 1];
+      dz2 = data[oi + 2] - data[oj + 2];
+      d2 = dx2 * dx2 + dy2 * dy2 + dz2 * dz2;
+      if (d2 < near2[i]) near2[i] = d2;
+      if (d2 < near2[j]) near2[j] = d2;
+    }
+  }
+  var sortedNear = Array.prototype.slice.call(near2).sort(function (p, q) { return p - q; });
+  var spacing = Math.sqrt(sortedNear[Math.floor(N / 2)]); /* 中位近邻距离 */
+  var cut2 = spacing * spacing * 1.7 * 1.7;
+
+  var segs = [];
+  for (i = 0; i < N; i++) {
+    var oa = i * 6;
+    a2 = data[oa + 0]; b2 = data[oa + 1];
+    var c2 = data[oa + 2];
+    /* 先比单个轴，超出半径就直接跳过，不必每次都算完整平方和 */
+    for (j = i + 1; j < N; j++) {
+      var ob = j * 6;
+      dx2 = a2 - data[ob];
+      if (dx2 * dx2 > cut2) continue;
+      dy2 = b2 - data[ob + 1];
+      if (dy2 * dy2 > cut2) continue;
+      dz2 = c2 - data[ob + 2];
+      if (dz2 * dz2 > cut2) continue;
+      d2 = dx2 * dx2 + dy2 * dy2 + dz2 * dz2;
+      if (d2 <= cut2 && d2 > 0.000001) segs.push(i, j);
+    }
+  }
+  var lineData = new Float32Array(segs.length * 6);
+  for (k = 0; k < segs.length; k++) {
+    var so = segs[k] * 6, to = k * 6;
+    lineData[to] = data[so];
+    lineData[to + 1] = data[so + 1];
+    lineData[to + 2] = data[so + 2];
+    lineData[to + 3] = data[so + 3];
+    lineData[to + 4] = data[so + 4];
+    lineData[to + 5] = data[so + 5];
+  }
+  var lineVbo = null;
+  if (segs.length) {
+    lineVbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineVbo);
+    gl.bufferData(gl.ARRAY_BUFFER, lineData, gl.STATIC_DRAW);
+  }
+
   gl.useProgram(prog);
   var aPos = gl.getAttribLocation(prog, "aPos");
   var aMeta = gl.getAttribLocation(prog, "aMeta");
   var aKind = gl.getAttribLocation(prog, "aKind");
-  gl.enableVertexAttribArray(aPos);
-  gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, STRIDE, 0);
-  gl.enableVertexAttribArray(aMeta);
-  gl.vertexAttribPointer(aMeta, 2, gl.FLOAT, false, STRIDE, 12);
-  gl.enableVertexAttribArray(aKind);
-  gl.vertexAttribPointer(aKind, 1, gl.FLOAT, false, STRIDE, 20);
+  function bindAttribs(buf) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, STRIDE, 0);
+    gl.enableVertexAttribArray(aMeta);
+    gl.vertexAttribPointer(aMeta, 2, gl.FLOAT, false, STRIDE, 12);
+    gl.enableVertexAttribArray(aKind);
+    gl.vertexAttribPointer(aKind, 1, gl.FLOAT, false, STRIDE, 20);
+  }
 
   /* ── 颜色：只从站上现成的两支令牌里取，不写死色号 ── */
   function hexToRgb(s) {
@@ -190,10 +260,11 @@
     try { raw = getComputedStyle(document.documentElement).getPropertyValue(name) || ""; } catch (e) { raw = ""; }
     return hexToRgb(raw.replace(/\s+/g, "")) || fallback;
   }
-  var col = [0.29, 0.33, 0.35], hot = [1, 0.42, 0];
+  /* 网用墨色（不是淡墨）—— 白底上一粒深点才干净，深浅交给前后层次去拉 */
+  var col = [0.08, 0.09, 0.11], hot = [1, 0.42, 0];
   function readTokens() {
-    col = token("--text-dim", [0.29, 0.33, 0.35]);   /* 网里的点 = 淡墨 */
-    hot = token("--hot-bright", [1, 0.42, 0]);       /* 你自己那一粒 = 橙 */
+    col = token("--text", [0.08, 0.09, 0.11]);
+    hot = token("--hot-bright", [1, 0.42, 0]);
   }
   readTokens();
 
@@ -251,6 +322,13 @@
     gl.uniform3f(u.uCloud, col[0], col[1], col[2]);
     gl.uniform3f(u.uHot, hot[0], hot[1], hot[2]);
     gl.uniform3f(u.uYou, YOU[0], YOU[1], YOU[2]);
+    if (lineVbo) {
+      gl.uniform1f(u.uMode, 1.0);
+      bindAttribs(lineVbo);
+      gl.drawArrays(gl.LINES, 0, segs.length);
+    }
+    gl.uniform1f(u.uMode, 0.0);
+    bindAttribs(pointVbo);
     gl.drawArrays(gl.POINTS, 0, N);
   }
 
@@ -288,7 +366,7 @@
 
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(function (list) {
-      for (var k = 0; k < list.length; k++) inView = list[k].isIntersecting;
+      for (var m = 0; m < list.length; m++) inView = list[m].isIntersecting;
       if (inView) schedule();
     }, { threshold: 0.01 }).observe(canvas);
   }
@@ -326,6 +404,7 @@
     state: function () {
       return {
         gather: gather, ring: ring, spin: spin, points: N, you: youIndex,
+        segs: segs.length, spacing: spacing,
         w: canvas.width, h: canvas.height, dpr: dpr
       };
     },
@@ -335,9 +414,9 @@
       if (!w || !h) return null;
       px = new Uint8Array(w * h * 4);
       gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      for (var k = 0; k < px.length; k += 4) {
-        if (px[k + 3] > 8) lit++;
-        if (px[k + 3] > 8 && px[k] > px[k + 2] + 40) orange++;
+      for (var m = 0; m < px.length; m += 4) {
+        if (px[m + 3] > 8) lit++;
+        if (px[m + 3] > 8 && px[m] > px[m + 2] + 40) orange++;
       }
       return { w: w, h: h, lit: lit, orange: orange, ratio: lit / (w * h) };
     }
