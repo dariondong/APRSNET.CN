@@ -41,7 +41,7 @@ AUTHOR = "BG7LZQ (Darion)"
 PAGES = [
     dict(
         file="index.html", nav="认识",
-        title="APRSNET.CN — APRS 中文站",
+        title="APRSNET.CN — 信标不止，回响不息。",
         desc="APRSNET.CN 是中文业余无线电 APRS（自动分组报告系统）资料站：APRS 是什么、常用工具、官方 TOCALL 查询，一处查完。",
         og="面向中文业余无线电爱好者的 APRS 资料站：从认识 APRS 开始，附常用工具与官方 TOCALL 查询。",
         keywords="APRS,APRS 中文,APRS 教程,业余无线电,自动分组报告系统,APRSNET,"
@@ -210,7 +210,7 @@ PAGES = [
     dict(
         file="about.html", nav="关于", h1="关于 APRSNET.CN",
         lead="信标不止，回响不息。",
-        title="关于 APRSNET.CN — APRS 中文站",
+        title="关于 APRSNET.CN",
         desc="APRSNET.CN 是一份中文 APRS 资料站：APRS 是什么、参数与频率怎么设、报文怎么读、官方 TOCALL 查询、APRS-IS 文档与协议规范，由 BG7LZQ 维护，源码与投稿入口都在 GitHub。",
         og="一份中文 APRS 资料站：资料、TOCALL 查询与协议规范都在这里。",
         keywords="APRSNET.CN,关于本站,APRS 中文资料,APRS 资料站,业余无线电,APRS 查询,开源,BG7LZQ",
@@ -349,7 +349,6 @@ FOOT = """
   <div class="footer-inner">
     <div class="footer-brand">
       <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
-      <span>业余无线电 · APRS 中文站</span>
       <span>信标不止，回响不息。</span>
     </div>
     <nav class="footer-index" aria-label="站内目录">
@@ -417,7 +416,6 @@ def build_jsonld(page):
     if page["file"] == "index.html":
         node["@type"] = "WebSite"
         node["name"] = SITE_NAME
-        node["alternateName"] = "APRS 中文站"
         node.pop("isPartOf", None)
         node["hasPart"] = [
             {"@type": "WebPage", "name": p["title"].split(" — ")[0], "url": page_url(p)}
