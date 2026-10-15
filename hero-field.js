@@ -351,21 +351,25 @@
     schedule();
   }
 
-  host.classList.add("is-3d");
-  if (!resize()) {
-    host.classList.remove("is-3d");
-    return;
-  }
+  /* 量到真尺寸之前不挂 is-3d：万一这会儿画布量出来是 0（祖先 display:none、
+     布局还没稳），静态 SVG 继续顶着，下面的观察者量到真尺寸再换过去。
+     以前量到 0 就整层 return，观察者也没挂上，静态图就永远顶着了。 */
+  var booted = false;
 
-  if (still) {
-    /* 关了动效：不呼吸、不转、不放电波，就给一张静止的网
-       —— 以前这里直接退回静态 SVG，看上去就像「GL 没生效」 */
-    gather = 1;
-    ring = 9;
-    spin = 0;
-    tAnim = 0;
-    draw();
-  } else {
+  function boot() {
+    booted = true;
+    host.classList.add("is-3d");
+    if (still) {
+      /* 关了动效：不呼吸、不转、不放电波，就给一张静止的网
+         —— 以前这里直接退回静态 SVG，看上去就像「GL 没生效」 */
+      gather = 1;
+      ring = 9;
+      spin = 0;
+      tAnim = 0;
+      draw();
+      return;
+    }
+
     /* 亮出来之前先摆成一粒点 */
     draw();
 
@@ -382,14 +386,21 @@
     document.addEventListener("visibilitychange", function () { if (!document.hidden) schedule(); });
   }
 
+  /* 量到尺寸就开机；已经开过就补画一帧（缩放、换肤都走这里） */
+  function ensure() {
+    if (!resize()) return;
+    if (!booted) boot();
+    else if (!raf) draw();
+  }
+
+  ensure();
+
   if ("ResizeObserver" in window) {
-    new ResizeObserver(function () {
-      if (resize() && !raf) draw();
-    }).observe(canvas);
+    new ResizeObserver(function () { ensure(); }).observe(canvas);
   } else {
     window.addEventListener("resize", function () {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      if (resize() && !raf) draw();
+      ensure();
     });
   }
 
