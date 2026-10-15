@@ -57,6 +57,7 @@
       <a href="#packets">报文</a>
       <a href="#fields">字段</a>
       <a href="#glossary">名词</a>
+      <a href="#gear">设备</a>
       <a href="#faq">问答</a>
       <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
         <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
@@ -391,7 +392,43 @@
     </div>
   </section>
 
-  <section class="section alt" id="faq">
+  <section class="section alt" id="gear">
+    <div class="section-head">
+      <h2>设备与链路</h2>
+      <p>软件可以随便换，空中那一侧永远是三样：电台、天线，和把电台接给终端的那一段。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>电台</b>
+          手台、车台、固定台都行，能跑 1200 bps 的音频数据包（AFSK）就够。手台功率小、天线矮，适合先在家把「只接收」跑通。
+        </li>
+        <li>
+          <b>天线</b>
+          VHF 是视距传播，架得多高比买得多贵重要：把天线挪到窗外或楼顶，通常比换一根增益更高的立竿见影。
+        </li>
+        <li>
+          <b>TNC（蓝牙 / 串口）</b>
+          夹在终端和电台之间，把数据调成音频送到电台，再把收到的音频解回数据。蓝牙模块现在最省事，手机能直接连。
+        </li>
+        <li>
+          <b>声卡线</b>
+          最省的一条路：两根音频线把电台和手机 / 电脑连起来，调制解调都交给软件。音量和静噪要调准，否则发出去的是一串噪声。
+        </li>
+        <li>
+          <b>只用 APRS-IS</b>
+          不出门也能玩：终端直接连互联网侧的服务器，收全网的包、发短消息。但那不是发射，也不算「在空中上线」。
+        </li>
+        <li>
+          <b>移动台</b>
+          车里除了电台，还要一根装到车顶的天线和固定手机 / 平板的支架；供电从点烟器取，注意电流和线径。
+        </li>
+      </ul>
+      <p class="prose">一台手台加一根转接头或一个蓝牙 TNC，就能把「接收」跑通；想真正发出去，天线高度和那本执照才是分水岭。</p>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
     <div class="section-head">
       <h2>常见问题</h2>
       <p>刚上手最容易卡住的几个地方，先把它们说清楚。</p>
@@ -449,6 +486,8 @@
         <a href="#freq">频率与路径</a>
         <a href="#packets">报文长什么样</a>
         <a href="#fields">报文字段</a>
+        <a href="#glossary">名词小抄</a>
+        <a href="#gear">设备与链路</a>
         <a href="#faq">常见问题</a>
         <a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">本站源码</a>
       </nav>
