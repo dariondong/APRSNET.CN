@@ -7,15 +7,13 @@
    同一个 program 画两遍：先连线（uMode=1），再点（uMode=0），
    省掉第二套 uniform。点云里连的是最近邻，一眼能看出网格结构。
 
-   没有 WebGL、关掉动效、或者上下文丢了，就什么都不做 ——
-   留在 <figure class="hero-net"> 里的那张静态 SVG 顶上。 */
+   没有 WebGL、或者上下文丢了，就什么都不做 —— 画布一直是那块空白，
+   不再顶一张静态图（那张方块格子 SVG 已经删掉）。 */
 (function () {
   "use strict";
 
   var canvas = document.getElementById("heroField");
   if (!canvas || !canvas.getContext) return;
-  var host = canvas.closest ? canvas.closest(".hero-net") : canvas.parentNode;
-  if (!host) return;
 
   /* 系统说要减少动效时不开动画 —— 但仍然给一张静止的网（见文件末尾的 still 分支） */
   var still = false;
@@ -351,14 +349,12 @@
     schedule();
   }
 
-  /* 量到真尺寸之前不挂 is-3d：万一这会儿画布量出来是 0（祖先 display:none、
-     布局还没稳），静态 SVG 继续顶着，下面的观察者量到真尺寸再换过去。
-     以前量到 0 就整层 return，观察者也没挂上，静态图就永远顶着了。 */
+  /* 画布就是首屏那张网，没有备胎了：量到真尺寸才开机，量不到（祖先 display:none、
+     布局还没稳）就等下面的观察者再量。 */
   var booted = false;
 
   function boot() {
     booted = true;
-    host.classList.add("is-3d");
     if (still) {
       /* 关了动效：不呼吸、不转、不放电波，就给一张静止的网
          —— 以前这里直接退回静态 SVG，看上去就像「GL 没生效」 */
@@ -412,11 +408,10 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   } catch (e) { /* 老浏览器没有 MutationObserver 也没关系 */ }
 
-  /* 上下文丢了就退回那张静态 SVG，别留一块空画布 */
+  /* 上下文丢了就先停手；浏览器把上下文还回来之前，画布就空着 */
   canvas.addEventListener("webglcontextlost", function (ev) {
     ev.preventDefault();
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    host.classList.remove("is-3d");
   }, false);
 
   /* 给以后的自检留个口子（同页面脚本可读） */

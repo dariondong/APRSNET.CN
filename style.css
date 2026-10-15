@@ -133,17 +133,10 @@ body.loaded .hero-inner { opacity: 1; }
 .hero-beats b { display: block; font-size: 17px; font-weight: 700; }
 .hero-beats span { color: var(--text-dim); font-size: 15px; }
 .hero-meta { order: 2; display: grid; gap: 26px; max-width: 46ch; }
-/* 首屏示意图：一个点 → 发一次信标 → 一张网。
-   有 WebGL 时 hero-field.js 接手换成 3D 点云；
-   这张静态 SVG 是没有 WebGL、关掉动效、上下文丢失时的落点。 */
+/* 首屏示意图：一个点 → 发一次信标 → 一张网，由 hero-field.js 画成 3D 点云。
+   原来那张静态 SVG 兜底已经删掉：没有 WebGL 时看到的是空画布，不再顶一张方块格子图。 */
 .hero-net { margin: 0; }
-.hero-net svg { display: block; width: 100%; max-width: 330px; height: auto; }
-.hero-net .hero-field { display: none; width: 100%; max-width: 360px; aspect-ratio: 4 / 3; }
-.hero-net.is-3d svg { display: none; }
-.hero-net.is-3d .hero-field { display: block; }
-.hero-net .dot, .hero-net .cell-on { fill: var(--hot-bright); }
-.hero-net .cell { fill: var(--line-strong); }
-.hero-net .arc, .hero-net .link { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.hero-net .hero-field { display: block; width: 100%; max-width: 360px; aspect-ratio: 4 / 3; }
 .hero-sub { color: var(--text-dim); font-size: 16.5px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 @media (min-width: 900px) {

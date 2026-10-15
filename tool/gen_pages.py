@@ -27,9 +27,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "20"        # style.css?v=
+CSS_V = "21"        # style.css?v=
 MAIN_V = "9"        # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "5"}   # 页内脚本的缓存键
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "6"}   # 页内脚本的缓存键
 
 SITE = "https://aprsnet.cn/"
 SITE_NAME = "APRSNET.CN"
