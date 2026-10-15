@@ -213,56 +213,40 @@ for _p in PAGES:
         if _b != "hero":
             BLOCK_PAGE[_b] = _p["file"]
 
-EXTRA_TITLE = {
-    "about": "认识 APRS", "start": "常用工具", "steps": "上手步骤",
-    "freq": "频率与路径", "packets": "报文长什么样", "fields": "报文字段",
-    "glossary": "名词小抄", "gear": "设备与链路", "faq": "常见问题",
-    "tocall": "官方 TOCALL 查询", "tocall-refs": "名单与出处",
-    "docs": "中文文档", "refs": "英文原文",
-    "tut-listen": "先在手机上听", "tut-send": "接线发出第一个包", "tut-trouble": "没上去怎么查",
-    "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
-    "aprsis-send": "UDP 与只发端口", "contribute": "参与贡献",
-    "filter-basics": "怎么写", "filter-place": "按位置挑",
-    "filter-station": "按台站挑", "filter-type": "按类型挑",
-    "filter-symbol": "按符号挑", "filter-refs": "原文与相关",
-    "igate-duty": "网关干的活", "igate-up": "收上来的包",
-    "igate-down": "发回空中的消息", "igate-path": "路径与第三方格式",
-    "igate-query": "查询怎么答", "igate-refs": "原文与相关",
-    "q-what": "什么是 q 构造", "q-server": "服务器写上的",
-    "q-client": "网关写上的", "q-rules": "几条规矩",
-    "q-examples": "两个例子", "q-refs": "原文与相关",
-    "proto-head": "协议说明", "proto-general": "总则", "proto-arch": "系统组成",
-    "proto-access": "接入规范", "proto-whitelist": "白名单", "proto-forward": "报文转发",
-    "proto-filter": "过滤器", "proto-ops": "安全与运维", "proto-boundary": "网络边界",
-    "proto-test": "测试与版本", "proto-misc": "附则",
-    "about-origin": "这个站从哪来", "about-site": "站上有什么", "about-upkeep": "谁在维护",
-    "links": "站与项目", "links-friends": "同行的站", "links-swap": "换链接",
-    "tools-client": "客户端", "tools-web": "在线地图与查询",
-    "tools-make": "自己动手", "tools-submit": "加一条",
+# 页脚目录：三栏，一页一条；每页自己的分节，从那一页里进
+FOOT_MAP = (
+    ("认识与上手", ("index.html", "guide.html", "tutorial.html",
+                    "packet.html", "tocall.html", "faq.html")),
+    ("文档", ("docs.html", "aprsis.html", "filter.html", "igate.html",
+              "qconstruct.html", "protocol.html")),
+    ("本站", ("tools.html", "links.html", "about.html")),
+)
+# 页脚里每页那一行的短名
+PAGE_SHORT = {
+    "index.html": "认识 APRS", "guide.html": "上手与设备",
+    "tutorial.html": "从零上手教程", "packet.html": "报文与字段",
+    "tocall.html": "官方 TOCALL 查询", "faq.html": "常见问题",
+    "docs.html": "规范与文档", "aprsis.html": "APRS-IS 文档（中文）",
+    "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
+    "qconstruct.html": "q 构造", "protocol.html": "APRSNET CN CONNECT（草案）",
+    "tools.html": "工具与链接", "links.html": "友链", "about.html": "关于本站",
 }
 
-# 页脚目录的分栏名：默认用导航里的名字，不在导航里的子页在这里自己报个名
-FOOT_GROUP = {
-    "tutorial.html": "教程", "aprsis.html": "APRS-IS 文档",
-    "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
-    "qconstruct.html": "q 构造",
-    "protocol.html": "协议规范", "about.html": "关于本站",
-}
-# 页脚目录最后一栏：仓库与反馈
-FOOT_SOURCE = ("本站", (
+# 页脚最后那栏里的两个外部入口
+FOOT_SOURCE = (
     ("https://github.com/dariondong/APRSNET.CN", "源码仓库"),
     ("https://github.com/dariondong/APRSNET.CN/issues", "提个 issue"),
-))
+)
 
 
 def footer_groups():
-    """页脚目录分栏：[（标题, [区块, ...]）, ...]，按 PAGES 顺序（也就是导航顺序）。"""
+    """页脚目录：[(栏名, [(href, 文字, 是不是外部链接), ...]), ...]，一页一条。"""
     out = []
-    for page in PAGES:
-        keys = [b for b in EXTRA_TITLE if BLOCK_PAGE.get(b) == page["file"]]
-        if not keys:
-            continue
-        out.append((FOOT_GROUP.get(page["file"]) or page.get("nav") or page["file"], keys))
+    for label, files in FOOT_MAP:
+        rows = [(f, PAGE_SHORT[f], False) for f in files]
+        if label == "本站":
+            rows += [(href, text, True) for href, text in FOOT_SOURCE]
+        out.append((label, rows))
     return out
 
 HEAD = """<!DOCTYPE html>
@@ -466,21 +450,18 @@ def render(page):
         '      <a href="%s"%s>%s</a>' % (
             "./" if p["file"] == "index.html" else p["file"], nav_state(p), p["nav"])
         for p in PAGES if p.get("nav"))
-    # 页脚目录：一页一栏，栏上一个标题；本页的区块用 #锚点，别的页带上文件名
+    # 页脚目录：三栏，一页一条；每页自己的分节从那一页里进
     groups = []
-    for label, keys in footer_groups():
+    for label, rows in footer_groups():
         items = "\n".join(
-            '          <li><a href="%s#%s">%s</a></li>' % (BLOCK_PAGE[b], b, EXTRA_TITLE[b])
-            if BLOCK_PAGE[b] != file else '          <li><a href="#%s">%s</a></li>' % (b, EXTRA_TITLE[b])
-            for b in keys)
+            '          <li><a href="%s"%s>%s</a></li>' % (
+                href,
+                ' target="_blank" rel="noopener"' if ext else
+                (' aria-current="page"' if href == file else ""),
+                text)
+            for href, text, ext in rows)
         groups.append('      <div class="footer-group">\n        <b>%s</b>\n        <ul>\n%s\n        </ul>\n      </div>'
                       % (label, items))
-    label, links = FOOT_SOURCE
-    items = "\n".join(
-        '          <li><a href="%s" target="_blank" rel="noopener">%s</a></li>' % (href, text)
-        for href, text in links)
-    groups.append('      <div class="footer-group">\n        <b>%s</b>\n        <ul>\n%s\n        </ul>\n      </div>'
-                  % (label, items))
     footer_links = "\n".join(groups)
 
     body = [read_part(b) for b in page["blocks"]]
@@ -608,6 +589,11 @@ def selfcheck(files):
     locs = [e.text for e in root.iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
     if sorted(locs) != sorted(page_url(p) for p in PAGES):
         sys.exit("FAIL: sitemap 里的地址和页面表对不上：%s" % locs)
+
+    # 页脚目录：页面表里的每一页都得在里面出现一次
+    listed = [f for _label, files in FOOT_MAP for f in files]
+    if sorted(listed) != sorted(p["file"] for p in PAGES):
+        sys.exit("FAIL: 页脚目录和页面表对不上：%s" % listed)
 
 
 def no_stamp(t):
