@@ -133,6 +133,17 @@ body.loaded .hero-inner { opacity: 1; }
 .hero-beats b { display: block; font-size: 17px; font-weight: 700; }
 .hero-beats span { color: var(--text-dim); font-size: 15px; }
 .hero-meta { order: 2; display: grid; gap: 26px; max-width: 46ch; }
+/* 首屏示意图：一个点 → 发一次信标 → 一张网。
+   有 WebGL 时 hero-field.js 接手换成 3D 点云；
+   这张静态 SVG 是没有 WebGL、关掉动效、上下文丢失时的落点。 */
+.hero-net { margin: 0; }
+.hero-net svg { display: block; width: 100%; max-width: 330px; height: auto; }
+.hero-net .hero-field { display: none; width: 100%; max-width: 330px; aspect-ratio: 4 / 3; }
+.hero-net.is-3d svg { display: none; }
+.hero-net.is-3d .hero-field { display: block; }
+.hero-net .dot, .hero-net .cell-on { fill: var(--hot-bright); }
+.hero-net .cell { fill: var(--line-strong); }
+.hero-net .arc, .hero-net .link { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
 .hero-sub { color: var(--text-dim); font-size: 16.5px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 @media (min-width: 900px) {
@@ -175,17 +186,6 @@ main > section.section { counter-increment: sec; }
 .section-head h2 { font-size: clamp(28px, 3.4vw, 46px); font-weight: 700; letter-spacing: -.025em; line-height: 1.08; }
 .section-head p { margin-top: 14px; color: var(--text-dim); font-size: 17px; max-width: 62ch; }
 .section-body { max-width: 940px; }
-/* 一个点，一张网：独占一条，铺到正文宽度。
-   有 WebGL 时 net-field.js 接手画 3D 点云；
-   静态 SVG 是没有 WebGL、关掉动效、上下文丢失时的落点。 */
-.net-figure { margin: 0; }
-.net-figure svg { display: block; width: 100%; max-width: 560px; height: auto; }
-.net-figure .net-field { display: none; width: 100%; aspect-ratio: 2 / 1; }
-.net-figure.is-3d svg { display: none; }
-.net-figure.is-3d .net-field { display: block; }
-.net-figure .dot, .net-figure .cell-on { fill: var(--hot-bright); }
-.net-figure .cell { fill: var(--line-strong); }
-.net-figure .arc, .net-figure .link { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
 .prose { color: var(--text-dim); font-size: 17px; max-width: 70ch; }
 .prose + .prose { margin-top: 20px; }
 .prose b { color: var(--text); }

@@ -89,11 +89,8 @@
     });
   }
 
-  /* ── 导航高亮（Scrollspy）：当前区块对应的锚点加 .active
-        没有对应导航项的区块不进观察名单，否则它会把别人的高亮清掉 ── */
-  var sections = Array.prototype.slice.call(document.querySelectorAll("section[id]")).filter(function (s) {
-    return !!document.querySelector(".nav-links a[href='#" + s.id + "']");
-  });
+  /* ── 导航高亮（Scrollspy）：当前区块对应的锚点加 .active ── */
+  var sections = Array.prototype.slice.call(document.querySelectorAll("section[id]"));
   var navAnchors = Array.prototype.slice.call(document.querySelectorAll(".nav-links a[href^='#']"));
   if ("IntersectionObserver" in window && sections.length && navAnchors.length) {
     var spy = new IntersectionObserver(function (entries) {
