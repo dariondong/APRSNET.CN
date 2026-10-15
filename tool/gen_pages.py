@@ -111,7 +111,7 @@ PAGES = [
         blocks=["docs", "refs"],
     ),
     dict(
-        file="protocol.html", nav="APRSNET CN CONNECT",
+        file="protocol.html", nav="", nav_active="docs.html",
         h1="APRSNET CN CONNECT v0.1.0（草案）",
         lead="APRSNET CN CONNECT 是一份 APRS 服务器的接入与转发规范：客户端怎么连进来、谁被放行、报文怎么转发出去。这一版是 v0.1.0，还是草案。",
         title="APRSNET CN CONNECT v0.1.0（草案）— 接入与报文转发规范",
@@ -176,7 +176,7 @@ PAGES = [
         blocks=["q-what", "q-server", "q-client", "q-rules", "q-examples", "q-refs"],
     ),
     dict(
-        file="tools.html", nav="", nav_active="links.html", h1="工具与链接",
+        file="tools.html", nav="工具", h1="工具与链接",
         lead="APRS 的软件、网站和自制的家伙都收在这一页：手机电脑上的客户端、浏览器里的地图，想自己搭一套时用得上的东西也在。",
         title="APRS 工具与链接 — 客户端、在线地图与自建工具",
         desc="中文 APRS 工具与链接集合：客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
@@ -245,7 +245,7 @@ EXTRA_TITLE = {
 FOOT_GROUP = {
     "tutorial.html": "教程", "aprsis.html": "APRS-IS 文档",
     "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
-    "qconstruct.html": "q 构造", "tools.html": "工具与链接",
+    "qconstruct.html": "q 构造",
     "protocol.html": "协议规范", "about.html": "关于本站",
 }
 # 页脚目录最后一栏：仓库与反馈
