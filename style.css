@@ -91,8 +91,8 @@ code {
 .read-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 140; height: 3px; background: var(--hot-bright); transform: scaleX(0); transform-origin: left center; }
 
 /* ── 03. 导航 ── */
-.nav { position: fixed; inset: 0 0 auto 0; z-index: 100; padding: 20px 0; border-bottom: 1px solid transparent; transition: padding .25s var(--ease), background .25s var(--ease), border-color .25s var(--ease); }
-.nav.scrolled { padding: 12px 0; background: var(--bg-1); border-bottom-color: var(--line-strong); }
+.nav { position: fixed; inset: 0 0 auto 0; z-index: 100; padding: 14px 0; border-bottom: 1px solid transparent; transition: padding .25s var(--ease), background .25s var(--ease), border-color .25s var(--ease); }
+.nav.scrolled { padding: 8px 0; background: var(--bg-1); border-bottom-color: var(--line-strong); }
 .nav-inner { max-width: var(--measure); margin: 0 auto; padding: 0 var(--gut); display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .brand { display: flex; align-items: center; gap: 10px; }
 /* 字标：APRSNET.CN = APRS（墨）+ NET（灰）+ .CN（赤红），导航与页脚共用一套 */
