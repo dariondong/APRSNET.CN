@@ -190,9 +190,9 @@ PAGES = [
         file="links.html", nav="友链", h1="友链",
         lead="同一条电波上的站，互相留个门牌。",
         title="友链 — APRS 相关的项目与站点",
-        desc="APRSNET.CN 的友链：APRSLocus 客户端与它的源码仓库、同行协会的站点，以及换链接的做法。",
+        desc="APRSNET.CN 的友链：APRSLocus 客户端与它的源码仓库、APRS.TV 实时地图、同行协会的站点，以及换链接的做法。",
         og="APRS 相关的项目与站点，都列在这一页。",
-        keywords="友链,APRSNET.CN,APRSLocus,APRS 客户端,业余无线电协会,APRS 相关站点,链接交换",
+        keywords="友链,APRSNET.CN,APRSLocus,APRS.TV,APRS 客户端,业余无线电协会,APRS 相关站点,链接交换",
         blocks=["links", "links-friends", "links-swap"],
     ),
     dict(
