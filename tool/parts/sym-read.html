@@ -1,0 +1,22 @@
+  <section class="section" id="sym-read">
+    <div class="section-head">
+      <h2>两个字符怎么读</h2>
+      <p>位置包里定图标的是两个字符：纬度经度中间那个说明读哪张表，经度后面那个说明读表里哪一格。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">拿一条位置包看：<code>!3905.45N/07223.83W&gt;路上</code>。夹在经纬度中间的 <code>/</code> 说明读主表，经度后面的 <code>&gt;</code> 是主表第 30 格，画到地图上是一辆汽车。两个字符合起来才是一个图标。</p>
+      <p class="prose">表只有两张。主表用 <code>/</code>，替补表用 <code>\</code>。同一个字符落在两张表里是两个图标：<code>/r</code> 是中继台，<code>\r</code> 是洗手间。</p>
+      <p class="prose">替补表里有些格子带「叠加」：符号表那个字符也可以写成数字或字母，图标照替补表那一格取，再把这个字符叠在图上，用来区分同一类台站。</p>
+      <p class="prose">两张表都排到 94 格。规范里没定义的格子，客户端画成十字准星，这一页照实写成「空位」。</p>
+      <ul class="fact-list">
+        <li>
+          <b>图标从哪来</b>
+          APRS 官方符号集的矢量重绘版，作者 OH7LZB，以 CC BY-SA 2.0 发布，放在 <a href="https://github.com/hessu/aprs-symbols" target="_blank" rel="noopener">aprs-symbols</a> 仓库里；每一格的名字按官方那张表写。
+        </li>
+        <li>
+          <b>改自己的图标</b>
+          各家客户端里挑的就是这两张表：先选主表或替补表，再点一格。地图站读的是同一套字符，所以别人看到的和你选的一样。
+        </li>
+      </ul>
+    </div>
+  </section>

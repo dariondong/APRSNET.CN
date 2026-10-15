@@ -80,6 +80,39 @@ PAGES = [
         blocks=["packets", "fields", "glossary"],
     ),
     dict(
+        file="symbols.html", nav="", nav_active="packet.html", h1="APRS 符号表",
+        lead="地图上那个图标是位置包里两个字符定出来的。这一页把主表和替补表的每一格摊开：字符、图标、名字都在格子里。",
+        title="APRS 符号表 — 主表与替补表逐格对照",
+        desc="APRS 符号表中文版：主表 / 与替补表 \\ 各 94 格逐格列出，一格一张官方图标加中文名，附位置包里哪两个字符定图标、叠加字符怎么用、没定义的格子画成什么样。",
+        og="APRS 符号表：主表与替补表各 94 格逐格对照，字符、图标、名字都在格子里。",
+        keywords="APRS 符号表,APRS 符号,APRS 图标,主表,替补表,叠加字符,APRS 台站符号,"
+                 "APRS 报文,APRS 图标对照,APRS 教程",
+        blocks=["sym-read", "sym-primary", "sym-alt"],
+        extra_head=('<style>\n'
+                    ".sym-grid {\n"
+                    "  list-style: none;\n"
+                    "  display: grid;\n"
+                    "  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));\n"
+                    "  gap: 14px 18px;\n"
+                    "}\n"
+                    ".sym-cell { display: grid; grid-template-columns: 34px minmax(0, 1fr); "
+                    "column-gap: 10px; align-items: center; }\n"
+                    "/* 官方图标是透明底的彩色笔画，深色皮肤下会糊成一片，所以固定垫在浅色底上 */\n"
+                    ".sym-ico { width: 34px; height: 34px; display: grid; place-items: center; "
+                    "background: #ffffff; border: 1px solid var(--line); }\n"
+                    ".sym-ico img { width: 24px; height: 24px; }\n"
+                    ".sym-txt { display: flex; align-items: baseline; column-gap: 6px; min-width: 0; }\n"
+                    ".sym-cell code { background: none; padding: 0; color: var(--text); font-size: 14px; }\n"
+                    ".sym-name { font-size: 13px; color: var(--text-dim); }\n"
+                    ".sym-cell.is-blank code, .sym-cell.is-blank .sym-name { color: var(--text-faint); }\n"
+                    "@media (max-width: 560px) {\n"
+                    "  .sym-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); "
+                    "gap: 12px 14px; }\n"
+                    "  .sym-txt { flex-direction: column; align-items: flex-start; row-gap: 1px; }\n"
+                    "}\n"
+                    "</style>\n"),
+    ),
+    dict(
         file="tocall.html", nav="查询", h1="官方 TOCALL 查询",
         lead="呼号后面那段 TOCALL 是设备或软件的记号。粘一整行报文进来也行，查表就在浏览器里做。",
         title="APRS TOCALL 查询 — 呼号后面那段是什么设备",
@@ -228,7 +261,7 @@ for _p in PAGES:
 # 页脚目录：三栏，一页一条；每页自己的分节，从那一页里进
 FOOT_MAP = (
     ("认识与上手", ("index.html", "guide.html", "tutorial.html",
-                    "packet.html", "tocall.html", "faq.html")),
+                    "packet.html", "symbols.html", "tocall.html", "faq.html")),
     ("文档", ("docs.html", "aprsis.html", "filter.html", "igate.html",
               "qconstruct.html", "protocol.html")),
     ("本站", ("tools.html", "passcode.html", "links.html", "about.html")),
@@ -237,6 +270,7 @@ FOOT_MAP = (
 PAGE_SHORT = {
     "index.html": "认识 APRS", "guide.html": "上手与设备",
     "tutorial.html": "从零上手教程", "packet.html": "报文与字段",
+    "symbols.html": "APRS 符号表",
     "tocall.html": "官方 TOCALL 查询", "faq.html": "常见问题",
     "docs.html": "规范与文档", "aprsis.html": "APRS-IS 文档（中文）",
     "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
