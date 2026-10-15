@@ -17,13 +17,12 @@
   var host = canvas.closest ? canvas.closest(".hero-net") : canvas.parentNode;
   if (!host) return;
 
-  /* 系统说要减少动效时，连这一层也不放 */
+  /* 系统说要减少动效时不开动画 —— 但仍然给一张静止的网（见文件末尾的 still 分支） */
   var still = false;
   try {
     var mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
     still = !!(mq && mq.matches);
   } catch (e) { still = false; }
-  if (still) return;
 
   var opts = {
     alpha: true, premultipliedAlpha: false, antialias: false,
@@ -358,17 +357,29 @@
     return;
   }
 
-  /* 亮出来之前先摆成一粒点 */
-  draw();
+  if (still) {
+    /* 关了动效：不呼吸、不转、不放电波，就给一张静止的网
+       —— 以前这里直接退回静态 SVG，看上去就像「GL 没生效」 */
+    gather = 1;
+    ring = 9;
+    spin = 0;
+    tAnim = 0;
+    draw();
+  } else {
+    /* 亮出来之前先摆成一粒点 */
+    draw();
 
-  if (document.readyState === "complete") schedule();
-  else window.addEventListener("load", schedule);
+    if (document.readyState === "complete") schedule();
+    else window.addEventListener("load", schedule);
 
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(function (list) {
-      for (var m = 0; m < list.length; m++) inView = list[m].isIntersecting;
-      if (inView) schedule();
-    }, { threshold: 0.01 }).observe(canvas);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (list) {
+        for (var m = 0; m < list.length; m++) inView = list[m].isIntersecting;
+        if (inView) schedule();
+      }, { threshold: 0.01 }).observe(canvas);
+    }
+
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) schedule(); });
   }
 
   if ("ResizeObserver" in window) {
@@ -382,15 +393,13 @@
     });
   }
 
-  /* 换肤只换颜色：重读令牌，停着的那一帧也补画一次 */
+  /* 换肤只换颜色：重读令牌，停着的那一帧也补画一次（静止模式下也生效） */
   try {
     new MutationObserver(function () {
       readTokens();
       if (!raf) draw();
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   } catch (e) { /* 老浏览器没有 MutationObserver 也没关系 */ }
-
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) schedule(); });
 
   /* 上下文丢了就退回那张静态 SVG，别留一块空画布 */
   canvas.addEventListener("webglcontextlost", function (ev) {
