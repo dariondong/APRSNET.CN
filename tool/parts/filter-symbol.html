@@ -1,0 +1,35 @@
+  <section class="section" id="filter-symbol">
+    <div class="section-head">
+      <h2>按符号与 q 构造挑</h2>
+      <p>两个偏门条件：一个认地图上的图标，一个认包是怎么上网的。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>s/pri/alt/over</b>
+          符号过滤。三段从左到右是主表符号、副表符号、叠加字符，叠加字符区分大小写。要写斜杠的地方用 <code>|</code> 代替。
+        </li>
+        <li>
+          <b>q/con/I</b>
+          q 构造过滤。<code>con</code> 是要放行的 q 构造，区分大小写；这一格留空、只写一个 <code>I</code>，就要那些由 iGate 上来的位置包。
+        </li>
+      </ul>
+      <ul class="pkt-list">
+        <li>
+          <b>符号过滤</b>
+          <code>s/-></code>
+          <code>s//#</code>
+          <code>s//#/T</code>
+          第一行要主表里的房子和汽车；第二行要副表里的中继，带不带叠加都算；第三行收窄到叠加字符是大写 T 的中继。
+        </li>
+        <li>
+          <b>q 构造过滤</b>
+          <code>q/C</code>
+          <code>q/rR</code>
+          <code>q//I</code>
+          第一行只要构造是 qAC 的包；第二行要 qAr 或者 qAR；第三行挑的是 iGate 上来的位置包，认那些在别的包里被标成 qAr 或 qAo 或 qAR 的网关。
+        </li>
+      </ul>
+      <p class="prose">q 构造是包进 APRS-IS 的时候被写上的标记，记着它是从哪条路、由谁送上网的。每个标记的含义在官方那一页单独讲，记不住也别硬背，日常过滤很少用到。</p>
+    </div>
+  </section>

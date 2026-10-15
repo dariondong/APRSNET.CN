@@ -135,13 +135,24 @@ PAGES = [
     ),
     dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
-        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用；后面的过滤器、网关、q 构造接着补。",
+        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用。过滤器另有专篇，网关细则和 q 构造接着补。",
         title="APRS-IS 中文文档 — 连接、登录行、端口与过滤器",
         desc="APRS-IS 官方文档的中文整理：TCP/UDP 端口怎么选（14501 / 10152 / 14580 / 23000）、登录行与 passcode、呼号与 SSID 规则、只发端口与 HTTP/WebSocket 返回码，附原文入口。",
         og="APRS-IS 中文文档：连上网络、登录行、UDP 与只发端口。",
         keywords="APRS-IS,APRS-IS 连接,APRS-IS 端口,14580,10152,登录行,passcode,"
                  "APRS-IS 文档,只发端口,呼号 SSID,WebSocket",
         blocks=["aprsis-connect", "aprsis-login", "aprsis-send"],
+    ),
+    dict(
+        file="filter.html", nav="", nav_active="docs.html", h1="APRS-IS 过滤器",
+        lead="服务器会把哪些包推给你，全看这一行 filter。官方文档里每个条件都在这一页摊开写。",
+        title="APRS-IS 过滤器 — filter 命令与条件清单（中文）",
+        desc="APRS-IS 服务器端过滤器中文整理：filter 命令怎么写、包含与排除、按位置 / 台站 / 类型 / 符号 / q 构造的每个条件怎么填，附官方原文入口。",
+        og="APRS-IS 过滤器中文整理：filter 怎么写，每个条件分别管什么。",
+        keywords="APRS-IS 过滤器,APRS filter,14580 过滤器,r/ 范围过滤,b/ 呼号过滤,"
+                 "t/ 类型过滤,s/ 符号过滤,q 构造,APRS-IS 中文文档",
+        blocks=["filter-basics", "filter-place", "filter-station",
+                "filter-type", "filter-symbol", "filter-refs"],
     ),
     dict(
         file="links.html", nav="友链", h1="友链",
@@ -179,6 +190,9 @@ EXTRA_TITLE = {
     "tut-listen": "先在手机上听", "tut-send": "接线发出第一个包", "tut-trouble": "没上去怎么查",
     "aprsis-connect": "连上 APRS-IS", "aprsis-login": "登录行怎么写",
     "aprsis-send": "UDP 与只发端口", "contribute": "参与贡献",
+    "filter-basics": "怎么写", "filter-place": "按位置挑",
+    "filter-station": "按台站挑", "filter-type": "按类型挑",
+    "filter-symbol": "按符号挑", "filter-refs": "原文与相关",
     "proto-head": "协议说明", "proto-general": "总则", "proto-arch": "系统组成",
     "proto-access": "接入规范", "proto-whitelist": "白名单", "proto-forward": "报文转发",
     "proto-filter": "过滤器", "proto-ops": "安全与运维", "proto-boundary": "网络边界",
@@ -190,6 +204,7 @@ EXTRA_TITLE = {
 # 页脚目录的分栏名：默认用导航里的名字，不在导航里的子页在这里自己报个名
 FOOT_GROUP = {
     "tutorial.html": "教程", "aprsis.html": "APRS-IS 文档",
+    "filter.html": "APRS-IS 过滤器",
     "protocol.html": "协议规范", "about.html": "关于本站",
 }
 # 页脚目录最后一栏：仓库与反馈

@@ -1,0 +1,43 @@
+  <section class="section" id="filter-station">
+    <div class="section-head">
+      <h2>按台站挑</h2>
+      <p>知道要看谁的包，就用这几个条件点名。多数支持星号通配。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>p/aa/bb</b>
+          呼号前缀。发信呼号以 aa 或者 bb 开头的包都推给你，跟一个地区或者一类台站用它。
+        </li>
+        <li>
+          <b>b/call1/call2</b>
+          精确呼号。可以写一列，也支持星号通配。
+        </li>
+        <li>
+          <b>d/digi1/digi2</b>
+          被某个中继转发过的包。路径里出现这个呼号就算，支持星号通配。
+        </li>
+        <li>
+          <b>e/call1/call2</b>
+          入口台站。包里的 q 构造后面紧跟着这个呼号，也就是把这个包收上网的那台网关。
+        </li>
+        <li>
+          <b>g/call1/call2</b>
+          组消息。消息的收件人是这些呼号的包都推给你，支持星号通配。
+        </li>
+        <li>
+          <b>u/unproto1</b>
+          目的呼号，也就是包头里那个 To call。支持星号通配。
+        </li>
+        <li>
+          <b>o/obj1/obj2</b>
+          对象名精确匹配。支持星号通配，名字里不能有空格。
+        </li>
+        <li>
+          <b>os/obj1/obj2</b>
+          严格对象过滤，写法同上。对象名固定九位，Item 名字三到九位。这个条件只能写一条，而且必须放在整行的最后。
+        </li>
+      </ul>
+      <p class="prose">对象名里要写斜杠或者星号，得换个写法：<code>|</code> 当斜杠用，<code>~</code> 当星号用。</p>
+    </div>
+  </section>

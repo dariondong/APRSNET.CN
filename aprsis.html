@@ -79,7 +79,7 @@
   <section class="section">
     <div class="section-head">
       <h1>APRS-IS 文档（中文）</h1>
-      <p>APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用；后面的过滤器、网关、q 构造接着补。</p>
+      <p>APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用。过滤器另有专篇，网关细则和 q 构造接着补。</p>
     </div>
   </section>
 
@@ -101,7 +101,7 @@
         </li>
         <li>
           <b>14580</b>
-          自定义过滤 feed，日常最常用。默认只给你「发给你的消息」和「你的网关收上来的包」，其余靠 filter 命令一条条加。这是双向端口：验证通过后你发的包也会进 APRS-IS（FireNet 的服务器除外）。
+          自定义过滤 feed，日常最常用。默认只给你「发给你的消息」和「你的网关收上来的包」，其余靠 filter 命令一条条加，写法见<a href="filter.html#filter-basics">APRS-IS 过滤器</a>。这是双向端口：验证通过后你发的包也会进 APRS-IS（FireNet 的服务器除外）。
         </li>
         <li>
           <b>23000</b>
@@ -133,7 +133,7 @@
         <li>
           <b>一个只收的例子（连 14580）</b>
           <code>user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50</code>
-          <code>pass -1</code> 表示只收不发；末尾那段是服务器命令，这里让服务器把 33.25N 96.5W 五十公里内的台站包都推过来（过滤器写法见下一节）。
+          <code>pass -1</code> 表示只收不发；末尾那段是服务器命令，这里让服务器把 33.25N 96.5W 五十公里内的台站包都推过来（过滤器写法见<a href="filter.html#filter-basics">另一篇</a>）。
         </li>
       </ul>
       <ul class="fact-list">
@@ -293,6 +293,17 @@
           <li><a href="#aprsis-connect">连上 APRS-IS</a></li>
           <li><a href="#aprsis-login">登录行怎么写</a></li>
           <li><a href="#aprsis-send">UDP 与只发端口</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>APRS-IS 过滤器</b>
+        <ul>
+          <li><a href="filter.html#filter-basics">怎么写</a></li>
+          <li><a href="filter.html#filter-place">按位置挑</a></li>
+          <li><a href="filter.html#filter-station">按台站挑</a></li>
+          <li><a href="filter.html#filter-type">按类型挑</a></li>
+          <li><a href="filter.html#filter-symbol">按符号挑</a></li>
+          <li><a href="filter.html#filter-refs">原文与相关</a></li>
         </ul>
       </div>
       <div class="footer-group">

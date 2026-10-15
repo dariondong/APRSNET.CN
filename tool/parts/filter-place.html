@@ -1,0 +1,34 @@
+  <section class="section" id="filter-place">
+    <div class="section-head">
+      <h2>按位置挑</h2>
+      <p>用得最多的四个条件：一个圆、一个方框，还有两个跟着人跑的圆。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>r/lat/lon/dist</b>
+          范围过滤。以 lat/lon 为圆心、dist 公里为半径，里头的台站位置包和对象都推给你，发给半径内台站的消息也一起推。
+        </li>
+        <li>
+          <b>a/latN/lonW/latS/lonE</b>
+          矩形过滤。给四个角，先左上再右下，经纬度照样用十进制度，西经南纬写负数。
+        </li>
+        <li>
+          <b>m/dist</b>
+          圆心放在本连接最后一次算出的位置上，半径 dist 公里。人动了也不用改条件。
+        </li>
+        <li>
+          <b>f/call/dist</b>
+          圆心放在某个台站最后已知的位置上，半径 dist 公里。跟着朋友跑就用它。
+        </li>
+      </ul>
+      <ul class="pkt-list">
+        <li>
+          <b>一个能直接抄的例子</b>
+          <code>filter r/23.13/113.26/50</code>
+          广州附近五十公里。嫌少就把最后那个数字改大，单位是公里。
+        </li>
+      </ul>
+      <p class="prose">范围、矩形、朋友这三类都能同时写好几条，把常去的地方一块儿圈上。同类各最多九条。</p>
+    </div>
+  </section>

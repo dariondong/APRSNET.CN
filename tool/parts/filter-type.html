@@ -1,0 +1,40 @@
+  <section class="section" id="filter-type">
+    <div class="section-head">
+      <h2>按类型挑</h2>
+      <p>不看是谁发的，看包里装的是什么。t 开头这一组管这个。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">写法是把类别字母连在 <code>t/</code> 后面，一次可以挑好几类，<code>t/otq</code> 就是要对象、遥测和查询。后面还能再跟一段 <code>/call/km</code>，把这些类别限制在某个台站周围多少公里以内。</p>
+      <dl class="glossary">
+        <dt>p</dt>
+        <dd>位置包。</dd>
+        <dt>o</dt>
+        <dd>对象。</dd>
+        <dt>i</dt>
+        <dd>Item，名字很短的小标记。</dd>
+        <dt>m</dt>
+        <dd>消息。</dd>
+        <dt>q</dt>
+        <dd>查询。</dd>
+        <dt>s</dt>
+        <dd>状态包。</dd>
+        <dt>t</dt>
+        <dd>遥测。</dd>
+        <dt>u</dt>
+        <dd>用户自定义。</dd>
+        <dt>n</dt>
+        <dd>NWS 格式的报文和对象。</dd>
+        <dt>w</dt>
+        <dd>天气。挑这一类的时候，不带位置的气象包，它对应的位置包也会一起给你。</dd>
+      </dl>
+      <ul class="pkt-list">
+        <li>
+          <b>几个例子</b>
+          <code>t/otq</code>
+          <code>t/n</code>
+          <code>t/poimqstunw</code>
+          第一行要对象、遥测和查询；第二行只要 NWS 公报；第三行十类全都要。
+        </li>
+      </ul>
+    </div>
+  </section>
