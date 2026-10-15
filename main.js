@@ -135,9 +135,21 @@
     var TLQ_KEYS = Object.keys(TLQ);
     if (tlqCount) tlqCount.textContent = String(TLQ_KEYS.length);
 
+    var tlqClear = function () {
+      while (tlqOut.firstChild) tlqOut.removeChild(tlqOut.firstChild);
+      tlqOut.className = "idq-out";
+    };
     var tlqSay = function (msg, kind) {
-      tlqOut.textContent = msg;
+      tlqClear();
       tlqOut.className = kind ? "idq-out " + kind : "idq-out";
+      tlqOut.textContent = msg;
+    };
+    var tlqLine = function (box, cls, text) {
+      var p = document.createElement("p");
+      p.className = cls;
+      p.textContent = text;
+      box.appendChild(p);
+      return p;
     };
     /* 整行报文也行：取「呼号>」之后的第一个字段 */
     var pickTocall = function (raw) {
@@ -145,10 +157,15 @@
       var i = s.indexOf(">");
       if (i >= 0) s = s.slice(i + 1);
       s = s.split(",")[0].split(":")[0];
-      return s.replace(/[^0-9A-Z?]/g, "");
+      return s.replace(/[^0-9A-Z?*]/g, "");
     };
-    /* 按位比：官方名单里的 ? 表示该位可以是任意字符 */
+    /* 按位比：官方名单里的 ? 表示该位可以是任意字符，* 表示后面随便 */
     var matchKey = function (key, tc) {
+      var star = key.indexOf("*");
+      if (star >= 0) {
+        var head = key.slice(0, star);
+        return tc.length >= head.length && tc.slice(0, head.length) === head;
+      }
       if (key.length !== tc.length) return false;
       for (var i = 0; i < key.length; i++) {
         var c = key.charAt(i);
@@ -158,35 +175,74 @@
     };
     var tlqLookup = function (tc) {
       if (TLQ[tc]) return { key: tc, val: TLQ[tc], exact: true };
+      var star = null;
       for (var i = 0; i < TLQ_KEYS.length; i++) {
-        if (TLQ_KEYS[i].indexOf("?") >= 0 && matchKey(TLQ_KEYS[i], tc)) {
-          return { key: TLQ_KEYS[i], val: TLQ[TLQ_KEYS[i]], exact: false };
-        }
+        var k = TLQ_KEYS[i];
+        if (k.indexOf("?") < 0 && k.indexOf("*") < 0) continue;
+        if (!matchKey(k, tc)) continue;
+        if (k.indexOf("?") >= 0) return { key: k, val: TLQ[k], exact: false };
+        if (!star) star = { key: k, val: TLQ[k], exact: false };
       }
-      return null;
+      return star;
     };
     var tlqNear = function (tc) {
-      var head = tc.replace(/\?/g, "").slice(0, 4), out = [];
+      var head = tc.replace(/[?*]/g, "").slice(0, 4), out = [];
       if (head.length < 3) return out;
       for (var i = 0; i < TLQ_KEYS.length && out.length < 3; i++) {
-        if (TLQ_KEYS[i].replace(/\?/g, "").indexOf(head) === 0) out.push(TLQ_KEYS[i]);
+        if (TLQ_KEYS[i].replace(/[?*]/g, "").indexOf(head) === 0) out.push(TLQ_KEYS[i]);
       }
       return out;
     };
-    tlqForm.addEventListener("submit", function (e) {
-      e.preventDefault();
+    /* 查到：等宽 TOCALL 码 + 设备名 + 类别/平台；没查到：把开头相近的条目列成可点的候选 */
+    var tlqShowHit = function (hit) {
+      var fm = hit.val.split(" \u00b7 ");
+      tlqClear();
+      var box = document.createElement("div");
+      box.className = "tlq-hit";
+      tlqLine(box, "tlq-code", hit.key);
+      tlqLine(box, "tlq-name", fm[0] || "未标明设备");
+      if (fm.length > 1) tlqLine(box, "tlq-meta", fm.slice(1).join(" \u00b7 "));
+      tlqLine(box, "tlq-note", hit.exact
+        ? "官方名单里的条目与输入完全一致。"
+        : "按官方名单里的 " + hit.key + " 匹配，其中的 ? 可以是任意字母或数字。");
+      tlqOut.appendChild(box);
+    };
+    var tlqShowMiss = function (tc) {
+      var near = tlqNear(tc);
+      tlqClear();
+      var box = document.createElement("div");
+      box.className = "tlq-hit tlq-miss";
+      tlqLine(box, "tlq-name", "名单里没有 " + tc);
+      tlqLine(box, "tlq-note", "可能抄错了一两位，也可能是自制程序或还没登记的软件。"
+        + (near.length ? "开头相近的有这几个，点一下直接查：" : ""));
+      if (near.length) {
+        var chips = document.createElement("div");
+        chips.className = "tlq-near";
+        near.forEach(function (k) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "tlq-chip";
+          b.textContent = k;
+          b.addEventListener("click", function () {
+            tlqInput.value = k.replace(/[?*]/g, "");
+            tlqRun();
+          });
+          chips.appendChild(b);
+        });
+        box.appendChild(chips);
+      }
+      tlqOut.appendChild(box);
+    };
+    var tlqRun = function () {
       var tc = pickTocall(tlqInput.value);
       if (!tc) { tlqSay("先填一个 TOCALL，或者把整行报文粘进来。", "bad"); return; }
       var hit = tlqLookup(tc);
-      if (hit) {
-        tlqInput.value = tc;
-        tlqSay(tc + " → " + hit.val + (hit.exact ? "" : "（按官方条目 " + hit.key + " 匹配）"), "good");
-        return;
-      }
-      var near = tlqNear(tc);
-      tlqSay("名单里没有 " + tc + "：可能是抄错了一两位，也可能是自制程序或还没登记的软件。"
-        + (near.length ? "同开头的还有：" + near.join("、") + "。" : "")
-        + "官方名单在下面的链接里。", "bad");
+      if (hit) { tlqInput.value = tc; tlqShowHit(hit); return; }
+      tlqShowMiss(tc);
+    };
+    tlqForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      tlqRun();
     });
     var tlqReset = tlqForm.querySelector("button[type=reset]");
     if (tlqReset) tlqReset.addEventListener("click", function () { tlqSay(""); });

@@ -251,6 +251,21 @@ main > section.section { counter-increment: sec; }
 .idq-out.good { color: var(--text); }
 .idq-out.bad { color: var(--hot); }
 
+/* 查询结果：一张不打框的结果牌（等宽码 + 名称 + 类别/平台），没查到就列候选 */
+.tlq-hit { margin-top: 20px; padding-top: 16px; border-top: 2px solid var(--text); max-width: 760px; }
+.tlq-hit.tlq-miss { border-top-color: var(--line-strong); }
+.tlq-code { font-family: var(--font-mono); font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: var(--hot); }
+.tlq-name { margin-top: 7px; font-size: clamp(21px, 2.6vw, 28px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; color: var(--text); }
+.tlq-meta { margin-top: 7px; font-size: 15px; color: var(--text-dim); }
+.tlq-note { margin-top: 10px; font-size: 14px; color: var(--text-faint); max-width: 62ch; }
+.tlq-near { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tlq-chip {
+  padding: 7px 12px; border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+  font-family: var(--font-mono); font-size: 14px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+  transition: border-color .2s var(--ease), color .2s var(--ease);
+}
+.tlq-chip:hover { border-color: var(--hot); color: var(--hot); }
+
 /* ── 07. 回到顶部（带滚动进度环） ── */
 .backtop {
   position: fixed; right: 24px; bottom: 24px; z-index: 90; width: 44px; height: 44px;
