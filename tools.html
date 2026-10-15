@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRS 工具与链接 — 客户端、在线地图与自建工具</title>
-<meta name="description" content="中文 APRS 工具与链接集合：passcode 计算器（填呼号算 APRS-IS 的 passcode）、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。">
+<meta name="description" content="中文 APRS 工具与链接集合：本站的 passcode 计算器与官方 TOCALL 查询、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。">
 <meta name="keywords" content="APRS 工具,passcode,APRS-IS passcode,passcode 计算器,APRS 客户端,APRS 软件,APRS 地图,APRS 网站,APRSdroid,APRSLocus,YAAC,APRSIS32,PinPoint APRS,Direwolf,aprs.fi,APRS.TV,APRS 设备名单">
 <meta name="author" content="BG7LZQ (Darion)">
 <meta name="robots" content="index, follow, max-image-preview:large">
@@ -28,7 +28,7 @@
 <meta name="twitter:description" content="APRS 的工具和网站收在一页：passcode 计算器、客户端、在线地图，和自己动手用的东西。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
 <link rel="stylesheet" href="style.css?v=34">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRS 工具与链接 — 客户端、在线地图与自建工具","url":"https://aprsnet.cn/tools.html","inLanguage":"zh-CN","description":"中文 APRS 工具与链接集合：passcode 计算器（填呼号算 APRS-IS 的 passcode）、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRS 工具与链接 — 客户端、在线地图与自建工具","url":"https://aprsnet.cn/tools.html","inLanguage":"zh-CN","description":"中文 APRS 工具与链接集合：本站的 passcode 计算器与官方 TOCALL 查询、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -83,7 +83,36 @@
     </div>
   </section>
 
-  <section class="section alt" id="tools-client">
+  <section class="section alt" id="tools-own">
+    <div class="section-head">
+      <h2>本站的小工具</h2>
+      <p>站上自己做的几件小事，打开就能用，不用装东西。</p>
+    </div>
+    <div class="section-body">
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="passcode.html">
+            <span class="lr-main">
+              <b>passcode 计算器</b>
+              <span>填上自己的呼号，当场算出连 APRS-IS 用的 passcode，一键复制。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="tocall.html">
+            <span class="lr-main">
+              <b>官方 TOCALL 查询</b>
+              <span>报文里呼号后面那段码是什么设备，粘进一整行就查得到。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="tools-client">
     <div class="section-head">
       <h2>客户端</h2>
       <p>装在手机或者电脑上，用来收发、看地图的软件。挑一个装上就能开始。</p>
@@ -140,50 +169,6 @@
     </div>
   </section>
 
-  <section class="section" id="tools-passcode">
-    <div class="section-head">
-      <h2>passcode 计算器</h2>
-      <p>连 APRS-IS 的登录行里要填一个 passcode，它只跟呼号有关。填上自己的呼号，这里替你算出来。</p>
-    </div>
-    <div class="section-body">
-      <form class="idq" id="pcForm" novalidate>
-        <label class="idq-label" for="pcInput">你的呼号</label>
-        <p class="idq-hint">填 <code>BG7LZQ</code> 这样的大写呼号；带 SSID 的 <code>BG7LZQ-9</code> 也行，SSID 不参与计算。整行 <code>user BG7LZQ pass …</code> 粘进来也认得。算在浏览器里做，本站不发请求，也不存任何东西。</p>
-        <div class="idq-row">
-          <input class="idq-input" id="pcInput" name="pcInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BG7LZQ" aria-describedby="pcOut">
-          <button class="btn btn-primary idq-btn" type="submit">算一下</button>
-          <button class="idq-clear" type="reset">清空</button>
-        </div>
-        <div class="idq-out" id="pcOut" role="status" aria-live="polite"></div>
-      </form>
-      <ul class="fact-list">
-        <li>
-          <b>它是什么</b>
-          登录行里 <code>pass</code> 后面那串数字，服务器拿它确认呼号是你的。同一个呼号永远算出同一个数，带不带 SSID 都一样。
-        </li>
-        <li>
-          <b>只算自己的呼号</b>
-          服务器只按呼号认人。拿别人的呼号登上去，发出去的包就都记在别人名下。
-        </li>
-        <li>
-          <b>算法是哪来的</b>
-          官方文档没有公开它，各家开源客户端都在本地按同一套老算法算。这一页也一样，只在你自己的浏览器里跑。
-        </li>
-      </ul>
-      <ul class="link-list">
-        <li>
-          <a class="link-row" href="aprsis.html#aprsis-login">
-            <span class="lr-main">
-              <b>登录行怎么写</b>
-              <span>user、pass、vers 各填什么，pass 写 -1 就是只收不发。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">→</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-  </section>
-
   <section class="section alt" id="tools-web">
     <div class="section-head">
       <h2>在线地图与查询</h2>
@@ -234,15 +219,6 @@
               <span>服务器地址和状态页入口；每台机器开了哪些端口，写在它自己的状态页上。</span>
             </span>
             <span class="lr-go" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a class="link-row" href="tocall.html">
-            <span class="lr-main">
-              <b>本站：官方 TOCALL 查询</b>
-              <span>报文里呼号后面那一段是什么设备，粘一整行进来就能查。</span>
-            </span>
-            <span class="lr-go" aria-hidden="true">→</span>
           </a>
         </li>
       </ul>
@@ -389,6 +365,7 @@
         <b>本站</b>
         <ul>
           <li><a href="tools.html" aria-current="page">工具与链接</a></li>
+          <li><a href="passcode.html">passcode 计算器</a></li>
           <li><a href="links.html">友链</a></li>
           <li><a href="about.html">关于本站</a></li>
           <li><a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">源码仓库</a></li>
@@ -407,7 +384,6 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="passcode.js?v=1"></script>
 <script src="main.js?v=13"></script>
 </body>
 </html>

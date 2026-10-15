@@ -159,7 +159,7 @@
         </li>
       </ul>
       <p class="prose">呼号和 SSID 有几条硬规矩：只能用 ASCII 字母数字，中间最多一个连字符加一两位 SSID；呼号本体至少 3 位，含 SSID 在内不超过 9 位。大小写虽然允许，但服务器按大写算同一个台站；发消息、上 RF 直发、给 Yaesu 电台发消息，都要求大写和 AX.25 的 SSID（0–15，同样不用 <code>-0</code>）。拿不准就一律大写。</p>
-      <p class="prose">passcode 的算法官方文档没有公布，各家开源客户端都在本地按同一套老算法算。填上自己的呼号，<a href="tools.html#tools-passcode">工具页的计算器</a>也能算出来。这道门槛的作用，是让 APRS-IS 只留给业余无线电使用，别拿别人的呼号登服务器。</p>
+      <p class="prose">passcode 的算法官方文档没有公布，各家开源客户端都在本地按同一套老算法算。填上自己的呼号，<a href="passcode.html">passcode 计算器</a>也能算出来。这道门槛的作用，是让 APRS-IS 只留给业余无线电使用，别拿别人的呼号登服务器。</p>
       <p class="prose">服务器回的每一行都以 <code>#</code> 开头的是注释，客户端直接忽略；登录成功失败的结论也在里面（例如 <code>#login AE5PL-TS unverified</code> 就是只收）。空闲一阵子服务器还会周期性发 <code>#</code> 开头的行探活。</p>
       <p class="prose">最后一条：发进 APRS-IS 的包必须是 TNC2 格式、以回车换行结尾，一整行不超过 512 字节（含回车换行）。没有效 passcode 的客户端发什么都没人收。</p>
     </div>
@@ -245,6 +245,7 @@
         <b>本站</b>
         <ul>
           <li><a href="tools.html">工具与链接</a></li>
+          <li><a href="passcode.html">passcode 计算器</a></li>
           <li><a href="links.html">友链</a></li>
           <li><a href="about.html">关于本站</a></li>
           <li><a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">源码仓库</a></li>

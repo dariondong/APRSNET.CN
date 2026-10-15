@@ -1,0 +1,18 @@
+  <section class="section" id="passcode-calc">
+    <div class="section-head">
+      <h2>算一下</h2>
+      <p>填自己的呼号就行。算在浏览器里做，本站不发请求，也不存任何东西。</p>
+    </div>
+    <div class="section-body">
+      <form class="idq" id="pcForm" novalidate>
+        <label class="idq-label" for="pcInput">你的呼号</label>
+        <p class="idq-hint">填 <code>BG7LZQ</code> 这样的大写呼号；带 SSID 的 <code>BG7LZQ-9</code> 也行，SSID 不参与计算。整行 <code>user BG7LZQ pass …</code> 粘进来也认得。</p>
+        <div class="idq-row">
+          <input class="idq-input" id="pcInput" name="pcInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BG7LZQ" aria-describedby="pcOut">
+          <button class="btn btn-primary idq-btn" type="submit">算一下</button>
+          <button class="idq-clear" type="reset">清空</button>
+        </div>
+        <div class="idq-out" id="pcOut" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>

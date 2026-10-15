@@ -42,8 +42,56 @@
           ' vers 软件名 版本</div>' +
         (hadSsid ? '<div class="tlq-note">带 SSID 也算得出同一个数：' +
           '登录行里写 ' + base + ' 就行。</div>' : '') +
+        '<div class="tlq-near"><button class="tlq-chip" type="button"' +
+          ' data-copy="' + code + '">复制</button></div>' +
       '</div>';
   }
+
+  function copied(btn) {
+    var label = btn.getAttribute('data-label') || btn.textContent;
+    btn.setAttribute('data-label', label);
+    btn.textContent = '已复制';
+    setTimeout(function () { btn.textContent = label; }, 1600);
+  }
+
+  // 老浏览器或非安全来源没有 navigator.clipboard，退回选中再复制的老办法
+  function fallback(text, btn) {
+    var box = document.createElement('textarea');
+    box.value = text;
+    box.setAttribute('readonly', '');
+    box.style.position = 'fixed';
+    box.style.top = '-1000px';
+    document.body.appendChild(box);
+    box.select();
+    try {
+      document.execCommand('copy');
+      copied(btn);
+    } catch (e) {
+      // 复制不成也看得见数字，不折腾
+    }
+    document.body.removeChild(box);
+  }
+
+  function copyText(text, btn) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { copied(btn); },
+        function () { fallback(text, btn); });
+      return;
+    }
+    fallback(text, btn);
+  }
+
+  // 结果牌每次重画，复制按钮用事件代理
+  out.addEventListener('click', function (e) {
+    var el = e.target;
+    while (el && el !== out) {
+      if (el.getAttribute && el.getAttribute('data-copy')) {
+        copyText(el.getAttribute('data-copy'), el);
+        return;
+      }
+      el = el.parentNode;
+    }
+  });
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();

@@ -29,7 +29,7 @@ PARTS = HERE / "parts"
 
 CSS_V = "34"        # style.css?v=
 MAIN_V = "13"       # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12", "passcode.js": "1"}  # 页内脚本的缓存键
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12", "passcode.js": "2"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
 
 SITE = "https://aprsnet.cn/"
@@ -179,13 +179,23 @@ PAGES = [
         file="tools.html", nav="工具", h1="工具与链接",
         lead="APRS 的软件、网站和自制的家伙都收在这一页：手机电脑上的客户端、浏览器里的地图，想自己搭一套时用得上的东西也在。",
         title="APRS 工具与链接 — 客户端、在线地图与自建工具",
-        desc="中文 APRS 工具与链接集合：passcode 计算器（填呼号算 APRS-IS 的 passcode）、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
+        desc="中文 APRS 工具与链接集合：本站的 passcode 计算器与官方 TOCALL 查询、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
         og="APRS 的工具和网站收在一页：passcode 计算器、客户端、在线地图，和自己动手用的东西。",
         keywords="APRS 工具,passcode,APRS-IS passcode,passcode 计算器,APRS 客户端,"
                  "APRS 软件,APRS 地图,APRS 网站,APRSdroid,APRSLocus,YAAC,APRSIS32,"
                  "PinPoint APRS,Direwolf,aprs.fi,APRS.TV,APRS 设备名单",
-        blocks=["tools-client", "tools-passcode", "tools-web", "tools-make",
+        blocks=["tools-own", "tools-client", "tools-web", "tools-make",
                 "tools-submit"],
+    ),
+    dict(
+        file="passcode.html", nav="", nav_active="tools.html", h1="passcode 计算器",
+        lead="连 APRS-IS 的登录行里要填一个 passcode，它只跟呼号有关。填上自己的呼号，当场算出来，复制了就能用。",
+        title="APRS-IS passcode 计算器 — 按呼号算登录用的 passcode",
+        desc="在浏览器里按呼号算 APRS-IS 的 passcode：填呼号（带不带 SSID 都行）当场得数，一键复制；同时说清 pass -1 只收不发、只算自己的呼号、算法出处，以及登录行怎么写、连哪个端口。",
+        og="填上呼号，当场算出 APRS-IS 登录用的 passcode，一键复制。",
+        keywords="passcode,APRS passcode,APRS-IS passcode,passcode 计算器,passcode 怎么算,"
+                 "登录行,APRS-IS 登录,pass -1,呼号,APRS 工具",
+        blocks=["passcode-calc", "passcode-note"],
         scripts=("passcode.js",),
     ),
     dict(
@@ -221,7 +231,7 @@ FOOT_MAP = (
                     "packet.html", "tocall.html", "faq.html")),
     ("文档", ("docs.html", "aprsis.html", "filter.html", "igate.html",
               "qconstruct.html", "protocol.html")),
-    ("本站", ("tools.html", "links.html", "about.html")),
+    ("本站", ("tools.html", "passcode.html", "links.html", "about.html")),
 )
 # 页脚里每页那一行的短名
 PAGE_SHORT = {
@@ -231,7 +241,8 @@ PAGE_SHORT = {
     "docs.html": "规范与文档", "aprsis.html": "APRS-IS 文档（中文）",
     "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
     "qconstruct.html": "q 构造", "protocol.html": "APRSNET CN CONNECT（草案）",
-    "tools.html": "工具与链接", "links.html": "友链", "about.html": "关于本站",
+    "tools.html": "工具与链接", "passcode.html": "passcode 计算器",
+    "links.html": "友链", "about.html": "关于本站",
 }
 
 # 页脚最后那栏里的两个外部入口

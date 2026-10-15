@@ -1,0 +1,46 @@
+  <section class="section" id="passcode-note">
+    <div class="section-head">
+      <h2>关于这个数</h2>
+      <p>填之前先看几件和它有关的事。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>它是什么</b>
+          登录行里 <code>pass</code> 后面那串数字，服务器拿它确认呼号是你的。同一个呼号永远算出同一个数，带不带 SSID 都一样。
+        </li>
+        <li>
+          <b>只收不发怎么写</b>
+          <code>pass -1</code> 表示只收不发，不用算 passcode；要往网上发自己的包，才需要真的填一个。
+        </li>
+        <li>
+          <b>只算自己的呼号</b>
+          服务器只按呼号认人。拿别人的呼号登上去，发出去的包就都记在别人名下。
+        </li>
+        <li>
+          <b>算法是哪来的</b>
+          官方文档没有公开它，各家开源客户端都在本地按同一套老算法算。这一页也一样，只在你自己的浏览器里跑。
+        </li>
+      </ul>
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="aprsis.html#aprsis-login">
+            <span class="lr-main">
+              <b>登录行怎么写</b>
+              <span>user、pass、vers 各填什么，呼号和 SSID 有几条硬规矩。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="aprsis.html#aprsis-connect">
+            <span class="lr-main">
+              <b>连哪个端口</b>
+              <span>14580 收自己的范围、只发端口怎么用，先在这一节里挑。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
