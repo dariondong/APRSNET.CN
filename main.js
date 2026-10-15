@@ -193,12 +193,13 @@
       }
       return out;
     };
-    /* 查到：等宽 TOCALL 码 + 设备名 + 类别/平台；没查到：把开头相近的条目列成可点的候选 */
+    /* 查到：一块读数牌（标签 / 等宽码 / 设备名 / 类别），没查到：同形状的牌 + 候选 */
     var tlqShowHit = function (hit) {
       var fm = hit.val.split(" \u00b7 ");
       tlqClear();
       var box = document.createElement("div");
       box.className = "tlq-hit";
+      tlqLine(box, "tlq-tag", "查询结果");
       tlqLine(box, "tlq-code", hit.key);
       tlqLine(box, "tlq-name", fm[0] || "未标明设备");
       if (fm.length > 1) tlqLine(box, "tlq-meta", fm.slice(1).join(" \u00b7 "));
@@ -212,7 +213,9 @@
       tlqClear();
       var box = document.createElement("div");
       box.className = "tlq-hit tlq-miss";
-      tlqLine(box, "tlq-name", "名单里没有 " + tc);
+      tlqLine(box, "tlq-tag", "查询结果");
+      tlqLine(box, "tlq-code", tc);
+      tlqLine(box, "tlq-name", "名单里没有这条");
       tlqLine(box, "tlq-note", "可能抄错了一两位，也可能是自制程序或还没登记的软件。"
         + (near.length ? "开头相近的有这几个，点一下直接查：" : ""));
       if (near.length) {
