@@ -46,6 +46,7 @@ a{color:inherit}
 <div class="wrap">
   <h1>APRSNETCN OA 主控台</h1>
   <p class="note">收到的 CNNET 报文在这里点名。名单改完自动写进本轮，页面上看到的就是这份。
+    <label class="hint"><input type="checkbox" id="auto"> 全自动</label>
     <span id="ago"></span> <label class="hint"><input type="checkbox" id="pause"> 暂停刷新</label></p>
 
   <div class="bar" id="bar"><span>正在读状态…</span></div>
@@ -68,7 +69,7 @@ a{color:inherit}
   <div id="msg" class="msg"></div>
 
   <h2>待办</h2>
-  <p class="note">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
+  <p class="note" id="todoNote">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
   <div id="todo"></div>
 
   <h2>报到流水（最近 200 条）</h2>
@@ -111,7 +112,7 @@ a{color:inherit}
     try { localStorage.setItem("oa_token", token); } catch (e) {}
   }
 
-  var state = { date: "", round: "", archive: "", routes: [] };
+  var state = { date: "", round: "", archive: "", auto: false, routes: [] };
   var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -187,6 +188,7 @@ a{color:inherit}
       state.routes = (data.packets || []).slice(0, 200);
       state.round = (data.round && data.round.date) || "";
       state.archive = (data.health && data.health.archive_dir) || "";
+      state.auto = !!(data.health && data.health.auto);
       lastSync = Date.now();
       paintBar(data.health, data.round);
       paintStats(data.stats, data.round);
@@ -229,11 +231,16 @@ a{color:inherit}
   var paintTodo = function (stations, round) {
     var box = $("todo");
     box.textContent = "";
-    var waiting = (stations || []).filter(function (s) { return s.status !== "confirmed"; });
+    $("todoNote").textContent = state.auto
+      ? "全自动开着：喊到自己就回 ACK，漏了的过一分钟自己补。这里只列还没回上 ACK 的。"
+      : "回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。";
+    var waiting = (stations || []).filter(function (s) {
+      return state.auto ? s.status === "called" : s.status !== "confirmed";
+    });
     if (!round || !waiting.length) {
       var p = document.createElement("div");
       p.className = "empty";
-      p.textContent = round ? "都确认了。" : "先开一轮。";
+      p.textContent = round ? (state.auto ? "没有要人动的。" : "都确认了。") : "先开一轮。";
       box.appendChild(p);
       return;
     }
@@ -295,10 +302,13 @@ a{color:inherit}
     add("在收的轮", (h && h.active_round) || "没开");
     add("报文", (h && h.packets) || 0);
     add("发 ACK", (h && h.tx) ? "能发" : "只记不发");
-    if (h && h.tx) add("自动回 ACK", (h.auto_ack ? "开" : "关"));
+    add("全自动", (h && h.auto) ? "开" : "关", (h && h.auto) ? "ok" : "");
+    if (h && h.tx) add("自动回 ACK", h.auto_ack ? "开" : "关");
     if (aprs.error) add("错误", aprs.error, "bad");
+    $("auto").checked = !!(h && h.auto);
     $("txHint").textContent = (h && h.tx)
       ? ((h.auto_ack ? "有人喊到就自动回一条 ACK。" : "自动回 ACK 关着，只能自己点。") +
+         (h.auto ? "没回成的过一分钟自己补，一台最多补 " + (h.ack_retry || 0) + " 次。" : "") +
          "一台一轮只回一次，一分钟最多 " + (h.ack_per_minute || 12) + " 条。")
       : "没有配 OA_TX_PASSCODE，回 ACK 只把报文记下来、复制给你自己发。";
   };
@@ -524,6 +534,24 @@ a{color:inherit}
   $("roundPick").addEventListener("change", function () {
     state.date = $("roundPick").value;
     refresh();
+  });
+
+  $("auto").addEventListener("change", function () {
+    var on = $("auto").checked;
+    api("/api/admin/settings", "POST", { auto: on }).then(function (d) {
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "改不动。";
+        showErr(why);
+        say(why, true);
+        $("auto").checked = !on;
+        return;
+      }
+      showErr("");
+      state.auto = on;
+      say(on ? "全自动开着：到点自己开轮收轮，喊到自己回 ACK，没回成的自己补。"
+             : "全自动关了：开轮收轮与回 ACK 都自己点。");
+      refresh();
+    });
   });
 
   var exportUrl = function (what) {

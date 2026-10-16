@@ -49,6 +49,8 @@ DEFAULTS = {
     "OA_ACK_MAX_PER_MINUTE": "12",
     "OA_ROUND_DUTY": "",
     "OA_AUTO_ROUND": "1",
+    "OA_AUTO": "1",
+    "OA_ACK_RETRY": "3",
     "OA_ARCHIVE_DIR": "",
     "OA_PUBLISH_ROSTER": "",
     "OA_KEEP_OTHER": "2000",
@@ -102,6 +104,18 @@ def config_from_env():
     return dict((key, os.environ.get(key, value)) for key, value in DEFAULTS.items())
 
 
+def flag(value):
+    """1 / yes / true 算开，空着与 0 / no / false 算关。"""
+    return (value or "").strip().lower() not in ("", "0", "no", "false")
+
+
+def as_int(value, default):
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
 class Runtime(object):
     def __init__(self, conf):
         self.conf = conf
@@ -111,17 +125,45 @@ class Runtime(object):
         self.site_root = os.path.realpath(root)
         self.link = None
         self.publish_path = conf["OA_PUBLISH_ROSTER"] or ""
-        self.auto_round_on = (conf.get("OA_AUTO_ROUND") or "").strip() not in ("", "0", "no", "false")
         self.archive_dir = conf["OA_ARCHIVE_DIR"] or os.path.join(conf["OA_DATA_DIR"] or ".", "archive")
-        self.auto_ack = (conf.get("OA_AUTO_ACK") or "").strip() not in ("", "0", "no", "false")
-        try:
-            self.ack_per_minute = int(conf.get("OA_ACK_MAX_PER_MINUTE") or 12)
-        except ValueError:
-            self.ack_per_minute = 12
+        # 三个开关都走「库里的设置优先，没设过就看环境变量」。全自动打开时，另外两个跟着开。
+        self._auto_env = flag(conf.get("OA_AUTO"))
+        self._auto_ack = flag(conf.get("OA_AUTO_ACK"))
+        self._auto_round = flag(conf.get("OA_AUTO_ROUND"))
+        self._auto_set = self.store.get_setting("auto")
+        self.ack_retry = as_int(conf.get("OA_ACK_RETRY"), 3)
+        self.ack_per_minute = as_int(conf.get("OA_ACK_MAX_PER_MINUTE"), 12)
         self._sendq = queue.Queue()
         self._sent_at = []
         self._send_lock = threading.Lock()
         self._stop = threading.Event()
+
+    # ---- 全自动 ----
+
+    @property
+    def auto_mode(self):
+        """全自动：开轮收轮、回 ACK、补漏都不用人守。主控台上能当场切。"""
+        if self._auto_set:
+            return self._auto_set == "1"
+        return self._auto_env
+
+    def set_auto_mode(self, on):
+        self._auto_set = self.store.set_setting("auto", "1" if on else "0")
+        return self.auto_mode
+
+    @property
+    def auto_ack_on(self):
+        return self.auto_mode and self._auto_ack
+
+    @property
+    def auto_round_on(self):
+        return self.auto_mode and self._auto_round
+
+    def flags(self):
+        return {"auto": self.auto_mode, "auto_ack": self.auto_ack_on,
+                "auto_round": self.auto_round_on, "ack_retry": self.ack_retry,
+                "ack_per_minute": self.ack_per_minute, "publish_roster": bool(self.publish_path),
+                "settings": self.store.settings()}
 
     def start_aprs(self):
         login = self.conf["OA_APRS_LOGIN"]
@@ -178,7 +220,8 @@ class Runtime(object):
         thread = threading.Thread(target=self._send_loop, name="oa-send")
         thread.daemon = True
         thread.start()
-        sys.stderr.write("发报文的通道开着，自动回 ACK %s\n" % ("开" if self.auto_ack else "关"))
+        sys.stderr.write("发报文的通道开着，全自动 %s，自动回 ACK %s\n"
+                         % ("开" if self.auto_mode else "关", "开" if self.auto_ack_on else "关"))
 
     def _send_loop(self):
         while not self._stop.is_set():
@@ -234,9 +277,14 @@ class Runtime(object):
             return active["duty"].strip().upper()
         return (self.conf["OA_ROUND_DUTY"] or "").strip().upper()
 
+    def ack_line(self, call, duty=""):
+        """回给某台站的那行报文：呼号列补到 9 格。"""
+        text = self.conf["OA_ACK_TEXT"] or "ACK"
+        return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
+
     def maybe_auto_ack(self, record, rid):
         """有人喊到就回一条 ACK，一台一轮只回一次。"""
-        if not self.auto_ack or not self.can_send():
+        if not self.auto_ack_on or not self.can_send():
             return
         active = self.store.active_round()
         if not active or (rid is not None and active["id"] != rid):
@@ -248,9 +296,40 @@ class Runtime(object):
         station = self.store.get_station(active["date"], src)
         if not station or station["status"] != "called":
             return
-        text = self.conf["OA_ACK_TEXT"] or "ACK"
-        line = "%s>APRS::%s:%s" % (duty, src.ljust(9), text)
-        self.queue_send(duty, src, line, date=active["date"])
+        self.queue_send(duty, src, self.ack_line(src, duty), date=active["date"])
+
+    def retry_pending_acks(self):
+        """全自动时补漏：没回成的 ACK（当时被限速、或者发失败）过一分钟再试，
+
+        一台一轮最多补 OA_ACK_RETRY 次。还在排队等发的不重复入队。
+        """
+        if not self.auto_mode or not self.auto_ack_on or not self.can_send():
+            return 0
+        if self.ack_retry <= 0:
+            return 0
+        active = self.store.active_round()
+        duty = self.duty_call()
+        if not active or not duty:
+            return 0
+        done = 0
+        for station in self.store.stations(active["date"]):
+            call = station["call"]
+            if station["status"] != "called" or call == duty:
+                continue
+            rows = self.store.outbox_for(call, active["opened"] or "")
+            if any((not r["sent"]) and (not r["error"]) for r in rows):
+                continue                                    # 还排着队，等它发
+            if sum(1 for r in rows if r["error"]) >= self.ack_retry:
+                continue                                    # 已经补够次数了
+            if rows:
+                gap = oa_store.seconds_since(rows[-1]["sent"] or rows[-1]["created"])
+                if gap is not None and gap < 60.0:
+                    continue                                # 一分钟里只补一次
+            self.queue_send(duty, call, self.ack_line(call, duty), date=active["date"])
+            done = done + 1
+        if done:
+            sys.stderr.write("补回 ACK %d 条\n" % done)
+        return done
 
     def start_maintenance(self):
         """后台一件小事：清掉攒下的闲聊报文，需要时把名单写一份到磁盘。"""
@@ -275,6 +354,11 @@ class Runtime(object):
                             sys.stderr.write("清掉 %d 条闲聊报文\n" % dropped)
                     except Exception as exc:
                         sys.stderr.write("清理出错：%s\n" % exc)
+                if tick % 4 == 3:                # 大约每分钟补一次没回成的 ACK
+                    try:
+                        self.retry_pending_acks()
+                    except Exception as exc:
+                        sys.stderr.write("补回 ACK 出错：%s\n" % exc)
                 if self.publish_path:
                     try:
                         text = json.dumps(self.store.roster(), ensure_ascii=False, indent=2) + "\n"
@@ -301,8 +385,10 @@ class Runtime(object):
             "duty": active["duty"] if active else self.conf["OA_ROUND_DUTY"],
             "rounds": len(self.store.rounds()),
             "tx": self.can_send(),
-            "auto_ack": self.auto_ack and self.can_send(),
+            "auto": self.auto_mode,
+            "auto_ack": self.auto_ack_on and self.can_send(),
             "ack_per_minute": self.ack_per_minute,
+            "ack_retry": self.ack_retry,
             "auto_round": self.auto_round_on,
             "archive_dir": self.archive_dir,
             "packets": data["packets"],
@@ -539,6 +625,13 @@ class Handler(BaseHTTPRequestHandler):
                 self.rt.store.set_station(date, call, status="acked", create=False)
             self._json({"ok": True, "queued": self.rt.can_send(), "line": line, "id": oid})
             return
+        if path == "/api/admin/settings":
+            if not self._need_token():
+                return
+            if "auto" in body:
+                self.rt.set_auto_mode(bool(body.get("auto")))
+            self._json({"ok": True, "flags": self.rt.flags()})
+            return
         if path == "/api/admin/archive":
             if not self._need_token():
                 return
@@ -591,6 +684,7 @@ def serve(conf):
     rt.start_aprs()
     rt.start_sender()
     rt.start_maintenance()
+    sys.stderr.write("全自动模式：%s\n" % ("开" if rt.auto_mode else "关"))
     httpd = ThreadingHTTPServer((conf["OA_HOST"], int(conf["OA_PORT"])), Handler)
     httpd.runtime = rt
     sys.stderr.write("oa-server 起来：http://%s:%s/ ，名单 /api/roster ，操作台 /admin\n"

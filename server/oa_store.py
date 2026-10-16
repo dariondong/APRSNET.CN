@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS outbox (
   sent    TEXT NOT NULL DEFAULT '',
   error   TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT '',
+  ts    TEXT NOT NULL DEFAULT ''
+);
 """
 
 STATUS_ORDER = {"called": 1, "acked": 2, "confirmed": 3}
@@ -135,6 +141,14 @@ def bj_at(text):
 
 def bj_now_date():
     return bj(datetime.now(UTC)).strftime("%Y-%m-%d")
+
+
+def seconds_since(text):
+    """这个时间点到现在过了多少秒，认不出来就是 None。"""
+    dt = parse_iso(text)
+    if not dt:
+        return None
+    return (datetime.now(UTC) - dt).total_seconds()
 
 
 def bj_weekday(text=None):
@@ -526,6 +540,37 @@ class Store(object):
         with self.lock:
             return [dict(r) for r in self.db.execute(
                 "SELECT * FROM outbox ORDER BY id DESC LIMIT ?", (int(limit),)).fetchall()]
+
+    def outbox_for(self, dst, since=""):
+        """发给这一台的那些，早的在前。看它排着队、发失败过几次都靠这个。"""
+        sql = "SELECT * FROM outbox WHERE dst=?"
+        args = [dst]
+        if since:
+            sql = sql + " AND created>=?"
+            args.append(since)
+        with self.lock:
+            return [dict(r) for r in self.db.execute(sql + " ORDER BY id ASC", tuple(args)).fetchall()]
+
+    # ---- 设置（主控台上能动的那几个开关） ----
+
+    def get_setting(self, key, default=""):
+        with self.lock:
+            row = self.db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+        return row["value"] if row else default
+
+    def set_setting(self, key, value):
+        with self.lock:
+            self.db.execute(
+                "INSERT INTO settings (key,value,ts) VALUES (?,?,?)"
+                " ON CONFLICT(key) DO UPDATE SET value=excluded.value, ts=excluded.ts",
+                (key, str(value), now_iso()))
+            self.db.commit()
+        return str(value)
+
+    def settings(self):
+        with self.lock:
+            rows = self.db.execute("SELECT key, value FROM settings").fetchall()
+        return dict((r["key"], r["value"]) for r in rows)
 
     def stats(self):
         with self.lock:

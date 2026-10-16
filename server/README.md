@@ -32,6 +32,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /api/admin/state` | 主控台读的一切：状态、轮次、本轮数字、名单、流水 |
 | `GET /api/admin/export` | 下载 roster.json；`?format=csv&what=stations` 或 `what=packets` 下载两份 CSV |
 | `POST /api/admin/round` | 开一轮：`{"date":"2026-10-17","duty":"BG7LZQ-2"}` |
+| `POST /api/admin/settings` | 切全自动：`{"auto":true}`，或 `{"auto":false}` 退回手动 |
 | `POST /api/admin/close` | 结束一轮，并把这一轮归档 |
 | `POST /api/admin/archive` | 单独归档一轮：`{"date":"2026-10-17"}` |
 | `POST /api/admin/duty` | 换轮值呼号 |
@@ -64,6 +65,20 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - 主控台每 10 秒自己刷一次，顶部那条「本轮」是台站数、已确认、已回 ACK、只喊到、射频、网络、
   中继、本轮报文、最后一条时间；再下面是「待办」，回过的还在等 `U CNNET`，没回的还等着回 ACK，
   每行能直接点。
+
+## 全自动模式
+
+`OA_AUTO=1`（默认开着）就是全自动：一轮走完不用人守。
+
+- 北京时间一到周六就自己开当天的轮，周六过完自己收轮并归档；
+- 有人喊到就自己回一条 ACK；
+- 没回成的（当时被限速，或者发失败）过一分钟自己补，一台一轮最多补 `OA_ACK_RETRY` 次
+  （默认 3，设 0 就是不补）；
+- 名单有变化就写一份到 `OA_PUBLISH_ROSTER`（配了才写）；
+- 主控台的「待办」只列还没回上 ACK 的，等对方回 `U CNNET` 的不再占着。
+
+主控台顶上那个「全自动」勾选框能当场开关，开关写在库里的 `settings` 表，重启也记得，不用改
+env 再重启。关掉以后退回手动：开轮、收轮、回 ACK 都得自己在台面上点。
 
 ## 配置
 

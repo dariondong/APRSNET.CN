@@ -11,11 +11,15 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import oa_aprs
+import oa_server
 import oa_store
+
+UTC = timezone.utc
 
 LINES = [
     # 走射频、过了中继，报文里自己报了网格
@@ -177,6 +181,65 @@ def main():
         again.close()
     finally:
         shutil.rmtree(old, ignore_errors=True)
+
+    # 全自动模式：开关写进库里、重启还认得；补回的 ACK 隔一分钟一次、一台一轮有上限
+    auto_dir = tempfile.mkdtemp(prefix="oa-selftest-auto-")
+    try:
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = auto_dir
+        conf["OA_TX_PASSCODE"] = "23736"
+        rt = oa_server.Runtime(conf)
+        check("默认就是全自动", rt.auto_mode, True)
+        check("全自动时自动回 ACK 跟着开", rt.auto_ack_on, True)
+        check("口令在，发得出去", rt.can_send(), True)
+        check("关掉全自动", rt.set_auto_mode(False), False)
+        check("关了就不自动回 ACK", rt.auto_ack_on, False)
+        check("关了也不自动开轮", rt.auto_round_on, False)
+        check("开关写进了库", rt.store.get_setting("auto"), "0")
+        rt.store.close()
+
+        again = oa_server.Runtime(conf)
+        check("重启还记得关着", again.auto_mode, False)
+        again.store.open_round("2026-10-17", "BG7LZQ-2")
+        # 这一轮已经开了两个钟头：补回的窗口比这一轮的开始晚，又不在一分钟内
+        again.store.db.execute(
+            "UPDATE rounds SET opened=? WHERE date=?",
+            ((datetime.now(UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"), "2026-10-17"))
+        again.store.db.commit()
+        again.store.set_station("2026-10-17", "BG1AAA", status="called")
+        again.store.set_station("2026-10-17", "BG2BBB", status="confirmed")
+        check("关着的时候不补", again.retry_pending_acks(), 0)
+        again.set_auto_mode(True)
+        check("打开了", again.auto_mode, True)
+        check("只补没回上 ACK 的那台", again.retry_pending_acks(), 1)
+        check("补回那条的写法", again.store.outbox_for("BG1AAA")[0]["line"],
+              "BG7LZQ-2>APRS::BG1AAA   :ACK")
+        check("排着队的不重复入队", again.retry_pending_acks(), 0)
+
+        def fail_last():
+            rows = again.store.outbox_for("BG1AAA")
+            again.store.mark_sent(rows[-1]["id"], "发不出去")
+
+        def backdate():
+            old = (datetime.now(UTC) - timedelta(seconds=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            again.store.db.execute("UPDATE outbox SET created=?", (old,))
+            again.store.db.commit()
+
+        fail_last()
+        check("刚失败的一分钟内不补", again.retry_pending_acks(), 0)
+        backdate()
+        check("过一会儿补第二次", again.retry_pending_acks(), 1)
+        fail_last()
+        backdate()
+        check("补第三次", again.retry_pending_acks(), 1)
+        fail_last()
+        backdate()
+        check("补到上限就停", again.retry_pending_acks(), 0)
+        check("补不上的那台还在待办里",
+              again.store.get_station("2026-10-17", "BG1AAA")["status"], "called")
+        again.store.close()
+    finally:
+        shutil.rmtree(auto_dir, ignore_errors=True)
 
     print("\n%d 项，过了 %d 项" % (len(CHECKS), sum(1 for c in CHECKS if c)))
     return 0 if all(CHECKS) else 1
