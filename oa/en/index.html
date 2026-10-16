@@ -62,6 +62,10 @@
 .oa-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .oa-btn { font-family: inherit; opacity: .55; }
 .oa-btn:hover { background: transparent; color: var(--text); border-color: var(--text); }
+.oa-switch { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.oa-switch[hidden] { display: none; }
+.oa-switch label { color: var(--text-faint); font-size: 14.5px; }
+.oa-switch select { font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 6px 10px; }
 .oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
 </style>
 </head>
@@ -237,10 +241,14 @@
 <section class="section" id="oa-roster">
   <div class="section-head">
     <h2>Stations taking part</h2>
-    <p>Once the bot is online, every station that sends a message is listed here. A station heard over the air carries an RF tag at the end of its row.</p>
+    <p>Once the bot is online, one line appears per station, and a station heard over the air carries an RF tag at the end of its row. The list is renewed every week, and you can switch back to earlier rounds.</p>
   </div>
   <div class="section-body">
-    <ul class="link-list" id="oaRoster" data-roster="../roster.json" data-tag-rf="RF" data-updated-label="Roster last updated: ">
+    <div class="oa-switch" id="oaSwitch" hidden>
+      <label for="oaRound">Round</label>
+      <select id="oaRound"></select>
+    </div>
+    <ul class="link-list" id="oaRoster" data-roster="../roster.json" data-tag-rf="RF" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
         <div class="link-row is-static">
           <span class="lr-main">

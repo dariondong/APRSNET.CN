@@ -62,6 +62,10 @@
 .oa-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .oa-btn { font-family: inherit; opacity: .55; }
 .oa-btn:hover { background: transparent; color: var(--text); border-color: var(--text); }
+.oa-switch { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.oa-switch[hidden] { display: none; }
+.oa-switch label { color: var(--text-faint); font-size: 14.5px; }
+.oa-switch select { font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 6px 10px; }
 .oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
 </style>
 </head>
@@ -237,10 +241,14 @@
 <section class="section" id="oa-roster">
   <div class="section-head">
     <h2>参与的台</h2>
-    <p>机器人上线之后，每一台发来报文的台站都记在这里。走射频进来的，行末带一个「射频」标签。</p>
+    <p>机器人上线之后，每收到一台就记一行，走射频进来的行末带一个「射频」标签。名单每周换一次，也可以切回前面几轮看。</p>
   </div>
   <div class="section-body">
-    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-updated-label="名单最后更新：">
+    <div class="oa-switch" id="oaSwitch" hidden>
+      <label for="oaRound">看哪一轮</label>
+      <select id="oaRound"></select>
+    </div>
+    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
       <li>
         <div class="link-row is-static">
           <span class="lr-main">
@@ -250,7 +258,7 @@
         </div>
       </li>
     </ul>
-    <p class="oa-note">名单会随机器人收到的报文生长。除了呼号与网格，页面不记别的。</p>
+    <p class="oa-note">名单随机器人收到的报文长。除了呼号与网格，页面不记别的。</p>
   </div>
 </section>
 
