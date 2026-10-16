@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 UTC = timezone.utc
 
 _LINE = re.compile(r"^([^>]{1,32})>([^,:]{1,32})(?:,([^:]*))?:(.*)$", re.S)
-_CNNET = re.compile(r"(?:^|[^0-9A-Z])(CQ|U)\s+CNNET\b", re.I)
+_CNNET = re.compile(r"^\s*(CQ|U)\s+CNNET\b", re.I)
 _ACK = re.compile(r"^ACK", re.I)
 _LAT = re.compile(r"^[0-9]{4}\.[0-9]{2}[NS]$")
 _LON = re.compile(r"^[0-9]{5}\.[0-9]{2}[EW]$")

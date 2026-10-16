@@ -214,8 +214,14 @@ class Store(object):
         return {"id": pid, "round_id": rid}
 
     def _touch(self, rid, call, ts, record, status):
-        """一台站进了名单：有就更新，没有就新建。空字段不覆盖已有的值。"""
+        """一台站进了名单：有就更新，没有就新建。空字段不覆盖已有的值。
+
+        轮值呼号自己发的报文（待命、回 ACK）不是参与台，不往名单里放。
+        """
         if not call:
+            return
+        duty = self.db.execute("SELECT duty FROM rounds WHERE id=?", (rid,)).fetchone()
+        if duty and duty["duty"] and duty["duty"].strip().upper() == call.strip().upper():
             return
         grid = record.get("grid", "") or ""
         via = record.get("via", "") or ""

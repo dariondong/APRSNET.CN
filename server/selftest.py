@@ -30,6 +30,10 @@ LINES = [
     # 服务器横幅与闲聊报文，都要被跳过或只记 other
     "# aprsc 2.1.11-g5db4e96",
     "BG5CCC>APRS,TCPIP*,qAC,T2X:>今天天气不错",
+    # 主控自己那句待命话里有「CQ CNNET」，那是说明不是喊到
+    "BG7LZQ-2>APALOC,TCPIP*,qAC,T2YANTAI:>APRSNETCN OA 主控待命 收 CQ CNNET 即回 ACK",
+    # 主控自己喊到也不算参与台
+    "BG7LZQ-2>APRS,TCPIP*,qAC,T2TAIWAN:!2233.33N/11400.00E> CQ CNNET 试一下",
 ]
 
 CHECKS = []
@@ -83,6 +87,10 @@ def main():
         chat = records[5]
         check("闲聊报文归 other", chat["kind"], "other")
 
+        duty_beat = records[6]
+        check("主控待命那句不算喊到", duty_beat["kind"], "other")
+        check("主控自己喊到认得出", records[7]["kind"], "cq")
+
         roster = store.roster()
         check("只有一轮", len(roster["rounds"]), 1)
         rnd = roster["rounds"][0]
@@ -90,6 +98,8 @@ def main():
         check("轮值呼号写进名单", rnd["call"], "BG7LZQ-2")
         calls = sorted([s["call"] for s in rnd["stations"]])
         check("名单里三台", calls, ["BG6BBB-7", "BG7XXX-9", "BH4AAA"])
+        check("主控自己不在名单里", store.stations(rnd["date"]) and
+              any(s["call"] == "BG7LZQ-2" for s in store.stations(rnd["date"])), False)
         by_call = dict((s["call"], s) for s in rnd["stations"])
         live = dict((s["call"], s) for s in store.stations(rnd["date"]))
         check("BG7XXX-9 回过 U 就是已确认", live["BG7XXX-9"]["status"], "confirmed")
