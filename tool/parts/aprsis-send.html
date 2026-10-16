@@ -14,7 +14,7 @@
           官方文档里的例子。它演示的是反面：passcode 写 <code>-1</code>，包不会被 APRS-IS 接受；只发端口同样要有效 passcode。
         </li>
       </ul>
-      <p class="prose">认证有两种放法：登录行写在 HTTP 内容里，或者放进 <code>Authorization</code> 头（Base64 编码的登录行，或 RFC 7617 的 Basic 认证：用户名是呼号-SSID、密码是 passcode）。Base64 不是加密，要安全就配合 HTTPS 用。</p>
+      <p class="prose">认证有两种放法：登录行写在 HTTP 内容里，或者放进 <code>Authorization</code> 头。头里可以是 Base64 编码的登录行，也可以是 RFC 7617 的 Basic 认证，用户名写呼号-SSID，密码写 passcode。Base64 不是加密，要安全就配合 HTTPS 用。</p>
       <ul class="fact-list">
         <li>
           <b>200 / 204</b>
@@ -37,7 +37,7 @@
           405 是方法不支持（只认 HEAD / GET / POST / PUT），404 是路径不存在。
         </li>
       </ul>
-      <p class="prose">WebSocket 只有 javAPRSSrvr 系的服务器支持，用起来和普通 TCP 端口一样：不写协议名就是 readwrite，等于 14580 那种自定义过滤；要退历史包就声明 history，并在登录行里带 filter。服务器只发二进制消息（包里可能出现非 UTF-8 内容），客户端发文本或二进制都行。从网页发起连接时，官方希望软件名填站点名、版本号填页面名或脚本名，方便服务器知道包从哪来。</p>
+      <p class="prose">WebSocket 只有 javAPRSSrvr 系的服务器支持，用起来和普通 TCP 端口一样。不写协议名就是 readwrite，等于 14580 那种自定义过滤；要退历史包就声明 history，并在登录行里带 filter。服务器只发二进制消息，包里可能出现非 UTF-8 内容。客户端发文本或二进制都行。从网页发起连接时，官方希望软件名填站点名、版本号填页面名或脚本名，服务器就能知道包从哪来。</p>
       <p class="prose">本页由官方的 <a href="https://www.aprs-is.net/ClientUDP.aspx" target="_blank" rel="noopener">Client UDP</a>、<a href="https://www.aprs-is.net/SendOnlyPorts.aspx" target="_blank" rel="noopener">Send-only Ports</a> 与 <a href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">Connecting to APRS-IS</a> 三篇整理而来。端口和返回码以原文为准。</p>
     </div>
   </section>
