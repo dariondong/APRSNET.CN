@@ -121,6 +121,7 @@ def main():
               bool(utc_first) and utc_first != by_call["BG7XXX-9"].get("first"), True)
         check("参与时间与第一次一致时也给 UTC",
               bool(by_call["BG7XXX-9"].get("atUtc")), True)
+        check("名单里带这台报的那句话", by_call["BG7XXX-9"].get("msg"), "OL62")
 
         out = os.path.join(work, "roster.json")
         check("第一次写盘有变化", store.write_roster(out), True)

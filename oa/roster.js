@@ -13,7 +13,8 @@
    date 是这一轮的日期，也是切换格里的那一行文字。updated 是这一轮名单最后写入的日期，
    有才显示。call 是这一轮的轮值呼号，写进页面上 [data-oa-duty] 的位子，取最新的一轮；
    没写 call 就留着 HTML 里那句占位文案。grid 是网格，digi 是报文经过的中继（按经过顺序写，
-   空数组就是没经过中继），at 是参与时间。status 是这一台的状态（called / acked / confirmed，
+   空数组就是没经过中继），at 是参与时间，msg 是这一台签到那几行后面报的话
+   （`CQ CNNET` / `U CNNET` 去掉后的那一句）。status 是这一台的状态（called / acked / confirmed，
    三个词从页面的 data-status-* 上取），packets 是收到的几条报文，first 与 last 是第一次与
    最后一次的时间（都写成 10-17 15:04），页面上不写这两项，名单里还是带着，给别的用处。后四项
    没有就不写。名单里的时间是 UTC+8 的写法，atUtc 是同一个时间点的 UTC 写法，页面只在「时间」
@@ -21,7 +22,7 @@
    名单里给了才接上（静态那份 JSON 手写时可以不写）。
 
    一台站画成一块：呼号一行，后面跟着由呼号前缀认出来的国家地区与国旗、状态与报文数，
-   下面跟着带字段名的几项（网格 / 路径 / 时间；网格没写着就写一个占位横线）。路径那一项把 via 与 digi
+   下面跟着带字段名的几项（网格 / 路径 / 时间 / 消息；网格没写着就写一个占位横线）。路径那一项把 via 与 digi
    合成一句话——走射频又过了中继是「射频 · A → B」，只走射频是「射频」，走网络是「网络」。
    字段名、路径的两种写法、空状态、「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
 
@@ -50,6 +51,7 @@
   var pathIs = list.getAttribute("data-path-is") || "Network";
   var updatedLabel = list.getAttribute("data-updated-label") || "";
   var packetsLabel = list.getAttribute("data-label-packets") || "";
+  var msgLabel = list.getAttribute("data-label-msg") || "";
   var statusWords = {
     called: list.getAttribute("data-status-called") || "",
     acked: list.getAttribute("data-status-acked") || "",
@@ -347,6 +349,8 @@
     addField(dl, gridLabel, st.grid, "\u2014");
     addField(dl, pathLabel, path);
     addField(dl, atLabel, zonesOf(st.at, st.atUtc));
+    /* 这一台签到那行后面报的那几句话，名单里没有就不写 */
+    addField(dl, msgLabel, st.msg);
     li.appendChild(dl);
     return li;
   };

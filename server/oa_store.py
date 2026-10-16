@@ -11,6 +11,7 @@ import csv
 import io
 import json
 import os
+import re
 import sqlite3
 import threading
 from datetime import datetime, timedelta, timezone
@@ -143,6 +144,14 @@ def utc_at(text):
     """同一个时间点的 UTC 写法，名单上与北京时间并排给。"""
     dt = parse_iso(text)
     return dt.strftime("%m-%d %H:%M") if dt else ""
+
+
+_CNNET_HEAD = re.compile(r"^\s*(?:CQ|U)\s+CNNET\b[ \t]*", re.I)
+
+
+def cnnet_tail(text):
+    """签到那两行（CQ CNNET / U CNNET）后面跟的那句话，没有就是空串。"""
+    return _CNNET_HEAD.sub("", str(text or "")).strip()
 
 
 def bj_now_date():
@@ -406,6 +415,14 @@ class Store(object):
                 rows = self.db.execute(
                     "SELECT * FROM stations WHERE round_id=? ORDER BY first_ts ASC, call ASC",
                     (rnd["id"],)).fetchall()
+                # 每台报的那句话：签到那两行的前缀去掉，留最后一回非空的（手写名单里没有就是空）
+                msgs = {}
+                for msg_row in self.db.execute(
+                        "SELECT src, text FROM packets WHERE round_id=? AND kind IN ('cq','u')"
+                        " ORDER BY ts ASC", (rnd["id"],)):
+                    tail = cnnet_tail(msg_row["text"])
+                    if tail:
+                        msgs[msg_row["src"]] = tail
             for row in rows:
                 first = bj_at(row["first_ts"])
                 stations.append({
@@ -422,6 +439,7 @@ class Store(object):
                     "atUtc": utc_at(row["first_ts"]) if row["at"] == first else "",
                     "firstUtc": utc_at(row["first_ts"]),
                     "lastUtc": utc_at(row["last_ts"]),
+                    "msg": msgs.get(row["call"], ""),
                 })
                 if row["last_ts"] > last:
                     last = row["last_ts"]
