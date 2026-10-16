@@ -365,6 +365,25 @@ def main():
     finally:
         shutil.rmtree(bad_dir, ignore_errors=True)
 
+    # 收报文的过滤串跟着当轮主控呼号走：换了一轮换了呼号，发给新呼号的报文才收得到
+    filt_dir = tempfile.mkdtemp(prefix="oa-selftest-filter-")
+    try:
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = filt_dir
+        conf["OA_APRS_FILTER"] = "a/54/73/18/135 g/BG7LZQ-2"
+        conf["OA_ROUND_DUTY"] = "BG7LZQ-2"
+        rt = oa_server.Runtime(conf)
+        check("没开轮时按配置的呼号收", rt.duty_filter(), "a/54/73/18/135 g/BG7LZQ-2")
+        rt.store.open_round("2026-10-17", "BG7LZQ-3")
+        check("开了轮就换成当轮呼号", rt.duty_filter(), "a/54/73/18/135 g/BG7LZQ-3")
+        check("过滤串里只有一个 g/", rt.duty_filter().count("g/"), 1)
+        rt.conf["OA_APRS_FILTER"] = "a/54/73/18/135"
+        check("配置里没写 g/ 就补上", rt.duty_filter(), "a/54/73/18/135 g/BG7LZQ-3")
+        check("没连链路时跟呼号不报错", rt.follow_duty(), None)
+        rt.store.close()
+    finally:
+        shutil.rmtree(filt_dir, ignore_errors=True)
+
     print("\n%d 项，过了 %d 项" % (len(CHECKS), sum(1 for c in CHECKS if c)))
     return 0 if all(CHECKS) else 1
 

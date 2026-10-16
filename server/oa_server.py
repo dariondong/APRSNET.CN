@@ -127,6 +127,7 @@ class Runtime(object):
         root = conf["OA_SITE_ROOT"] or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.site_root = os.path.realpath(root)
         self.link = None
+        self._link_duty = ""
         self.publish_path = conf["OA_PUBLISH_ROSTER"] or ""
         self.archive_dir = conf["OA_ARCHIVE_DIR"] or os.path.join(conf["OA_DATA_DIR"] or ".", "archive")
         # 三个开关都走「库里的设置优先，没设过就看环境变量」。全自动打开时，另外两个跟着开。
@@ -168,16 +169,42 @@ class Runtime(object):
                 "ack_per_minute": self.ack_per_minute, "publish_roster": bool(self.publish_path),
                 "settings": self.store.settings()}
 
+    def duty_filter(self):
+        """过滤串里的 g/ 跟着当轮轮值呼号走。
+
+        换一轮换了主控呼号时，发给新呼号的报文才收得到；其余那几段（区域、b/ 之类）照旧。
+        """
+        base = (self.conf["OA_APRS_FILTER"] or "").strip()
+        duty = self.duty_call()
+        if not duty:
+            return base
+        items = [x for x in base.split() if not x.lower().startswith("g/")]
+        items.append("g/" + duty)
+        return " ".join(items)
+
     def start_aprs(self):
         login = self.conf["OA_APRS_LOGIN"]
         if not login:
             sys.stderr.write("没有 OA_APRS_LOGIN，只开 HTTP，不连 APRS-IS\n")
             return
+        self._link_duty = self.duty_call()
         self.link = oa_aprs.AprsIsLink(
             self.conf["OA_APRS_HOST"], self.conf["OA_APRS_PORT"],
-            login=login, passcode="-1", filter_text=self.conf["OA_APRS_FILTER"],
+            login=login, passcode="-1", filter_text=self.duty_filter(),
             on_line=self.on_line)
         self.link.start()
+        sys.stderr.write("收报文的过滤串：%s\n" % self.duty_filter())
+
+    def follow_duty(self):
+        """当轮换了个主控呼号：重连一次，把收件人那段换过去。"""
+        if not self.link:
+            return
+        duty = self.duty_call()
+        if duty == self._link_duty:
+            return
+        self.link.stop()
+        self.start_aprs()
+        sys.stderr.write("主控换成 %s，重连接收\n" % (duty or "（空）"))
 
     def on_line(self, record):
         try:
@@ -390,6 +417,10 @@ class Runtime(object):
                     self.auto_round()
                 except Exception as exc:
                     sys.stderr.write("自动开轮出错：%s\n" % exc)
+                try:
+                    self.follow_duty()
+                except Exception as exc:
+                    sys.stderr.write("跟主控呼号出错：%s\n" % exc)
                 if tick % 4 == 1:                # 大约每分钟清一次，报文淌得快也不用每 15 秒动库
                     try:
                         dropped = self.store.prune(keep)
@@ -426,6 +457,7 @@ class Runtime(object):
             "aprs": link,
             "active_round": active["date"] if active else "",
             "duty": active["duty"] if active else self.conf["OA_ROUND_DUTY"],
+            "filter": self.duty_filter(),
             "rounds": len(self.store.rounds()),
             "tx": self.can_send(),
             "auto": self.auto_mode,
