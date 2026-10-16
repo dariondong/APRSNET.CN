@@ -34,6 +34,9 @@ button.mini{padding:1px 7px;font-size:12px}
 .empty{color:var(--grey);font-size:13px;padding:10px 2px}
 .err{background:#fdecec;border:1px solid var(--hot);color:var(--hot);padding:8px 10px;font-size:13px;margin:12px 0}
 .hint{color:var(--grey);font-size:12px}
+.msg{font-size:13px;color:var(--grey);margin:8px 0 0}
+.msg.ok{color:#137a3f}
+.msg.bad{color:var(--hot)}
 p.note label{display:inline}
 p.note input[type=checkbox]{min-width:0;width:auto;padding:0;border:0;background:none;vertical-align:-1px}
 a{color:inherit}
@@ -62,6 +65,7 @@ a{color:inherit}
     <div><a href="#" id="csvStBtn"><button type="button">名单 CSV</button></a></div>
     <div><a href="#" id="csvPktBtn"><button type="button">报文 CSV</button></a></div>
   </form>
+  <div id="msg" class="msg"></div>
 
   <h2>待办</h2>
   <p class="note">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
@@ -107,7 +111,7 @@ a{color:inherit}
     try { localStorage.setItem("oa_token", token); } catch (e) {}
   }
 
-  var state = { date: "", round: "", routes: [] };
+  var state = { date: "", round: "", archive: "", routes: [] };
   var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -119,6 +123,21 @@ a{color:inherit}
     div.className = "err";
     div.textContent = msg;
     box.appendChild(div);
+  };
+
+  var sayTimer = 0;
+
+  var say = function (text, bad) {
+    var box = $("msg");
+    box.textContent = text || "";
+    box.className = text ? ("msg " + (bad ? "bad" : "ok")) : "msg";
+    if (sayTimer) clearTimeout(sayTimer);
+    if (text) {
+      sayTimer = setTimeout(function () {
+        box.textContent = "";
+        box.className = "msg";
+      }, 8000);
+    }
   };
 
   var api = function (path, method, body) {
@@ -147,7 +166,12 @@ a{color:inherit}
   };
 
   var copy = function (text, btn) {
-    var done = function () { var old = btn.textContent; btn.textContent = "已复制"; setTimeout(function () { btn.textContent = old; }, 1400); };
+    var done = function () {
+      if (!btn) return;
+      var old = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(function () { btn.textContent = old; }, 1400);
+    };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done, function () { window.prompt("复制这行", text); });
       return;
@@ -162,6 +186,7 @@ a{color:inherit}
       if (!data || !data.ok) return;
       state.routes = (data.packets || []).slice(0, 200);
       state.round = (data.round && data.round.date) || "";
+      state.archive = (data.health && data.health.archive_dir) || "";
       lastSync = Date.now();
       paintBar(data.health, data.round);
       paintStats(data.stats, data.round);
@@ -231,7 +256,7 @@ a{color:inherit}
         ack.type = "button";
         ack.className = "mini";
         ack.textContent = "回 ACK";
-        ack.onclick = function () { doAck(s.call); };
+        ack.onclick = function () { doAck(s.call, ack); };
         ops.appendChild(ack);
       } else {
         var up = document.createElement("button");
@@ -267,6 +292,7 @@ a{color:inherit}
     add("收到", (aprs.lines || 0) + " 行");
     add("最后一行", bjTime(aprs.last) || "—");
     add("本轮", (round && round.date) || "没开");
+    add("在收的轮", (h && h.active_round) || "没开");
     add("报文", (h && h.packets) || 0);
     add("发 ACK", (h && h.tx) ? "能发" : "只记不发");
     if (h && h.tx) add("自动回 ACK", (h.auto_ack ? "开" : "关"));
@@ -341,7 +367,7 @@ a{color:inherit}
       ack.type = "button";
       ack.className = "mini";
       ack.textContent = "回 ACK";
-      ack.onclick = function () { doAck(p.src); };
+      ack.onclick = function () { doAck(p.src, ack); };
       ops.appendChild(ack);
       table.appendChild(tr);
     });
@@ -385,7 +411,7 @@ a{color:inherit}
       ack.type = "button";
       ack.className = "mini";
       ack.textContent = "回 ACK";
-      ack.onclick = function () { doAck(s.call); };
+      ack.onclick = function () { doAck(s.call, ack); };
       ops.appendChild(ack);
       var edit = document.createElement("button");
       edit.type = "button";
@@ -444,23 +470,55 @@ a{color:inherit}
     box.appendChild(table);
   };
 
-  var doAck = function (call) {
-    api("/api/admin/ack", "POST", { date: state.date, call: call, text: "ACK" }).then(function (d) {
-      showErr(d && d.error);
-      if (d && d.line) copy(d.line, $("roundPick"));
-      refresh();
-    });
+  var doAck = function (call, btn) {
+    api("/api/admin/ack", "POST", { date: state.round || state.date, call: call, text: "ACK" })
+      .then(function (d) {
+        if (!d || !d.ok) {
+          var why = (d && d.error) || "没回成。";
+          showErr(why);
+          say(why, true);
+          return;
+        }
+        showErr("");
+        if (d.line) copy(d.line, btn);
+        say((d.queued ? "发出去了 " : "记下了，口令没配，自己发 ") + d.line);
+        refresh();
+      });
   };
 
   $("roundForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    api("/api/admin/round", "POST", { date: $("roundDate").value, duty: $("dutyCall").value })
-      .then(function (d) { showErr(d && d.error); state.date = $("roundDate").value; refresh(); });
+    var date = $("roundDate").value;
+    api("/api/admin/round", "POST", { date: date, duty: $("dutyCall").value }).then(function (d) {
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "开不起来。";
+        showErr(why);
+        say(why, true);
+        return;
+      }
+      showErr("");
+      state.date = date;
+      say("现在在收的是 " + date + " 这轮，本轮呼号 " +
+          ((d.round && d.round.duty) || "还没写") + "。");
+      refresh();
+    });
   });
 
   $("closeRound").addEventListener("click", function () {
-    api("/api/admin/close", "POST", { date: $("roundDate").value })
-      .then(function (d) { showErr(d && d.error); refresh(); });
+    var date = $("roundDate").value;
+    api("/api/admin/close", "POST", { date: date }).then(function (d) {
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "收不起来。";
+        showErr(why);
+        say(why, true);
+        return;
+      }
+      showErr("");
+      var n = (d.archived || []).length;
+      say(n ? (date + " 这轮收好了，" + n + " 份档案写在 " + state.archive)
+            : (date + " 这轮收好了，没有新档案。"));
+      refresh();
+    });
   });
 
   $("roundPick").addEventListener("change", function () {
@@ -490,8 +548,15 @@ a{color:inherit}
 
   $("archBtn").addEventListener("click", function () {
     api("/api/admin/archive", "POST", { date: state.round || state.date }).then(function (d) {
-      showErr(d && d.error ? d.error : (d && d.files && d.files.length ? "存到 " + d.dir : "归档没写成"));
-      refresh();
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "归档没写成。";
+        showErr(why);
+        say(why, true);
+        return;
+      }
+      showErr("");
+      var names = (d.files || []).map(function (p) { return p.split("/").pop(); });
+      say("归档好了：" + names.join(", ") + "，写在 " + d.dir);
     });
   });
 
