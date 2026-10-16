@@ -251,6 +251,12 @@ PAGES = [
     ),
 ]
 
+# 手写的独立页：不归生成器管（不在 PAGES 里，也就不会进导航和页脚目录），
+# 但地址要出现在 sitemap.xml 里，所以在这儿登记一条 (路径, priority)。
+EXTRA_URLS = (
+    ("oa", "0.9"),  # APRSNETCN-OA 活动占位页：aprsnet.cn/oa（目录形式，文件是 oa/index.html）
+)
+
 # 区块 → 所在页面（跨页链接、页脚链接都靠这张表算，不用手写）
 BLOCK_PAGE = {}
 for _p in PAGES:
@@ -541,16 +547,21 @@ def lastmod():
     return datetime.datetime.utcnow().strftime("%Y-%m-%d")
 
 
+def sitemap_row(loc, stamp, priority):
+    return ("  <url>\n"
+            "    <loc>%s</loc>\n"
+            "    <lastmod>%s</lastmod>\n"
+            "    <changefreq>weekly</changefreq>\n"
+            "    <priority>%s</priority>\n"
+            "  </url>" % (loc, stamp, priority))
+
+
 def sitemap_xml():
     stamp = lastmod()
-    rows = []
-    for p in PAGES:
-        rows.append("  <url>\n"
-                    "    <loc>%s</loc>\n"
-                    "    <lastmod>%s</lastmod>\n"
-                    "    <changefreq>weekly</changefreq>\n"
-                    "    <priority>%s</priority>\n"
-                    "  </url>" % (page_url(p), stamp, "1.0" if p["file"] == "index.html" else "0.8"))
+    rows = [sitemap_row(page_url(p), stamp,
+                        "1.0" if p["file"] == "index.html" else "0.8")
+            for p in PAGES]
+    rows += [sitemap_row(SITE + name, stamp, priority) for name, priority in EXTRA_URLS]
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             + "\n".join(rows) + "\n</urlset>\n")
@@ -632,7 +643,8 @@ def selfcheck(files):
     except ET.ParseError as e:
         sys.exit("FAIL: sitemap.xml 不是合法 XML：%s" % e)
     locs = [e.text for e in root.iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
-    if sorted(locs) != sorted(page_url(p) for p in PAGES):
+    want = sorted([page_url(p) for p in PAGES] + [SITE + n for n, _p in EXTRA_URLS])
+    if sorted(locs) != want:
         sys.exit("FAIL: sitemap 里的地址和页面表对不上：%s" % locs)
 
     # 页脚目录：页面表里的每一页都得在里面出现一次
