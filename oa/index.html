@@ -112,7 +112,6 @@
       <li><b>活动时间</b><span>北京时间的周六，00:00 到 23:59</span></li>
       <li><b>轮值呼号</b><span data-oa-duty>还没排出来</span></li>
       <li><b>参与方式</b><span>向当周的轮值呼号发送 CNNET 报文，射频或网络都行</span></li>
-      <li><b>当前状态</b><span>筹备中，尚未到活动时间</span></li>
       <li><b>说明</b><span>本活动由 APRSNET.CN 独立发起，与 APRS Thursday、APRS OTA 均无隶属关系。</span></li>
     </ul>
     <p class="oa-kicker">APRSNET.CN 独立活动 · 筹备中</p>
@@ -121,7 +120,7 @@
     <ul class="oa-lines">
       <li>当周的轮值呼号还没排出来，先别发报文。</li>
       <li>一步发 CQ，一步回 U：先发 CQ CNNET 你的信息，收到 ACK 再发 U CNNET。</li>
-      <li>射频与网络两条路都收得到，更鼓励走射频那一条。</li>
+      <li>射频与网络两条路都收得到，鼓励走射频。</li>
       <li>本页只做引导与说明，不收集数据，不统计。</li>
       <li>开放时间以本页后续公告为准。</li>
     </ul>
@@ -134,13 +133,13 @@
 <section class="section alt" id="oa-about">
   <div class="section-head">
     <h2>活动简介</h2>
-    <p>北京时间的周六，把呼号与网格发到当周的轮值呼号，轮值台回一条 ACK，这一天就记上了。</p>
+    <p>北京时间的周六，把呼号与网格发给当周的轮值呼号。收到 ACK 就算参加。</p>
   </div>
   <div class="section-body">
-    <p class="prose">APRSNETCN OA 由 APRSNET.CN 独立发起，非活动主办方代管。OA 就是 On Air。轮值台收到报文后回一条 ACK，其余的事情就到这里。</p>
-    <p class="prose">没有报名这一步，也没有名单。到时间把报文发给当周的轮值呼号就行，发完就可以关设备。</p>
-    <p class="prose">时间按北京时间算，整 24 小时，什么时候方便就什么时候发。没有先后顺序，也不比谁更早。</p>
-    <p class="prose">射频与网络两条路都算参加，更希望你是从射频进来的。周围的链路响起来，一个地方的 APRS 才立得住。</p>
+    <p class="prose">本活动由 APRSNET.CN 独立发起，没有其他主办方。OA 是 On Air 的缩写。轮值台收到报文后回一条 ACK。</p>
+    <p class="prose">不用报名，没有签到表。到时间把报文发给当周的轮值呼号。</p>
+    <p class="prose">时间按北京时间算，周六 00:00 到 23:59，整 24 小时。这 24 小时里任一时刻发都算。</p>
+    <p class="prose">射频与网络两条路都算参加。走射频的，名单里带一个「射频」标签。</p>
     <p class="oa-note">当周的轮值呼号还没排出来。排出来之前发出去的报文没有人收。</p>
   </div>
 </section>
@@ -165,7 +164,7 @@
 <section class="section alt" id="oa-rf">
   <div class="section-head">
     <h2>通过射频加入</h2>
-    <p>网络、射频两条路都收得到。更希望你是走射频那一条。</p>
+    <p>网络、射频两条路都收得到。鼓励走射频。</p>
   </div>
   <div class="section-body">
     <p class="prose">APRS-IS 是网络侧。手机或电脑连上服务器，报文在服务器之间走。射频是空中侧。用手台或车台把报文发出去，附近的台站先听到，再由网关送进网络。</p>
@@ -173,7 +172,7 @@
       <li><b>网络侧（APRS-IS）</b><span>连上服务器就能发，手边没有电台也行</span></li>
       <li><b>空中侧（射频）</b><span>用手台或车台发，经本地中继与网关进网络</span></li>
     </ul>
-    <p class="prose">走射频对本地更有意义。你的报文被周围听到，周围的人才可能把电台打开。一个地方常年有信号，这个地方的 APRS 才立得住。APRSNETCN OA 想推的就是这件事：各地的业余无线电 APRS 都长起来。</p>
+    <p class="prose">射频的意义在本地。报文被附近听到，附近的台站才有可能开台。</p>
     <p class="oa-note">射频发射要用自己的呼号与执照，频率与路径按当地规定来。本地网关怎么接，见 <a href="../igate.html">iGate 细则</a>。</p>
   </div>
 </section>
@@ -197,7 +196,7 @@
       </li>
       <li>
         <b>第二步：收到 ACK 再回一条</b>
-        轮值台回一条 ACK，表示这条报文已经收到。这时再向它发送 <code>U CNNET</code>，到这里就完成了。
+        轮值台回一条 ACK，表示这条报文已经收到。收到 ACK 之后再向它发送 <code>U CNNET</code>。
       </li>
       <li>
         <b>可选：不发 CQ</b>
@@ -225,7 +224,7 @@
       <li>
         <b>收到 ACK 后回一条</b>
         <code>U CNNET</code>
-        <span>收到轮值台回的 ACK 之后发这一条，到这里结束。</span>
+        <span>收到轮值台回的 ACK 之后发这一条。</span>
       </li>
       <li>
         <b>不发 CQ（可选）</b>
@@ -233,7 +232,7 @@
         <span>不发 CQ 的写法。收到 ACK 同样算。</span>
       </li>
     </ul>
-    <p class="prose">写的时候注意三件事：前缀 CNNET 每一条都要带上；呼号就写自己执照上的那个；一条报文只做一件事，收到 ACK 再发下一条。</p>
+    <p class="prose">写法三条：每条报文都带前缀 CNNET；呼号写执照上的那个；收到 ACK 再发下一条。</p>
     <p class="oa-note">报文前缀是 CNNET，对象名是当周的轮值呼号。</p>
   </div>
 </section>
@@ -298,7 +297,7 @@
 <section class="section alt" id="oa-terms">
   <div class="section-head">
     <h2>独立声明</h2>
-    <p>下面几条现在也一样有效。</p>
+    <p>下面几条同样适用。</p>
   </div>
   <div class="section-body">
     <ul class="oa-lines">
