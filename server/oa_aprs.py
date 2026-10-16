@@ -173,6 +173,23 @@ def parse_line(line, ts=None):
     }
 
 
+def _connect(host, port, timeout=30):
+    """连服务器：优先 IPv4。这台机器没有公网 v6 路由，拿到 AAAA 只会白等。"""
+    try:
+        addrs = socket.getaddrinfo(host, int(port), socket.AF_INET, socket.SOCK_STREAM)
+    except OSError:
+        addrs = []
+    if not addrs:
+        return socket.create_connection((host, int(port)), timeout=timeout)
+    last = None
+    for info in addrs:
+        try:
+            return socket.create_connection(info[4], timeout=timeout)
+        except OSError as exc:
+            last = exc
+    raise last if last else OSError("连不上 %s" % host)
+
+
 class AprsIsLink(threading.Thread):
     """一条只收的 APRS-IS 连接，断了按 5 秒起的退避重连。
 
@@ -228,7 +245,7 @@ class AprsIsLink(threading.Thread):
         self.status["state"] = "off"
 
     def _session(self):
-        sock = socket.create_connection((self.host, self.port), timeout=30)
+        sock = _connect(self.host, self.port, timeout=30)
         self._sock = sock
         sock.settimeout(180)
         login = "user %s pass %s vers aprsnetcn-oa 0.1" % (self.login, self.passcode)
@@ -266,7 +283,7 @@ def send_once(host, port, login, passcode, line, timeout=12):
     """发一条报文：连上去、登录、等 logresp、发、走。返回服务器那句 logresp。"""
     if not passcode:
         raise RuntimeError("没有报文口令（OA_TX_PASSCODE 空着），不发")
-    sock = socket.create_connection((host, int(port)), timeout=timeout)
+    sock = _connect(host, port, timeout=timeout)
     try:
         sock.settimeout(timeout)
         sock.sendall(("user %s pass %s vers aprsnetcn-oa 0.1\r\n" % (login, passcode)).encode("utf-8"))

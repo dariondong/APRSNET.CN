@@ -133,13 +133,16 @@ class Runtime(object):
 
         def loop():
             last = None
+            tick = 0
             while not self._stop.is_set():
-                try:
-                    dropped = self.store.prune(keep)
-                    if dropped:
-                        sys.stderr.write("清掉 %d 条闲聊报文\n" % dropped)
-                except Exception as exc:
-                    sys.stderr.write("清理出错：%s\n" % exc)
+                tick = tick + 1
+                if tick % 4 == 1:                # 大约每分钟清一次，报文淌得快也不用每 15 秒动库
+                    try:
+                        dropped = self.store.prune(keep)
+                        if dropped:
+                            sys.stderr.write("清掉 %d 条闲聊报文\n" % dropped)
+                    except Exception as exc:
+                        sys.stderr.write("清理出错：%s\n" % exc)
                 if self.publish_path:
                     try:
                         text = json.dumps(self.store.roster(), ensure_ascii=False, indent=2) + "\n"
