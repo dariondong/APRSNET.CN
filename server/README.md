@@ -29,10 +29,11 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /api/roster` | 名单，与静态 `roster.json` 同格式 |
 | `GET /api/health` | 连接状态、收到多少行、当轮、报文数 |
 | `GET /admin` | 主控台（要口令） |
-| `GET /api/admin/state` | 主控台读的一切：状态、轮次、名单、流水 |
-| `GET /api/admin/export` | 下载 roster.json |
+| `GET /api/admin/state` | 主控台读的一切：状态、轮次、本轮数字、名单、流水 |
+| `GET /api/admin/export` | 下载 roster.json；`?format=csv&what=stations` 或 `what=packets` 下载两份 CSV |
 | `POST /api/admin/round` | 开一轮：`{"date":"2026-10-17","duty":"BG7LZQ-2"}` |
-| `POST /api/admin/close` | 结束一轮 |
+| `POST /api/admin/close` | 结束一轮，并把这一轮归档 |
+| `POST /api/admin/archive` | 单独归档一轮：`{"date":"2026-10-17"}` |
 | `POST /api/admin/duty` | 换轮值呼号 |
 | `POST /api/admin/station` | 加或改一台：呼号、网格、路径、中继、时间、状态 |
 | `POST /api/admin/station/delete` | 删一台 |
@@ -52,6 +53,17 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - `OA_ACK_TEXT=ACK`：回过去的那句话；
 - 发出去的每一条都记在 `outbox` 表，主控台的「发件箱」里看得到，发失败的带原因；
 - 没配口令时，点「回 ACK」只把报文记下来并复制，主控自己发。
+
+## 轮次与归档
+
+- `OA_AUTO_ROUND=1`：北京时间一到周六就自己开当天的轮，轮值呼号取 `OA_ROUND_DUTY`；周六过完
+  自动收轮并归档。关掉以后整轮都得主控自己开、自己收。
+- `OA_ARCHIVE_DIR`：归档写到哪，默认在数据目录下的 `archive/`。一轮收档写下三份，
+  `round-<日期>.json`（轮次、数字、名单、流水全在里面）、`round-<日期>-stations.csv`、
+  `round-<日期>-packets.csv`（带 BOM，Excel 直接打开不乱码）。
+- 主控台每 10 秒自己刷一次，顶部那条「本轮」是台站数、已确认、已回 ACK、只喊到、射频、网络、
+  中继、本轮报文、最后一条时间；再下面是「待办」，回过的还在等 `U CNNET`，没回的还等着回 ACK，
+  每行能直接点。
 
 ## 配置
 

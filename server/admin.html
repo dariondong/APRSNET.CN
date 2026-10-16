@@ -34,15 +34,19 @@ button.mini{padding:1px 7px;font-size:12px}
 .empty{color:var(--grey);font-size:13px;padding:10px 2px}
 .err{background:#fdecec;border:1px solid var(--hot);color:var(--hot);padding:8px 10px;font-size:13px;margin:12px 0}
 .hint{color:var(--grey);font-size:12px}
+p.note label{display:inline}
+p.note input[type=checkbox]{min-width:0;width:auto;padding:0;border:0;background:none;vertical-align:-1px}
 a{color:inherit}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>APRSNETCN OA 主控台</h1>
-  <p class="note">收到的 CNNET 报文在这里点名。名单改完自动写进本轮，页面上看到的就是这份。</p>
+  <p class="note">收到的 CNNET 报文在这里点名。名单改完自动写进本轮，页面上看到的就是这份。
+    <span id="ago"></span> <label class="hint"><input type="checkbox" id="pause"> 暂停刷新</label></p>
 
   <div class="bar" id="bar"><span>正在读状态…</span></div>
+  <div class="bar" id="stats" style="margin-top:8px"><span>本轮还没有台站。</span></div>
 
   <div id="err"></div>
 
@@ -53,8 +57,15 @@ a{color:inherit}
     <div><button type="submit">开这一轮</button></div>
     <div><button type="button" id="closeRound">结束这一轮</button></div>
     <div><label>看哪一轮</label><select id="roundPick"></select></div>
-    <div><a href="#" id="exportBtn"><button type="button">导出 roster.json</button></a></div>
+    <div><button type="button" id="archBtn">归档本轮</button></div>
+    <div><a href="#" id="exportBtn"><button type="button">roster.json</button></a></div>
+    <div><a href="#" id="csvStBtn"><button type="button">名单 CSV</button></a></div>
+    <div><a href="#" id="csvPktBtn"><button type="button">报文 CSV</button></a></div>
   </form>
+
+  <h2>待办</h2>
+  <p class="note">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
+  <div id="todo"></div>
 
   <h2>报到流水（最近 200 条）</h2>
   <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。</p>
@@ -96,7 +107,8 @@ a{color:inherit}
     try { localStorage.setItem("oa_token", token); } catch (e) {}
   }
 
-  var state = { date: "", routes: [] };
+  var state = { date: "", round: "", routes: [] };
+  var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
 
   var showErr = function (msg) {
@@ -149,12 +161,92 @@ a{color:inherit}
       showErr(data && data.error ? data.error : "");
       if (!data || !data.ok) return;
       state.routes = (data.packets || []).slice(0, 200);
+      state.round = (data.round && data.round.date) || "";
+      lastSync = Date.now();
       paintBar(data.health, data.round);
+      paintStats(data.stats, data.round);
       paintRounds(data.rounds, data.round);
+      paintTodo(data.stations, data.round);
       paintPackets(data.packets);
       paintStations(data.stations, data.round);
       paintOutbox(data.outbox);
     });
+  };
+
+  var paintStats = function (s, round) {
+    var box = $("stats");
+    box.textContent = "";
+    if (!round || !s) {
+      var p = document.createElement("span");
+      p.textContent = "本轮还没有台站。";
+      box.appendChild(p);
+      return;
+    }
+    var add = function (label, value) {
+      var span = document.createElement("span");
+      var b = document.createElement("b");
+      b.textContent = label;
+      span.appendChild(b);
+      span.appendChild(document.createTextNode(" " + value));
+      box.appendChild(span);
+    };
+    add("台站", s.stations);
+    add("已确认", s.confirmed);
+    add("已回 ACK", s.acked);
+    add("只喊到", s.called);
+    add("射频", s.rf);
+    add("网络", s.is);
+    add("中继", s.digis);
+    add("本轮报文", s.packets);
+    add("最后一条", bjTime(s.last) || "—");
+  };
+
+  var paintTodo = function (stations, round) {
+    var box = $("todo");
+    box.textContent = "";
+    var waiting = (stations || []).filter(function (s) { return s.status !== "confirmed"; });
+    if (!round || !waiting.length) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = round ? "都确认了。" : "先开一轮。";
+      box.appendChild(p);
+      return;
+    }
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["呼号", "现在", "等什么", ""].forEach(function (label) {
+      var th = document.createElement("th");
+      th.textContent = label;
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    waiting.forEach(function (s) {
+      var tr = document.createElement("tr");
+      cell(tr, s.call, "mono");
+      cell(tr, s.status === "acked" ? "已回 ACK" : "只喊到");
+      cell(tr, s.status === "acked" ? "等它回 U CNNET" : "还没回 ACK");
+      var ops = cell(tr);
+      if (s.status !== "acked") {
+        var ack = document.createElement("button");
+        ack.type = "button";
+        ack.className = "mini";
+        ack.textContent = "回 ACK";
+        ack.onclick = function () { doAck(s.call); };
+        ops.appendChild(ack);
+      } else {
+        var up = document.createElement("button");
+        up.type = "button";
+        up.className = "mini";
+        up.textContent = "标已确认";
+        up.onclick = function () {
+          api("/api/admin/station", "POST", { date: state.date, call: s.call, status: "confirmed" })
+            .then(function (d) { showErr(d && d.error); refresh(); });
+        };
+        ops.appendChild(up);
+      }
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
   };
 
   var paintBar = function (h, round) {
@@ -376,9 +468,31 @@ a{color:inherit}
     refresh();
   });
 
+  var exportUrl = function (what) {
+    return "/api/admin/export?format=" + what.format + (what.what ? "&what=" + what.what : "") +
+      "&date=" + encodeURIComponent(state.round || state.date) + "&token=" + encodeURIComponent(token);
+  };
+
   $("exportBtn").addEventListener("click", function (e) {
     e.preventDefault();
-    window.location = "/api/admin/export?token=" + encodeURIComponent(token);
+    window.location = exportUrl({ format: "json" });
+  });
+
+  $("csvStBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    window.location = exportUrl({ format: "csv", what: "stations" });
+  });
+
+  $("csvPktBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    window.location = exportUrl({ format: "csv", what: "packets" });
+  });
+
+  $("archBtn").addEventListener("click", function () {
+    api("/api/admin/archive", "POST", { date: state.round || state.date }).then(function (d) {
+      showErr(d && d.error ? d.error : (d && d.files && d.files.length ? "存到 " + d.dir : "归档没写成"));
+      refresh();
+    });
   });
 
   $("stForm").addEventListener("submit", function (e) {
@@ -395,7 +509,15 @@ a{color:inherit}
   });
 
   refresh();
-  setInterval(refresh, 20000);
+  setInterval(function () {
+    if (!lastSync) return;
+    var ago = Math.max(0, Math.round((Date.now() - lastSync) / 1000));
+    $("ago").textContent = "更新于 " + ago + " 秒前。";
+  }, 1000);
+  setInterval(function () {
+    if ($("pause").checked) return;
+    refresh();
+  }, 10000);
 })();
 </script>
 </body>
