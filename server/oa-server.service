@@ -1,0 +1,16 @@
+[Unit]
+Description=APRSNETCN OA backend (APRS-IS roll call)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/srv/APRSNET.CN
+Environment=OA_ENV=/etc/oa-server.env
+ExecStart=/usr/bin/python3 /srv/APRSNET.CN/server/oa_server.py serve
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

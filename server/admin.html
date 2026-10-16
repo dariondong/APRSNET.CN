@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>APRSNETCN OA 主控台</title>
+<style>
+:root{--bg:#f2f0ea;--card:#ffffff;--text:#15181c;--grey:#6b7280;--line:#d8d5cd;--hot:#b3141f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 "Helvetica Neue",Helvetica,Arial,"Noto Sans SC",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:20px;margin:0 0 4px}
+h2{font-size:15px;margin:26px 0 8px;letter-spacing:.04em}
+p.note{color:var(--grey);font-size:13px;margin:0 0 12px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;background:var(--card);border:1px solid var(--line);padding:10px 12px;font-size:13px}
+.bar b{font-weight:600}
+.ok{color:#137a3f}
+.bad{color:var(--hot)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--grey);font-size:12px}
+tr:last-child td{border-bottom:0}
+td.mono,th.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.k{display:inline-block;padding:0 5px;border:1px solid var(--line);font-size:11px}
+.k.cq{color:var(--hot);border-color:var(--hot)}
+form.row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:var(--card);border:1px solid var(--line);padding:10px}
+label{display:block;font-size:11px;color:var(--grey)}
+input,select{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);background:#fff;color:var(--text);min-width:90px}
+button{font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--text);background:#fff;color:var(--text);cursor:pointer}
+button.hot{border-color:var(--hot);color:var(--hot)}
+button.on{background:var(--hot);border-color:var(--hot);color:#fff}
+button.mini{padding:1px 7px;font-size:12px}
+.empty{color:var(--grey);font-size:13px;padding:10px 2px}
+.err{background:#fdecec;border:1px solid var(--hot);color:var(--hot);padding:8px 10px;font-size:13px;margin:12px 0}
+.hint{color:var(--grey);font-size:12px}
+a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>APRSNETCN OA 主控台</h1>
+  <p class="note">收到的 CNNET 报文在这里点名。名单改完自动写进本轮，页面上看到的就是这份。</p>
+
+  <div class="bar" id="bar"><span>正在读状态…</span></div>
+
+  <div id="err"></div>
+
+  <h2>轮次</h2>
+  <form class="row" id="roundForm">
+    <div><label>本轮日期</label><input type="date" id="roundDate"></div>
+    <div><label>轮值呼号</label><input type="text" id="dutyCall" placeholder="BG7LZQ-2"></div>
+    <div><button type="submit">开这一轮</button></div>
+    <div><button type="button" id="closeRound">结束这一轮</button></div>
+    <div><label>看哪一轮</label><select id="roundPick"></select></div>
+    <div><a href="#" id="exportBtn"><button type="button">导出 roster.json</button></a></div>
+  </form>
+
+  <h2>报到流水（最近 200 条）</h2>
+  <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。</p>
+  <div id="packets"></div>
+
+  <h2>本轮名单</h2>
+  <div id="stations"></div>
+
+  <h2>手动加一台</h2>
+  <form class="row" id="stForm">
+    <div><label>呼号</label><input type="text" id="stCall" placeholder="BG7XXX-9"></div>
+    <div><label>网格</label><input type="text" id="stGrid" placeholder="OL62"></div>
+    <div><label>路径</label><select id="stVia"><option value="rf">射频</option><option value="is">网络</option><option value="">空着</option></select></div>
+    <div><label>中继（逗号隔开）</label><input type="text" id="stDigi" placeholder="BG7LZQ-1"></div>
+    <div><label>时间（MM-DD HH:MM）</label><input type="text" id="stAt" placeholder="10-17 15:04"></div>
+    <div><label>状态</label><select id="stStatus"><option value="confirmed">已确认</option><option value="acked">已回 ACK</option><option value="called">只喊到</option></select></div>
+    <div><button type="submit">写进名单</button></div>
+  </form>
+  <p class="hint" id="txHint"></p>
+</div>
+<script>
+(function () {
+  "use strict";
+  var token = "";
+  var hit = /(?:^|[?&])token=([^&]+)/.exec(location.search);
+  if (hit) {
+    token = decodeURIComponent(hit[1]);
+    try { localStorage.setItem("oa_token", token); } catch (e) {}
+    history.replaceState(null, "", location.pathname);
+  } else {
+    try { token = localStorage.getItem("oa_token") || ""; } catch (e) { token = ""; }
+  }
+  if (!token) {
+    token = prompt("主控口令（OA_ADMIN_TOKEN）") || "";
+    try { localStorage.setItem("oa_token", token); } catch (e) {}
+  }
+
+  var state = { date: "", routes: [] };
+  var $ = function (id) { return document.getElementById(id); };
+
+  var showErr = function (msg) {
+    var box = $("err");
+    box.textContent = "";
+    if (!msg) return;
+    var div = document.createElement("div");
+    div.className = "err";
+    div.textContent = msg;
+    box.appendChild(div);
+  };
+
+  var api = function (path, method, body) {
+    var url = path + (path.indexOf("?") < 0 ? "?" : "&") + "token=" + encodeURIComponent(token);
+    return fetch(url, {
+      method: method || "GET",
+      headers: { "X-OA-Token": token, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store"
+    }).then(function (r) { return r.json(); });
+  };
+
+  var bjTime = function (iso) {
+    if (!iso) return "";
+    var t = Date.parse(iso);
+    if (!t) return String(iso);
+    return new Date(t + 8 * 3600 * 1000).toISOString().slice(5, 16).replace("T", " ");
+  };
+
+  var cell = function (tr, text, cls) {
+    var td = document.createElement("td");
+    if (cls) td.className = cls;
+    if (text !== undefined && text !== null) td.textContent = String(text);
+    tr.appendChild(td);
+    return td;
+  };
+
+  var copy = function (text, btn) {
+    var done = function () { var old = btn.textContent; btn.textContent = "已复制"; setTimeout(function () { btn.textContent = old; }, 1400); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { window.prompt("复制这行", text); });
+      return;
+    }
+    window.prompt("复制这行", text);
+  };
+
+  var refresh = function () {
+    var url = "/api/admin/state" + (state.date ? "?date=" + encodeURIComponent(state.date) : "");
+    return api(url).then(function (data) {
+      showErr(data && data.error ? data.error : "");
+      if (!data || !data.ok) return;
+      state.routes = (data.packets || []).slice(0, 200);
+      paintBar(data.health, data.round);
+      paintRounds(data.rounds, data.round);
+      paintPackets(data.packets);
+      paintStations(data.stations, data.round);
+    });
+  };
+
+  var paintBar = function (h, round) {
+    var bar = $("bar");
+    bar.textContent = "";
+    var aprs = (h && h.aprs) || {};
+    var add = function (label, value, cls) {
+      var span = document.createElement("span");
+      var b = document.createElement("b");
+      b.textContent = label;
+      span.appendChild(b);
+      span.appendChild(document.createTextNode(" " + value));
+      if (cls) span.className = cls;
+      bar.appendChild(span);
+    };
+    var online = aprs.state === "online";
+    add("APRS-IS", online ? "在线" : (aprs.state || "断"), online ? "ok" : "bad");
+    add("收到", (aprs.lines || 0) + " 行");
+    add("最后一行", bjTime(aprs.last) || "—");
+    add("本轮", (round && round.date) || "没开");
+    add("报文", (h && h.packets) || 0);
+    add("发 ACK", (h && h.tx) ? "能发" : "只记不发");
+    if (aprs.error) add("错误", aprs.error, "bad");
+    $("txHint").textContent = (h && h.tx)
+      ? "发 ACK 走的是 OA_TX_PASSCODE 那条连接，点了就真发。"
+      : "没有配 OA_TX_PASSCODE，回 ACK 只把报文记下来、复制给你自己发。";
+  };
+
+  var paintRounds = function (rounds, round) {
+    var pick = $("roundPick");
+    pick.textContent = "";
+    (rounds || []).forEach(function (r) {
+      var opt = document.createElement("option");
+      opt.value = r.date;
+      opt.textContent = r.date + (r.active ? "（在收）" : "");
+      pick.appendChild(opt);
+    });
+    if (round) {
+      $("roundDate").value = round.date;
+      $("dutyCall").value = round.duty || "";
+      pick.value = round.date;
+    } else if (!$("roundDate").value) {
+      var today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+      $("roundDate").value = today;
+    }
+  };
+
+  var paintPackets = function (packets) {
+    var box = $("packets");
+    box.textContent = "";
+    var rows = (packets || []).filter(function (p) { return p.kind !== "other"; });
+    if (!rows.length) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = "还没有 CNNET 报文。";
+      box.appendChild(p);
+      return;
+    }
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["时间", "呼号", "类型", "网格", "路径", "报文", ""].forEach(function (label, i) {
+      var th = document.createElement("th");
+      th.textContent = label;
+      if (i === 5) th.className = "mono";
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    rows.forEach(function (p) {
+      var tr = document.createElement("tr");
+      cell(tr, bjTime(p.ts), "mono");
+      cell(tr, p.src, "mono");
+      var kind = cell(tr, p.kind === "cq" ? "喊到" : (p.kind === "u" ? "确认" : p.kind));
+      kind.className = "k " + p.kind;
+      cell(tr, p.grid || "", "mono");
+      cell(tr, (p.via === "rf" ? "射频" : "网络") + (p.digi && p.digi.length ? " " + p.digi.join(" → ") : ""));
+      cell(tr, p.text || "", "mono");
+      var ops = cell(tr);
+      var add = document.createElement("button");
+      add.type = "button";
+      add.className = "mini";
+      add.textContent = "加入本轮";
+      add.onclick = function () {
+        api("/api/admin/station", "POST", {
+          date: state.date, call: p.src, grid: p.grid, via: p.via, digi: p.digi,
+          at: undefined, status: p.kind === "u" ? "confirmed" : "called"
+        }).then(function (d) { showErr(d && d.error); refresh(); });
+      };
+      ops.appendChild(add);
+      var ack = document.createElement("button");
+      ack.type = "button";
+      ack.className = "mini";
+      ack.textContent = "回 ACK";
+      ack.onclick = function () { doAck(p.src); };
+      ops.appendChild(ack);
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+  };
+
+  var paintStations = function (stations, round) {
+    var box = $("stations");
+    box.textContent = "";
+    if (!round) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = "先开一轮。";
+      box.appendChild(p);
+      return;
+    }
+    if (!(stations || []).length) {
+      var q = document.createElement("div");
+      q.className = "empty";
+      q.textContent = "这一轮还没有台站。";
+      box.appendChild(q);
+      return;
+    }
+    var names = { called: "只喊到", acked: "已回 ACK", confirmed: "已确认" };
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["呼号", "网格", "路径", "时间", "状态", ""].forEach(function (label) {
+      var th = document.createElement("th");
+      th.textContent = label;
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    stations.forEach(function (s) {
+      var tr = document.createElement("tr");
+      cell(tr, s.call, "mono");
+      cell(tr, s.grid || "", "mono");
+      cell(tr, (s.via === "rf" ? "射频" : "网络") + (s.digi ? " " + s.digi.split(",").join(" → ") : ""));
+      cell(tr, s.at || "", "mono");
+      cell(tr, names[s.status] || s.status);
+      var ops = cell(tr);
+      var ack = document.createElement("button");
+      ack.type = "button";
+      ack.className = "mini";
+      ack.textContent = "回 ACK";
+      ack.onclick = function () { doAck(s.call); };
+      ops.appendChild(ack);
+      var edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "mini";
+      edit.textContent = "改";
+      edit.onclick = function () {
+        $("stCall").value = s.call;
+        $("stGrid").value = s.grid || "";
+        $("stVia").value = s.via || "";
+        $("stDigi").value = s.digi || "";
+        $("stAt").value = s.at || "";
+        $("stStatus").value = s.status || "called";
+      };
+      ops.appendChild(edit);
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "mini hot";
+      del.textContent = "删";
+      del.onclick = function () {
+        api("/api/admin/station/delete", "POST", { date: state.date, call: s.call })
+          .then(function (d) { showErr(d && d.error); refresh(); });
+      };
+      ops.appendChild(del);
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+  };
+
+  var doAck = function (call) {
+    api("/api/admin/ack", "POST", { date: state.date, call: call, text: "ACK" }).then(function (d) {
+      showErr(d && d.error);
+      if (d && d.line) copy(d.line, $("roundPick"));
+      refresh();
+    });
+  };
+
+  $("roundForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    api("/api/admin/round", "POST", { date: $("roundDate").value, duty: $("dutyCall").value })
+      .then(function (d) { showErr(d && d.error); state.date = $("roundDate").value; refresh(); });
+  });
+
+  $("closeRound").addEventListener("click", function () {
+    api("/api/admin/close", "POST", { date: $("roundDate").value })
+      .then(function (d) { showErr(d && d.error); refresh(); });
+  });
+
+  $("roundPick").addEventListener("change", function () {
+    state.date = $("roundPick").value;
+    refresh();
+  });
+
+  $("exportBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    window.location = "/api/admin/export?token=" + encodeURIComponent(token);
+  });
+
+  $("stForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    api("/api/admin/station", "POST", {
+      date: state.date,
+      call: $("stCall").value,
+      grid: $("stGrid").value,
+      via: $("stVia").value,
+      digi: $("stDigi").value,
+      at: $("stAt").value,
+      status: $("stStatus").value
+    }).then(function (d) { showErr(d && d.error); $("stCall").value = ""; refresh(); });
+  });
+
+  refresh();
+  setInterval(refresh, 20000);
+})();
+</script>
+</body>
+</html>

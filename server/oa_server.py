@@ -1,0 +1,527 @@
+#!/usr/bin/env python3
+"""APRSNETCN OA 的后端。
+
+做三件事：
+  1. 收 APRS-IS 的报文，认 CQ CNNET / U CNNET，把台站并进当轮名单；
+  2. 把活动页与数据面板发给用户看，页面上的名单接本机的 /api/roster，
+     格式和静态那份 roster.json 一样，页面的脚本一行都不用改；
+  3. 给主控一个操作台 /admin：报文流水、名单增删改、回 ACK、导出 roster.json。
+
+用法：
+  python3 oa_server.py serve              # 接收 + HTTP，给 systemd 用
+  python3 oa_server.py export [路径]      # 只导出一次名单
+  python3 oa_server.py feed 文件          # 把文件里的报文集进来（离线试）
+  python3 oa_server.py listen [秒数]      # 只连 APRS-IS，把认出来的报文打到终端
+
+配置从环境变量来，也可以给 --env 一个 KEY=VALUE 的文件，清单见 oa-server.env.example。
+"""
+import argparse
+import hmac
+import json
+import os
+import re
+import signal
+import sys
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import oa_aprs
+import oa_store
+
+DEFAULTS = {
+    "OA_DATA_DIR": "/var/lib/oa-server",
+    "OA_HOST": "127.0.0.1",
+    "OA_PORT": "8090",
+    "OA_SITE_ROOT": "",
+    "OA_ADMIN_TOKEN": "",
+    "OA_APRS_HOST": "rotate.aprs2.net",
+    "OA_APRS_PORT": "14580",
+    "OA_APRS_LOGIN": "",
+    "OA_APRS_FILTER": "a/54/73/18/135 g/BG7LZQ-2",
+    "OA_TX_PASSCODE": "",
+    "OA_ROUND_DUTY": "",
+    "OA_PUBLISH_ROSTER": "",
+    "OA_KEEP_OTHER": "2000",
+}
+
+PAGES = {
+    "/": "oa/index.html",
+    "/oa": "oa/index.html",
+    "/oa/": "oa/index.html",
+    "/oa/index.html": "oa/index.html",
+    "/en": "oa/en/index.html",
+    "/en/": "oa/en/index.html",
+    "/oa/en": "oa/en/index.html",
+    "/oa/en/": "oa/en/index.html",
+    "/oa/en/index.html": "oa/en/index.html",
+    "/oa/data.html": "oa/data.html",
+    "/oa/en/data.html": "oa/en/data.html",
+    "/data": "oa/data.html",
+    "/en/data": "oa/en/data.html",
+    "/data.html": "oa/data.html",
+}
+
+MIME = {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".xml": "application/xml; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
+    ".ico": "image/x-icon",
+    ".woff2": "font/woff2",
+}
+
+
+def load_env(path):
+    if not path:
+        return
+    with open(path, "r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
+
+
+def config_from_env():
+    return dict((key, os.environ.get(key, value)) for key, value in DEFAULTS.items())
+
+
+class Runtime(object):
+    def __init__(self, conf):
+        self.conf = conf
+        self.started = oa_aprs.now_iso()
+        self.store = oa_store.Store(conf["OA_DATA_DIR"], conf["OA_ROUND_DUTY"])
+        root = conf["OA_SITE_ROOT"] or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.site_root = os.path.realpath(root)
+        self.link = None
+        self.publish_path = conf["OA_PUBLISH_ROSTER"] or ""
+        self._stop = threading.Event()
+
+    def start_aprs(self):
+        login = self.conf["OA_APRS_LOGIN"]
+        if not login:
+            sys.stderr.write("没有 OA_APRS_LOGIN，只开 HTTP，不连 APRS-IS\n")
+            return
+        self.link = oa_aprs.AprsIsLink(
+            self.conf["OA_APRS_HOST"], self.conf["OA_APRS_PORT"],
+            login=login, passcode="-1", filter_text=self.conf["OA_APRS_FILTER"],
+            on_line=self.on_line)
+        self.link.start()
+
+    def on_line(self, record):
+        try:
+            self.store.add_packet(record)
+        except Exception as exc:                     # 一条报文出错不能断接收
+            sys.stderr.write("收报文出错：%s\n" % exc)
+
+    def start_maintenance(self):
+        """后台一件小事：清掉攒下的闲聊报文，需要时把名单写一份到磁盘。"""
+        try:
+            keep = int(self.conf.get("OA_KEEP_OTHER") or 2000)
+        except ValueError:
+            keep = 2000
+
+        def loop():
+            last = None
+            while not self._stop.is_set():
+                try:
+                    dropped = self.store.prune(keep)
+                    if dropped:
+                        sys.stderr.write("清掉 %d 条闲聊报文\n" % dropped)
+                except Exception as exc:
+                    sys.stderr.write("清理出错：%s\n" % exc)
+                if self.publish_path:
+                    try:
+                        text = json.dumps(self.store.roster(), ensure_ascii=False, indent=2) + "\n"
+                        if text != last:
+                            self.store.write_roster(self.publish_path)
+                            last = text
+                    except Exception as exc:
+                        sys.stderr.write("写名单出错：%s\n" % exc)
+                self._stop.wait(15)
+
+        thread = threading.Thread(target=loop, name="oa-maintain")
+        thread.daemon = True
+        thread.start()
+
+    def health(self):
+        active = self.store.active_round()
+        data = self.store.stats()
+        link = self.link.status if self.link else {"state": "off", "lines": 0, "last": "", "error": ""}
+        return {
+            "ok": True,
+            "started": self.started,
+            "aprs": link,
+            "active_round": active["date"] if active else "",
+            "duty": active["duty"] if active else self.conf["OA_ROUND_DUTY"],
+            "rounds": len(self.store.rounds()),
+            "tx": bool(self.conf["OA_TX_PASSCODE"]),
+            "packets": data["packets"],
+            "kinds": data["kinds"],
+            "last_packet": data["last_packet"],
+        }
+
+    def stop(self):
+        self._stop.set()
+        if self.link:
+            self.link.stop()
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "oa-server/0.1"
+    protocol_version = "HTTP/1.1"
+
+    def log_message(self, fmt, *args):
+        sys.stderr.write("%s %s %s\n" % (time.strftime("%H:%M:%S"), self.address_string(), fmt % args))
+
+    @property
+    def rt(self):
+        return self.server.runtime
+
+    # ---- 回包 ----
+
+    def _send(self, code, body, ctype, extra=None):
+        if isinstance(body, str):
+            body = body.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        for key, value in (extra or {}).items():
+            self.send_header(key, value)
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
+
+    def _json(self, obj, code=200, extra=None):
+        self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8", extra)
+
+    def _fail(self, code, message):
+        self._json({"ok": False, "error": message}, code)
+
+    def _body(self):
+        try:
+            size = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            size = 0
+        raw = self.rfile.read(size) if size else b""
+        if not raw:
+            return {}
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except ValueError:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def _token(self):
+        given = self.headers.get("X-OA-Token") or ""
+        if not given:
+            hit = re.search(r"(?:^|;\s*)oa_token=([^;]+)", self.headers.get("Cookie") or "")
+            if hit:
+                given = hit.group(1)
+        if not given:
+            given = (parse_qs(urlparse(self.path).query).get("token") or [""])[0]
+        return given
+
+    def _need_token(self):
+        want = self.rt.conf.get("OA_ADMIN_TOKEN") or ""
+        if not want:
+            self._fail(503, "服务端没设 OA_ADMIN_TOKEN，管理接口关着")
+            return False
+        if not hmac.compare_digest(self._token(), want):
+            self._fail(403, "口令不对")
+            return False
+        return True
+
+    # ---- GET ----
+
+    def do_HEAD(self):
+        self.do_GET()
+
+    def do_GET(self):
+        path = urlparse(self.path).path
+        query = parse_qs(urlparse(self.path).query)
+        if path in PAGES:
+            self._page(PAGES[path])
+            return
+        if path == "/admin" or path == "/admin/":
+            self._file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin.html"),
+                       cookie="oa_token=%s; Path=/; HttpOnly" % self._token() if self._token() else None)
+            return
+        if path == "/api/roster":
+            self._json(self.rt.store.roster(), 200, {"Access-Control-Allow-Origin": "*"})
+            return
+        if path == "/api/health":
+            self._json(self.rt.health())
+            return
+        if path == "/api/packets":
+            if not self._need_token():
+                return
+            limit = int((query.get("limit") or ["200"])[0] or 200)
+            kind = (query.get("kind") or [""])[0] or None
+            self._json({"ok": True, "packets": self.rt.store.packets(limit=min(limit, 1000), kind=kind)})
+            return
+        if path == "/api/admin/state":
+            if not self._need_token():
+                return
+            active = self.rt.store.active_round()
+            date = (query.get("date") or [""])[0] or (active["date"] if active else oa_store.bj_now_date())
+            self._json({
+                "ok": True,
+                "health": self.rt.health(),
+                "round": self.rt.store.round_by_date(date),
+                "rounds": self.rt.store.rounds(),
+                "stations": self.rt.store.stations(date),
+                "packets": self.rt.store.packets(limit=200),
+                "outbox": self.rt.store.outbox(limit=20),
+            })
+            return
+        if path == "/api/admin/export":
+            if not self._need_token():
+                return
+            body = json.dumps(self.rt.store.roster(), ensure_ascii=False, indent=2) + "\n"
+            self._send(200, body, "application/json; charset=utf-8",
+                       {"Content-Disposition": 'attachment; filename="roster.json"'})
+            return
+        self._static(path)
+
+    # ---- POST ----
+
+    def do_POST(self):
+        path = urlparse(self.path).path
+        body = self._body()
+        if path == "/api/inject":
+            if not self._need_token():
+                return
+            line = str(body.get("line") or "").strip()
+            record = oa_aprs.parse_line(line) if line else None
+            if not record:
+                self._fail(400, "这行不是报文")
+                return
+            result = self.rt.store.add_packet(record)
+            self._json({"ok": True, "record": record, "stored": result})
+            return
+        if path == "/api/admin/round":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip()
+            if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
+                self._fail(400, "日期要写成 2026-10-17")
+                return
+            duty = str(body.get("duty") or "").strip().upper()
+            rid = self.rt.store.open_round(date, duty)
+            self._json({"ok": True, "round": self.rt.store.round_by_date(date), "id": rid})
+            return
+        if path == "/api/admin/close":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip()
+            self.rt.store.close_round(date)
+            self._json({"ok": True})
+            return
+        if path == "/api/admin/duty":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip() or oa_store.bj_now_date()
+            call = str(body.get("call") or "").strip().upper()
+            self.rt.store.set_duty(date, call)
+            self._json({"ok": True, "date": date, "call": call})
+            return
+        if path == "/api/admin/station":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip() or oa_store.bj_now_date()
+            call = str(body.get("call") or "").strip().upper()
+            if not call:
+                self._fail(400, "要写呼号")
+                return
+            digi = body.get("digi")
+            if isinstance(digi, str):
+                digi = [d for d in digi.split(",")]
+            self.rt.store.set_station(
+                date, call,
+                grid=None if body.get("grid") is None else str(body.get("grid")).strip().upper(),
+                via=None if body.get("via") in (None, "") else str(body.get("via")).strip(),
+                digi=None if digi is None else digi,
+                at=None if body.get("at") in (None, "") else str(body.get("at")).strip(),
+                status=None if body.get("status") in (None, "") else str(body.get("status")).strip(),
+                note=None if body.get("note") is None else str(body.get("note")).strip())
+            self._json({"ok": True, "stations": self.rt.store.stations(date)})
+            return
+        if path == "/api/admin/station/delete":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip()
+            call = str(body.get("call") or "").strip().upper()
+            ok = self.rt.store.drop_station(date, call)
+            self._json({"ok": ok, "stations": self.rt.store.stations(date)})
+            return
+        if path == "/api/admin/ack":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip() or oa_store.bj_now_date()
+            call = str(body.get("call") or "").strip().upper()
+            text = str(body.get("text") or "ACK").strip() or "ACK"
+            duty = str(body.get("duty") or self.rt.conf["OA_ROUND_DUTY"]).strip().upper()
+            if not call or not duty:
+                self._fail(400, "缺呼号：回谁、以谁的名义回")
+                return
+            line = "%s>APRS,TCPIP*::%s:%s" % (duty, call.ljust(9), text)
+            oid = self.rt.store.queue_line(duty, call, line)
+            error = ""
+            if body.get("send"):
+                try:
+                    oa_aprs.send_once(self.rt.conf["OA_APRS_HOST"], self.rt.conf["OA_APRS_PORT"],
+                                      duty, self.rt.conf["OA_TX_PASSCODE"], line)
+                except Exception as exc:
+                    error = str(exc)[:200]
+            self.rt.store.mark_sent(oid, error)
+            self.rt.store.set_station(date, call, status="acked")
+            self._json({"ok": not error, "error": error, "line": line, "id": oid})
+            return
+        self._fail(404, "没有这个接口")
+
+    # ---- 文件 ----
+
+    def _page(self, rel):
+        path = os.path.join(self.rt.site_root, rel)
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                html = fh.read()
+        except (IOError, OSError):
+            self._fail(404, "站上找不到 %s" % rel)
+            return
+        html = html.replace('data-roster="../roster.json"', 'data-roster="/api/roster"')
+        html = html.replace('data-roster="roster.json"', 'data-roster="/api/roster"')
+        self._send(200, html, "text/html; charset=utf-8")
+
+    def _file(self, path, cookie=None):
+        try:
+            with open(path, "rb") as fh:
+                body = fh.read()
+        except (IOError, OSError):
+            self._fail(404, "没有这个文件")
+            return
+        extra = {"Set-Cookie": cookie} if cookie else None
+        self._send(200, body, MIME.get(os.path.splitext(path)[1].lower(), "application/octet-stream"), extra)
+
+    def _static(self, path):
+        root = self.rt.site_root
+        target = os.path.realpath(os.path.join(root, path.lstrip("/")))
+        if not (target == root or target.startswith(root + os.sep)):
+            self._fail(403, "越界")
+            return
+        if os.path.isdir(target):
+            target = os.path.join(target, "index.html")
+        self._file(target)
+
+
+def serve(conf):
+    rt = Runtime(conf)
+    rt.start_aprs()
+    rt.start_maintenance()
+    httpd = ThreadingHTTPServer((conf["OA_HOST"], int(conf["OA_PORT"])), Handler)
+    httpd.runtime = rt
+    sys.stderr.write("oa-server 起来：http://%s:%s/ ，名单 /api/roster ，操作台 /admin\n"
+                     % (conf["OA_HOST"], conf["OA_PORT"]))
+    stopping = threading.Event()
+
+    def bye(signum, frame):
+        if stopping.is_set():
+            return
+        stopping.set()
+        sys.stderr.write("收工\n")
+        rt.stop()
+        threading.Thread(target=httpd.shutdown).start()
+
+    signal.signal(signal.SIGTERM, bye)
+    signal.signal(signal.SIGINT, bye)
+    try:
+        httpd.serve_forever(poll_interval=0.5)
+    finally:
+        httpd.server_close()
+        rt.stop()
+        rt.store.close()
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description="APRSNETCN OA 后端")
+    parser.add_argument("--env", default=os.environ.get("OA_ENV", ""), help="KEY=VALUE 的配置文件")
+    sub = parser.add_subparsers(dest="cmd")
+    sub.add_parser("serve", help="接收 + HTTP")
+    exporter = sub.add_parser("export", help="导出一次名单")
+    exporter.add_argument("path", nargs="?", help="写到哪个文件，不给就打到标准输出")
+    feeder = sub.add_parser("feed", help="把文件里的报文集进来")
+    feeder.add_argument("file")
+    listener = sub.add_parser("listen", help="只连 APRS-IS 打日志")
+    listener.add_argument("seconds", nargs="?", type=int, default=30)
+    args = parser.parse_args(argv)
+
+    load_env(args.env)
+    conf = config_from_env()
+
+    if args.cmd == "export":
+        store = oa_store.Store(conf["OA_DATA_DIR"], conf["OA_ROUND_DUTY"])
+        data = store.roster()
+        text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+        if args.path:
+            with open(args.path, "w", encoding="utf-8") as fh:
+                fh.write(text)
+            sys.stderr.write("写到 %s：%d 轮\n" % (args.path, len(data["rounds"])))
+        else:
+            sys.stdout.write(text)
+        store.close()
+        return 0
+
+    if args.cmd == "feed":
+        store = oa_store.Store(conf["OA_DATA_DIR"], conf["OA_ROUND_DUTY"])
+        count = 0
+        with open(args.file, "r", encoding="utf-8") as fh:
+            for line in fh:
+                record = oa_aprs.parse_line(line)
+                if not record:
+                    continue
+                store.add_packet(record)
+                count = count + 1
+                sys.stdout.write("%-9s %-6s %-9s %s\n" % (record["src"], record["kind"],
+                                                          record["via"], record["text"][:60]))
+        sys.stdout.write("共集进 %d 条\n" % count)
+        store.close()
+        return 0
+
+    if args.cmd == "listen":
+        def show(record):
+            sys.stdout.write("%s %-9s %-4s %-6s %-5s %-6s %s\n" % (
+                record["ts"], record["src"], record["kind"], record["via"],
+                record["grid"], ",".join(record["digi"])[:24], record["text"][:50]))
+            sys.stdout.flush()
+
+        link = oa_aprs.AprsIsLink(conf["OA_APRS_HOST"], conf["OA_APRS_PORT"],
+                                  login=conf["OA_APRS_LOGIN"] or "N0CALL", passcode="-1",
+                                  filter_text=conf["OA_APRS_FILTER"], on_line=show)
+        link.start()
+        try:
+            time.sleep(max(1, args.seconds))
+        except KeyboardInterrupt:
+            pass
+        sys.stderr.write("状态：%s，收到 %d 行，最后 %s\n" % (
+            link.status["state"], link.status["lines"], link.status["last"] or "（还没有）"))
+        link.stop()
+        return 0
+
+    serve(conf)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -1,0 +1,66 @@
+# APRSNETCN OA 后端
+
+活动页原本读一份静态的 `oa/roster.json`，名单靠人往里写。这个后端把那份名单接上
+APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当轮名单，主控在
+操作台上点名、回 ACK、删改，页面上立刻就是最新的那一份。
+
+只用 Python 3 标准库，没有依赖。
+
+## 一条报文怎么变成一行名单
+
+1. 连 APRS-IS（只收，`pass -1`），按区域过滤中国上空的报文，另外单独收发给轮值呼号的报文；
+2. 每行拆出呼号、路径、位置、网格、文字，文字里认出 `CQ CNNET`（喊到）与 `U CNNET`（确认）；
+3. 喊到的台站进当轮名单，状态 `called`；回过 U 的升到 `confirmed`；主控回过 ACK 的记 `acked`；
+4. 名单从 `stations` 表导出，格式和页面上 `roster.js` 读的那份 `roster.json` 一模一样。
+
+射频还是网络：路径里有 `qAR`、有带 `*` 的中继、有 WIDE 这类别名，就按射频，中继按经过顺序写；
+只有 `TCPIP*` 与 `qAC` 这类 q 构造，就按网络。q 构造后面的网关与服务器不算中继。
+
+网格先按报文里的位置算；没有位置就用文字里写的那个；主控台里都能改。
+
+## 接口
+
+| 路径 | 说明 |
+| --- | --- |
+| `GET /` | 活动页（`oa/index.html`），页面上的名单自动指向 `/api/roster` |
+| `GET /oa/data.html` | 数据面板，同上 |
+| `GET /en/` | 英文活动页 |
+| `GET /api/roster` | 名单，与静态 `roster.json` 同格式 |
+| `GET /api/health` | 连接状态、收到多少行、当轮、报文数 |
+| `GET /admin` | 主控台（要口令） |
+| `GET /api/admin/state` | 主控台读的一切：状态、轮次、名单、流水 |
+| `GET /api/admin/export` | 下载 roster.json |
+| `POST /api/admin/round` | 开一轮：`{"date":"2026-10-17","duty":"BG7LZQ-2"}` |
+| `POST /api/admin/close` | 结束一轮 |
+| `POST /api/admin/duty` | 换轮值呼号 |
+| `POST /api/admin/station` | 加或改一台：呼号、网格、路径、中继、时间、状态 |
+| `POST /api/admin/station/delete` | 删一台 |
+| `POST /api/admin/ack` | 回 ACK：记下报文并标 `acked`，配了口令才真发 |
+| `POST /api/inject` | 拿一行报文试一下：`{"line":"BG7XXX-9>APRS:…"}` |
+
+管理接口认 `X-OA-Token` 头、`token=` 参数或 `oa_token` cookie 里的口令，就是配置里的
+`OA_ADMIN_TOKEN`。没设口令时管理接口一律拒绝，不会敞着。
+
+## 配置
+
+复制 `oa-server.env.example` 改成自己的，用 `--env` 指过去，或者直接给环境变量。
+`OA_ADMIN_TOKEN` 必填，`OA_TX_PASSCODE` 空着就是只记不发。
+
+## 跑起来
+
+```sh
+python3 oa_server.py --env oa-server.env serve      # 接收 + 页面 + 主控台
+python3 oa_server.py --env oa-server.env export out.json
+python3 oa_server.py --env oa-server.env feed 几行报文.txt
+python3 oa_server.py --env oa-server.env listen 30  # 只连 APRS-IS 看一眼
+python3 selftest.py                                 # 不连网的自检
+```
+
+systemd 单元见 `oa-server.service`，路径按本机改成对的。
+
+## 两件要知道的事
+
+- 只听得见上了 APRS-IS 的报文。完全走射频、没有网关收到的台站，主控自己在台上抄到了，
+  就在主控台的「手动加一台」里补一行。
+- 发 ACK 需要轮值呼号的报文口令，写在 `OA_TX_PASSCODE` 里才会真发。不写的话，
+  点「回 ACK」只把报文记进发件箱并复制到剪贴板，主控自己发。
