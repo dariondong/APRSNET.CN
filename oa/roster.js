@@ -36,6 +36,8 @@
 
    主控呼号那几个位子写的是 [data-oa-duty]，点一下就复制（按钮上的字先换成
    名单 ul 上 data-copy-done 的那句话，过一会儿换回来）。 */
+   数据面板上还有两个下载按钮，位子是 [data-oa-image]，地址前半截取自名单 ul 的
+   data-image-base，后半截是 board.png / points.png，后面接上选中那一轮与页面语言。 */
 (function () {
   "use strict";
 
@@ -441,6 +443,7 @@
     list.textContent = "";
     list.appendChild(frag);
     stamp(round);
+    fillImages(round);
   };
 
   /* 主控呼号：点一下复制。老浏览器或非安全来源没有 navigator.clipboard，
@@ -495,6 +498,25 @@
       el = el.parentNode;
     }
   });
+
+  /* 数据面板上的两个下载按钮：地址跟着选中的那一轮与页面语言走。
+     地址的前半截（data-image-base）从名单 ul 上取，静态站与后端两种发法都能用。 */
+  var imgBase = list.getAttribute("data-image-base") || "";
+
+  var fillImages = function (round) {
+    if (!imgBase) return;
+    var nodes = document.querySelectorAll("[data-oa-image]");
+    if (!nodes.length) return;
+    var query = [];
+    var date = String((round && round.date) || "").trim();
+    if (date) query.push("date=" + encodeURIComponent(date));
+    if (!chinese) query.push("lang=en");
+    var tail = query.length ? "?" + query.join("&") : "";
+    Array.prototype.forEach.call(nodes, function (el) {
+      var name = el.getAttribute("data-oa-image");
+      if (name) el.setAttribute("href", imgBase + name + ".png" + tail);
+    });
+  };
 
   /* 名单会自己变：服务端把 data-roster 指到 /api/roster（绝对路径），隔一会儿再读一次；
      静态站上它是相对路径，读一次就不动了。 */
@@ -555,5 +577,6 @@
     });
   }
 
+  fillImages(null);   /* 名单还在路上的时候，按钮先只带上语言 */
   load();
 })();

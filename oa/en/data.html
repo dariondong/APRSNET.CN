@@ -153,7 +153,11 @@
       <label for="oaRound">Round</label>
       <select id="oaRound"></select>
     </div>
-    <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
+    <div class="oa-actions">
+      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">Download check-in table (PNG)</a>
+      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/points.png" data-oa-image="points">Download check-in points (PNG)</a>
+    </div>
+    <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-image-base="https://oa.aprsnet.cn/api/" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
         <b class="st-call">The list is still empty</b>
         <span class="st-note">This round has no station yet.</span>
@@ -212,7 +216,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=14"></script>
+<script src="../roster.js?v=15"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>
