@@ -142,7 +142,7 @@
     <p class="prose">本活动由 APRSNET.CN 独立发起，没有其他主办方。OA 是 On Air 的缩写。轮值台收到报文后回一条 ACK。</p>
     <p class="prose">不用报名，没有签到表。到时间把报文发给当周的轮值呼号。</p>
     <p class="prose">时间按北京时间算，周六 00:00 到 23:59，整 24 小时。这 24 小时里任一时刻发都算。</p>
-    <p class="prose">射频与网络两条路都算参加。走射频的，名单里带一个「射频」标签。</p>
+    <p class="prose">射频与网络两条路都算参加。行末的标签写清是哪一条路。</p>
     <p class="oa-note">当周的轮值呼号还没排出来。排出来之前发出去的报文没有人收。</p>
   </div>
 </section>
@@ -150,10 +150,10 @@
 <section class="section" id="oa-roster">
   <div class="section-head">
     <h2>参与的台</h2>
-    <p>活动开始之后，每收到一台就记一行，走射频进来的行末带一个「射频」标签。</p>
+    <p>活动开始之后，每收到一台就记一行。行末的标签写清是走射频还是走网络。</p>
   </div>
   <div class="section-body">
-    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
+    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-tag-is="网络" data-label-grid="网格" data-label-digi="经" data-label-at="参与" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
       <li>
         <div class="link-row is-static">
           <span class="lr-main">
@@ -164,7 +164,7 @@
       </li>
     </ul>
     <p class="oa-note">这一节只放最新一轮。前面几轮的名单与汇总数字在<a href="data.html">数据面板</a>。</p>
-    <p class="oa-note">除了呼号与网格，页面不记别的。</p>
+    <p class="oa-note">一行写一台：呼号、网格、中继与参与时间。</p>
   </div>
 </section>
 
@@ -377,7 +377,7 @@
 </a>
 
 <script src="clock.js?v=1"></script>
-<script src="roster.js?v=4"></script>
+<script src="roster.js?v=5"></script>
 <script src="../main.js?v=13"></script>
 </body>
 </html>

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNETCN OA data panel | APRSNET.CN</title>
-<meta name="description" content="The APRSNETCN OA data panel: the station list of every round plus round and station totals, all taken from the messages the duty station receives.">
-<meta name="keywords" content="APRSNETCN OA,data panel,station list,rounds,APRS check-in net,CNNET,APRSNET.CN,independent net">
+<meta name="description" content="The APRSNETCN OA data panel: every round of stations with the callsign, grid, path, repeaters and time, followed by the totals.">
+<meta name="keywords" content="APRSNETCN OA,data panel,station list,grid,repeaters,check-in time,APRS check-in net,CNNET,APRSNET.CN">
 <meta name="author" content="BG7LZQ (Darion)">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
@@ -13,7 +13,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="APRSNET.CN">
 <meta property="og:title" content="APRSNETCN OA data panel | APRSNET.CN">
-<meta property="og:description" content="The station list of every round, plus round and station totals, taken from the messages the duty station receives.">
+<meta property="og:description" content="Every round of stations with the callsign, grid, path, repeaters and time, followed by the totals.">
 <meta property="og:url" content="https://aprsnet.cn/oa/en/data.html">
 <meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
 <meta property="og:image:width" content="512">
@@ -28,10 +28,10 @@
 <link rel="apple-touch-icon" href="../../assets/icon.png?v=5">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="APRSNETCN OA data panel | APRSNET.CN">
-<meta name="twitter:description" content="The station list of every round, plus round and station totals, taken from the messages the duty station receives.">
+<meta name="twitter:description" content="Every round of stations with the callsign, grid, path, repeaters and time, followed by the totals.">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
 <link rel="stylesheet" href="../../style.css?v=35">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRSNETCN OA data panel","url":"https://aprsnet.cn/oa/en/data.html","inLanguage":"en","description":"The APRSNETCN OA data panel: the station list of every round plus round and station totals, all taken from the messages the duty station receives.","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRSNETCN OA data panel","url":"https://aprsnet.cn/oa/en/data.html","inLanguage":"en","description":"The APRSNETCN OA data panel: every round of stations with the callsign, grid, path, repeaters and time, followed by the totals.","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -72,13 +72,7 @@
 .oa-switch label { color: var(--text-faint); font-size: 14.5px; }
 .oa-switch select { font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 6px 10px; }
 .oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
-/* 数据面板自用：四个数字一格，窄屏两列。 */
-.oa-stat { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 30px 0 0; padding: 1px; background: var(--line-strong); }
-.oa-stat li { background: var(--surface-1); padding: 18px 20px 20px; }
-.oa-stat b { display: block; font-size: 14px; font-weight: 400; letter-spacing: .04em; color: var(--text-faint); }
-.oa-stat span { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: clamp(24px, 4.6vw, 42px); line-height: 1; font-variant-numeric: tabular-nums; }
 .oa-actions a.oa-btn { opacity: 1; }
-@media (max-width: 720px) { .oa-stat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 </head>
 
@@ -121,15 +115,17 @@
     <p class="oa-lang"><a href="../data.html" hreflang="zh-CN" lang="zh-CN">中文</a><strong>English</strong></p>
     <p class="oa-kicker">APRSNETCN OA · data panel</p>
     <h1 class="oa-title">Data panel</h1>
-    <ul class="oa-stat">
+    <ul class="fact-list">
       <li><b>Rounds</b><span data-oa-stat="rounds">0</span></li>
       <li><b>Stations in the newest round</b><span data-oa-stat="latest">0</span></li>
       <li><b>Stations across all rounds</b><span data-oa-stat="stations">0</span></li>
       <li><b>Over RF</b><span data-oa-stat="rf">0</span></li>
+      <li><b>Through a repeater</b><span data-oa-stat="digi">0</span></li>
+      <li><b>Repeaters seen</b><span data-oa-stat="digis">0</span></li>
+      <li><b>Roster last updated</b><span data-oa-stat="updated">—</span></li>
     </ul>
-    <p class="oa-clock-note">Roster last updated <span data-oa-stat="updated">—</span>. The figures come from the messages the duty station receives, and the page only reads them.</p>
     <ul class="oa-lines">
-      <li>One roster per round. Both the list and the figures come from the messages the duty station receives.</li>
+      <li>One roster per round: callsign, grid, the path it came in on, the repeaters along that path, and the time.</li>
       <li>Before the net opens, all of it is empty.</li>
     </ul>
     <div class="oa-actions">
@@ -141,14 +137,14 @@
 <section class="section" id="data-roster">
   <div class="section-head">
     <h2>Stations per round</h2>
-    <p>A station heard over the air carries an RF tag at the end of its row. The roster is renewed every round.</p>
+    <p>A tag at the end of a row says whether the station came over RF or over the network. The roster is renewed every round.</p>
   </div>
   <div class="section-body">
     <div class="oa-switch" id="oaSwitch" hidden>
       <label for="oaRound">Round</label>
       <select id="oaRound"></select>
     </div>
-    <ul class="link-list" id="oaRoster" data-roster="../roster.json" data-tag-rf="RF" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
+    <ul class="link-list" id="oaRoster" data-roster="../roster.json" data-tag-rf="RF" data-tag-is="Net" data-label-grid="Grid" data-label-digi="via" data-label-at="Time" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
         <div class="link-row is-static">
           <span class="lr-main">
@@ -158,21 +154,24 @@
         </div>
       </li>
     </ul>
-    <p class="oa-note">Apart from the callsign and the grid, nothing is recorded.</p>
+    <p class="oa-note">One line per station: the callsign, the grid, the repeaters and the time, taken from the messages the duty station receives.</p>
   </div>
 </section>
 
 <section class="section alt" id="data-how">
   <div class="section-head">
     <h2>How the numbers are counted</h2>
-    <p>Where the four figures come from.</p>
+    <p>Where the figures above come from.</p>
   </div>
   <div class="section-body">
     <ul class="fact-list">
       <li><b>Rounds</b><span>Rounds finished or running, one per week.</span></li>
       <li><b>Stations in the newest round</b><span>How many stations sent a message in the newest round.</span></li>
       <li><b>Stations across all rounds</b><span>The rounds added up. A station that takes part in three rounds is counted three times.</span></li>
-      <li><b>Over RF</b><span>Messages that came in over the air.</span></li>
+      <li><b>Over RF</b><span>Stations that came in over the air.</span></li>
+      <li><b>Through a repeater</b><span>Stations whose message passed a repeater before it reached the duty station.</span></li>
+      <li><b>Repeaters seen</b><span>How many repeaters appear in the rosters, each counted once.</span></li>
+      <li><b>Roster last updated</b><span>The date the publishing flow wrote the roster last.</span></li>
     </ul>
     <p class="oa-note">The publishing flow writes the figures. This page only reads them.</p>
   </div>
@@ -217,7 +216,7 @@
         </ul>
       </div>
     </nav>
-    <p class="footer-note">This page is the APRSNETCN OA data panel. The figures come from the messages the duty station receives, and the page collects nothing. Follow your local radio regulations and transmit only on frequencies you are allowed to use.</p>
+    <p class="footer-note">This page is the APRSNETCN OA data panel. The roster and the figures come from the messages the duty station receives, and the page collects nothing. Follow your local radio regulations and transmit only on frequencies you are allowed to use.</p>
     <p class="footer-edit">Spotted a mistake?<a href="https://github.com/dariondong/APRSNET.CN/edit/main/oa/en/data.html" target="_blank" rel="noopener">Edit this page on GitHub</a>.</p>
     <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
   </div>
@@ -228,7 +227,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=4"></script>
+<script src="../roster.js?v=5"></script>
 <script src="../../main.js?v=13"></script>
 </body>
 </html>

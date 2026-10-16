@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNETCN OA 数据面板 | APRSNET.CN</title>
-<meta name="description" content="APRSNETCN OA 的数据面板：每一轮的参与台名单、轮次与台站数汇总，数据取自轮值台收到的报文。">
-<meta name="keywords" content="APRSNETCN OA,数据面板,参与台名单,轮次,台站数,APRS 报文活动,APRSNET.CN,独立活动">
+<meta name="description" content="APRSNETCN OA 的数据面板：每一轮的参与台名单，每台带呼号、网格、走哪条路、路上有哪些中继与参与时间，后面是汇总数字。">
+<meta name="keywords" content="APRSNETCN OA,数据面板,参与台名单,网格,中继,参与时间,APRS 报文活动,APRSNET.CN">
 <meta name="author" content="BG7LZQ (Darion)">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
@@ -13,7 +13,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="APRSNET.CN">
 <meta property="og:title" content="APRSNETCN OA 数据面板 | APRSNET.CN">
-<meta property="og:description" content="每一轮的参与台名单，加上轮次与台站数汇总。数据取自轮值台收到的报文。">
+<meta property="og:description" content="每一轮的参与台名单，每台带呼号、网格、路径、中继与参与时间，后面是汇总数字。">
 <meta property="og:url" content="https://aprsnet.cn/oa/data.html">
 <meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
 <meta property="og:image:width" content="512">
@@ -28,10 +28,10 @@
 <link rel="apple-touch-icon" href="../assets/icon.png?v=5">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="APRSNETCN OA 数据面板 | APRSNET.CN">
-<meta name="twitter:description" content="每一轮的参与台名单，加上轮次与台站数汇总。数据取自轮值台收到的报文。">
+<meta name="twitter:description" content="每一轮的参与台名单，每台带呼号、网格、路径、中继与参与时间，后面是汇总数字。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
 <link rel="stylesheet" href="../style.css?v=35">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRSNETCN OA 数据面板","url":"https://aprsnet.cn/oa/data.html","inLanguage":"zh-CN","description":"APRSNETCN OA 的数据面板：每一轮的参与台名单、轮次与台站数汇总，数据取自轮值台收到的报文。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRSNETCN OA 数据面板","url":"https://aprsnet.cn/oa/data.html","inLanguage":"zh-CN","description":"APRSNETCN OA 的数据面板：每一轮的参与台名单，每台带呼号、网格、走哪条路、路上有哪些中继与参与时间，后面是汇总数字。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -72,13 +72,7 @@
 .oa-switch label { color: var(--text-faint); font-size: 14.5px; }
 .oa-switch select { font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 6px 10px; }
 .oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
-/* 数据面板自用：四个数字一格，窄屏两列。 */
-.oa-stat { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 30px 0 0; padding: 1px; background: var(--line-strong); }
-.oa-stat li { background: var(--surface-1); padding: 18px 20px 20px; }
-.oa-stat b { display: block; font-size: 14px; font-weight: 400; letter-spacing: .04em; color: var(--text-faint); }
-.oa-stat span { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: clamp(24px, 4.6vw, 42px); line-height: 1; font-variant-numeric: tabular-nums; }
 .oa-actions a.oa-btn { opacity: 1; }
-@media (max-width: 720px) { .oa-stat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 </head>
 
@@ -121,15 +115,17 @@
     <p class="oa-lang"><strong>中文</strong><a href="en/data.html" hreflang="en" lang="en">English</a></p>
     <p class="oa-kicker">APRSNETCN OA · 数据面板</p>
     <h1 class="oa-title">数据面板</h1>
-    <ul class="oa-stat">
+    <ul class="fact-list">
       <li><b>轮次</b><span data-oa-stat="rounds">0</span></li>
       <li><b>最新一轮台站</b><span data-oa-stat="latest">0</span></li>
       <li><b>各轮台站合计</b><span data-oa-stat="stations">0</span></li>
       <li><b>走射频的</b><span data-oa-stat="rf">0</span></li>
+      <li><b>走中继的</b><span data-oa-stat="digi">0</span></li>
+      <li><b>用过的中继</b><span data-oa-stat="digis">0</span></li>
+      <li><b>名单最后更新</b><span data-oa-stat="updated">—</span></li>
     </ul>
-    <p class="oa-clock-note">名单最后更新 <span data-oa-stat="updated">—</span>。数字取自轮值台收到的报文，页面只读。</p>
     <ul class="oa-lines">
-      <li>每一轮记一份名单，名单与数字都从轮值台收到的报文来。</li>
+      <li>每一轮记一份名单：呼号、网格、走哪条路、路上有哪些中继、什么时间。</li>
       <li>活动开始之前，这一页全是空的。</li>
     </ul>
     <div class="oa-actions">
@@ -141,14 +137,14 @@
 <section class="section" id="data-roster">
   <div class="section-head">
     <h2>每轮的台站</h2>
-    <p>走射频进来的行末带一个「射频」标签。名单每周换一轮。</p>
+    <p>行末的标签写清是走射频还是走网络。名单每周换一轮。</p>
   </div>
   <div class="section-body">
     <div class="oa-switch" id="oaSwitch" hidden>
       <label for="oaRound">看哪一轮</label>
       <select id="oaRound"></select>
     </div>
-    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
+    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-tag-is="网络" data-label-grid="网格" data-label-digi="经" data-label-at="参与" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
       <li>
         <div class="link-row is-static">
           <span class="lr-main">
@@ -158,21 +154,24 @@
         </div>
       </li>
     </ul>
-    <p class="oa-note">除了呼号与网格，页面不记别的。</p>
+    <p class="oa-note">一行写一台：呼号、网格、中继与参与时间，都按轮值台收到的报文写。</p>
   </div>
 </section>
 
 <section class="section alt" id="data-how">
   <div class="section-head">
     <h2>数字怎么算</h2>
-    <p>上面四个数字的来源。</p>
+    <p>上面那几个数字的来源。</p>
   </div>
   <div class="section-body">
     <ul class="fact-list">
       <li><b>轮次</b><span>已经结束或正在进行的轮数，一周算一轮。</span></li>
       <li><b>最新一轮台站</b><span>最新那一轮里发来报文的台数。</span></li>
       <li><b>各轮台站合计</b><span>每一轮的台数相加。同一个台参加多轮就记多次。</span></li>
-      <li><b>走射频的</b><span>经空中侧送进来的报文条数。</span></li>
+      <li><b>走射频的</b><span>经空中侧送进来的台数。</span></li>
+      <li><b>走中继的</b><span>报文在到达轮值台之前经过过中继的台数。</span></li>
+      <li><b>用过的中继</b><span>名单里出现过的中继数量，同一个中继只算一次。</span></li>
+      <li><b>名单最后更新</b><span>发布流程最后一次写名单的日期。</span></li>
     </ul>
     <p class="oa-note">数字由发布流程写入，页面只读不写。</p>
   </div>
@@ -217,7 +216,7 @@
         </ul>
       </div>
     </nav>
-    <p class="footer-note">本页是 APRSNETCN OA 的数据面板，数字取自轮值台收到的报文，本页不收集数据。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
+    <p class="footer-note">本页是 APRSNETCN OA 的数据面板，名单与数字都取自轮值台收到的报文，本页不收集数据。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
     <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/oa/data.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>。</p>
     <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
   </div>
@@ -228,7 +227,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="roster.js?v=4"></script>
+<script src="roster.js?v=5"></script>
 <script src="../main.js?v=13"></script>
 </body>
 </html>
