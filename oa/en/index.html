@@ -77,7 +77,7 @@
 .st-list > li { padding: 15px 0; border-bottom: 1px solid var(--line); }
 .st-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
 .st-call { display: block; font-size: 17px; }
-.st-region { color: var(--text-faint); font-size: 14px; }
+.st-region, .st-meta { color: var(--text-faint); font-size: 14px; }
 .st-fields { display: flex; flex-wrap: wrap; column-gap: 26px; row-gap: 5px; margin: 7px 0 0; }
 .st-fields > div { display: flex; gap: 8px; align-items: baseline; }
 .st-fields dt { color: var(--text-faint); font-size: 14px; }
@@ -162,7 +162,7 @@
     <p>One line per station, with its grid, path and time.</p>
   </div>
   <div class="section-body">
-    <ul class="st-list" id="oaRoster" data-roster="../roster.json" data-copy-done="Copied" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
+    <ul class="st-list" id="oaRoster" data-roster="../roster.json" data-copy-done="Copied" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-packets="Packets" data-label-first="First" data-label-last="Last" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
         <b class="st-call">The list is still empty</b>
         <span class="st-note">This round has no station yet.</span>
@@ -372,7 +372,7 @@
 </a>
 
 <script src="../clock.js?v=1"></script>
-<script src="../roster.js?v=9"></script>
+<script src="../roster.js?v=10"></script>
 <script src="../../main.js?v=13"></script>
 </body>
 </html>

@@ -13,10 +13,12 @@
    date 是这一轮的日期，也是切换格里的那一行文字。updated 是这一轮名单最后写入的日期，
    有才显示。call 是这一轮的轮值呼号，写进页面上 [data-oa-duty] 的位子，取最新的一轮；
    没写 call 就留着 HTML 里那句占位文案。grid 是网格，digi 是报文经过的中继（按经过顺序写，
-   空数组就是没经过中继），at 是参与时间。
+   空数组就是没经过中继），at 是参与时间。status 是这一台的状态（called / acked / confirmed，
+   三个词从页面的 data-status-* 上取），packets 是收到的几条报文，first 与 last 是第一次与
+   最后一次的时间（都写成 10-17 15:04）。后四项没有就不写。
 
-   一台站画成一块：呼号一行，下面跟着带字段名的几项（网格 / 路径 / 时间）。呼号后面跟着由呼号前缀
-   认出来的国家地区与国旗，认不出来就不写。路径那一项把 via 与 digi
+   一台站画成一块：呼号一行，后面跟着由呼号前缀认出来的国家地区与国旗、状态、报文数与首末时间，
+   下面跟着带字段名的几项（网格 / 路径 / 时间）。路径那一项把 via 与 digi
    合成一句话——走射频又过了中继是「射频 · A → B」，只走射频是「射频」，走网络是「网络」。
    字段名、路径的两种写法、空状态、「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
 
@@ -44,6 +46,14 @@
   var pathRf = list.getAttribute("data-path-rf") || "RF";
   var pathIs = list.getAttribute("data-path-is") || "Network";
   var updatedLabel = list.getAttribute("data-updated-label") || "";
+  var packetsLabel = list.getAttribute("data-label-packets") || "";
+  var firstLabel = list.getAttribute("data-label-first") || "";
+  var lastLabel = list.getAttribute("data-label-last") || "";
+  var statusWords = {
+    called: list.getAttribute("data-status-called") || "",
+    acked: list.getAttribute("data-status-acked") || "",
+    confirmed: list.getAttribute("data-status-confirmed") || ""
+  };
   var emptyTitle = list.getAttribute("data-empty-title") || "";
   var emptyNote = list.getAttribute("data-empty-note") || "";
   var box = document.getElementById("oaSwitch");
@@ -275,6 +285,16 @@
     return null;
   };
 
+  /* 呼号那一行上的小字：地区、状态、报文数、首末时间。没值就什么都不写 */
+  var addMeta = function (head, text) {
+    var v = String(text == null ? "" : text).trim();
+    if (!v) return;
+    var span = document.createElement("span");
+    span.className = "st-meta";
+    span.textContent = v;
+    head.appendChild(span);
+  };
+
   /* 一台站：呼号一行，下面跟着网格 / 路径 / 参与时间 */
   var makeRow = function (st) {
     var call = String(st && st.call != null ? st.call : "").trim();
@@ -307,6 +327,12 @@
       where.textContent = (chinese ? region[1] : region[2]) + " " + region[3];
       head.appendChild(where);
     }
+    addMeta(head, statusWords[String(st.status == null ? "" : st.status)] || "");
+    if (st.packets) addMeta(head, packetsLabel ? packetsLabel + " " + st.packets : "");
+    addMeta(head, (firstLabel && st.first) ? firstLabel + " " + st.first : "");
+    /* 只发过一条的台站，第一次与最后一次是同一个时间，写两遍没意思 */
+    addMeta(head, (lastLabel && st.last && String(st.last) !== String(st.first))
+      ? lastLabel + " " + st.last : "");
     li.appendChild(head);
 
     var dl = document.createElement("dl");
