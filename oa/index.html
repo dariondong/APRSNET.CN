@@ -233,7 +233,27 @@
   </div>
 </section>
 
-<section class="section" id="oa-first">
+<section class="section" id="oa-roster">
+  <div class="section-head">
+    <h2>参与的台</h2>
+    <p>机器人上线之后，每一台发来报文的台站都记在这里。走射频进来的，行末带一个「射频」标签。</p>
+  </div>
+  <div class="section-body">
+    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-updated-label="名单最后更新：">
+      <li>
+        <div class="link-row is-static">
+          <span class="lr-main">
+            <b>名单还空着</b>
+            <span>机器人尚未上线，还没有台站发来报文。</span>
+          </span>
+        </div>
+      </li>
+    </ul>
+    <p class="oa-note">名单会随机器人收到的报文生长。除了呼号与网格，页面不记别的。</p>
+  </div>
+</section>
+
+<section class="section alt" id="oa-first">
   <div class="section-head">
     <h2>第一次发 APRS 报文</h2>
     <p>没发过 APRS 报文的话，先把站里这几页看一眼。跟本页规则无关，只是底子。</p>
@@ -250,7 +270,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-faq">
+<section class="section" id="oa-faq">
   <div class="section-head">
     <h2>常见问题</h2>
     <p>现在最常被问到的几件事。</p>
@@ -317,7 +337,7 @@
   </div>
 </section>
 
-<section class="section" id="oa-terms">
+<section class="section alt" id="oa-terms">
   <div class="section-head">
     <h2>独立声明</h2>
     <p>下面几条现在也一样有效。</p>
@@ -383,6 +403,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
+<script src="roster.js?v=1"></script>
 <script src="../main.js?v=13"></script>
 </body>
 </html>
