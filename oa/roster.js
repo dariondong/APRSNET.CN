@@ -1,4 +1,4 @@
-/* 周六 APRS OA 的参与台名单：读 <ul id="oaRoster" data-roster="…"> 指到的那份 JSON，
+/* APRSNETCN OA 的参与台名单：读 <ul id="oaRoster" data-roster="…"> 指到的那份 JSON，
    把台站铺成行。数据由发布流程写入，机器人上线之前它是空的。
 
    文件格式：
