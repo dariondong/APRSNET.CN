@@ -27,7 +27,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 PARTS = HERE / "parts"
 
-CSS_V = "34"        # style.css?v=
+CSS_V = "35"        # style.css?v=
 MAIN_V = "13"       # main.js?v=
 SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12", "passcode.js": "2"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
@@ -261,9 +261,10 @@ EXTRA_URLS = (
 )
 
 # 手写页也能占一格导航：一条 = (导航文字, 链接, 插在哪一项之后)。
-# 链接从站点根算（/oa 是目录形式，带尾斜杠）；两字一条是这套导航的规矩。
+# 链接从站点根算（/oa 是目录形式，带尾斜杠）。
+# 这一格写活动名，比两字宽 88px，所以 style.css 折抽屉的宽度跟着提到了 820px。
 NAV_EXTRA = (
-    ("活动", "oa/", "工具"),
+    ("APRSNETCN OA", "oa/", "工具"),
 )
 
 # 区块 → 所在页面（跨页链接、页脚链接都靠这张表算，不用手写）
