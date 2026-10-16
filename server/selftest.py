@@ -11,6 +11,8 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+import threading
+import urllib.request
 from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -75,6 +77,20 @@ def check(name, got, want):
     print("%s %s：%s" % ("ok  " if ok else "FAIL", name, got))
     if not ok:
         print("      想要：%s" % (want,))
+
+
+def red_pixels(body, box):
+    """一张 PNG 里某块区域上接近那一点红（#b3141f）的像素数。"""
+    import io as _io
+    from PIL import Image
+    img = Image.open(_io.BytesIO(body)).convert("RGB")
+    n = 0
+    for x in range(box[0], box[2]):
+        for y in range(box[1], box[3]):
+            r, g, b = img.getpixel((x, y))
+            if r > 140 and g < 90 and b < 90:
+                n += 1
+    return n
 
 
 def main():
@@ -383,6 +399,58 @@ def main():
         rt.store.close()
     finally:
         shutil.rmtree(filt_dir, ignore_errors=True)
+
+    # 签到表 / 签到点那张图，以及数据面板上的两个下载按钮
+    try:
+        import oa_image
+    except ImportError:
+        oa_image = None
+        print("没装 Pillow，跳过网格换算那几项")
+    if oa_image is not None:
+        check("4 位网格算出格子中心", oa_image.grid_center("OL62"), (22.5, 113.0))
+        six = oa_image.grid_center("ol62ab")
+        check("6 位网格算出格子中心", tuple(round(v, 3) for v in six), (22.125, 112.083))
+        check("认不出的网格给 None", oa_image.grid_center("XX"), None)
+
+    img_dir = tempfile.mkdtemp(prefix="oa-selftest-image-")
+    try:
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = img_dir
+        conf["OA_SITE_ROOT"] = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        rt = oa_server.Runtime(conf)
+        rt.store.add_packet(oa_aprs.parse_line(LINES[0]))
+        rounds = rt.store.roster()["rounds"]
+        check("名单里有一轮", len(rounds), 1)
+        check("名单里有一台", len(rounds[0]["stations"]) if rounds else 0, 1)
+        check("默认没有测试字样", conf.get("OA_TEST_NOTE"), "")
+        httpd = oa_server.ThreadingHTTPServer(("127.0.0.1", 0), oa_server.Handler)
+        httpd.runtime = rt
+        thread = threading.Thread(target=httpd.serve_forever, kwargs={"poll_interval": 0.1})
+        thread.daemon = True
+        thread.start()
+        base = "http://127.0.0.1:%d" % httpd.server_address[1]
+        try:
+            for what in ("board", "points"):
+                try:
+                    res = urllib.request.urlopen("%s/api/%s.png" % (base, what), timeout=10)
+                    body = res.read()
+                    disp = res.headers.get("Content-Disposition") or ""
+                    check("%s.png 回 200" % what, res.status, 200)
+                    check("%s.png 是 PNG" % what, body[:8], b"\x89PNG\r\n\x1a\n")
+                    check("%s.png 的文件名带轮次" % what,
+                          "aprsnetcn-oa-" in disp and "-%s.png" % what in disp, True)
+                except Exception as exc:
+                    check("%s.png 拿得到" % what, "出错：%s" % exc, "拿得到")
+            page = urllib.request.urlopen("%s/data" % base, timeout=10).read().decode("utf-8")
+            check("页面里名单指本机", 'data-roster="/api/roster"' in page, True)
+            check("页面里下载按钮指本机", 'data-image-base="/api/"' in page, True)
+            check("页面里脚本走绝对路径", 'src="/oa/roster.js?v=15"' in page, True)
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+        rt.store.close()
+    finally:
+        shutil.rmtree(img_dir, ignore_errors=True)
 
     print("\n%d 项，过了 %d 项" % (len(CHECKS), sum(1 for c in CHECKS if c)))
     return 0 if all(CHECKS) else 1

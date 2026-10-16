@@ -4,7 +4,7 @@
 APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当轮名单，主控在
 操作台上点名、回 ACK、删改，页面上立刻就是最新的那一份。
 
-只用 Python 3 标准库，没有依赖。
+只用 Python 3 标准库；签到表与签到点那两张 PNG 用 Pillow 画（没装时那两个接口回 503，别的照常）。
 
 ## 一条报文怎么变成一行名单
 
@@ -32,6 +32,8 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /oa/data.html` | 数据面板，同上 |
 | `GET /en/` | 英文活动页 |
 | `GET /api/roster` | 名单，与静态 `roster.json` 同格式 |
+| `GET /api/board.png` | 签到表那张 PNG，`?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文 |
+| `GET /api/points.png` | 签到点那张 PNG，参数同上 |
 | `GET /api/health` | 连接状态、收到多少行、当轮、报文数 |
 | `GET /admin` | 主控台（要口令） |
 | `GET /api/admin/state` | 主控台读的一切：状态、轮次、本轮数字、名单、流水 |
@@ -48,6 +50,17 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 
 管理接口认 `X-OA-Token` 头、`token=` 参数或 `oa_token` cookie 里的口令，就是配置里的
 `OA_ADMIN_TOKEN`。没设口令时管理接口一律拒绝，不会敞着。
+
+## 出图
+
+数据面板上那两个按钮（签到表 PNG / 签到点 PNG）点的是 `/api/board.png` 与 `/api/points.png`。
+签到表一台一行，列是呼号、网格、路径、状态、时间；签到点把每台的网格中心标在带刻度的方框里，
+认不出网格的不画点。两张图的名底都写着哪一轮、轮值呼号与落款时间，页面上的按钮自己带着
+`?date=` 与 `?lang=en`，点了就是当前选中那一轮。
+
+- 出图要 Pillow，没装回 503，页面别的照常；
+- 中文字体先找 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`，找不到就退回 Pillow 自带的位图字；
+- `OA_TEST_NOTE`：写在两张图副标题后面的一句小字（红），本机写着「测试轮次」；空着就不写。
 
 ## 发报文
 

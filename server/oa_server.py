@@ -50,6 +50,7 @@ DEFAULTS = {
     "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET",
     "OA_ACK_MAX_PER_MINUTE": "12",
     "OA_ROUND_DUTY": "",
+    "OA_TEST_NOTE": "",
     "OA_AUTO_ROUND": "1",
     "OA_AUTO": "1",
     "OA_ACK_RETRY": "3",
@@ -561,6 +562,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/roster":
             self._json(self.rt.store.roster(), 200, {"Access-Control-Allow-Origin": "*"})
             return
+        if path in ("/api/board.png", "/api/points.png"):
+            self._image("board" if path.startswith("/api/board") else "points", query)
+            return
         if path == "/api/health":
             self._json(self.rt.health())
             return
@@ -718,6 +722,44 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---- 文件 ----
 
+    def _image(self, what, query):
+        """签到表 / 签到点的 PNG。数据面板上那两个下载按钮点到这里。
+
+        ?date=2026-10-17 指定哪一轮，不给就是最新一轮；?lang=en 要英文。
+        名单读不出来就画一张空表；没装 Pillow 回 503。
+        """
+        try:
+            import oa_image
+        except ImportError:
+            self._fail(503, "服务端没装 Pillow，画不了图")
+            return
+        steps = {"board": oa_image.render_board, "points": oa_image.render_points}
+        lang = (query.get("lang") or ["zh"])[0].strip().lower()
+        lang = "en" if lang.startswith("en") else "zh"
+        date = (query.get("date") or [""])[0].strip()
+        rounds = []
+        try:
+            rounds = self.rt.store.roster().get("rounds") or []
+        except Exception as exc:                   # 库有毛病也得回一张看得懂的图
+            sys.stderr.write("名单读不出来：%s\n" % exc)
+        row = None
+        for rnd in rounds:
+            if not date or str(rnd.get("date")) == date:
+                row = rnd
+                break
+        if row is None:
+            row = {"date": date, "call": "", "stations": []}
+        note = self.rt.conf.get("OA_TEST_NOTE") or ""
+        try:
+            body = steps[what](row, note=note, lang=lang)
+        except Exception as exc:
+            self._fail(500, "画不出来：%s" % exc)
+            return
+        name = "aprsnetcn-oa-%s-%s.png" % (row.get("date") or "empty", what)
+        self._send(200, body, "image/png", {
+            "Content-Disposition": 'attachment; filename="%s"' % name,
+        })
+
     def _page(self, rel):
         path = os.path.join(self.rt.site_root, rel)
         try:
@@ -728,6 +770,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         # 静态那份 data-roster 指的是反代上的 /api/roster；本机自己发页面时直接指本机。
         html = re.sub(r'data-roster="[^"]*"', 'data-roster="/api/roster"', html)
+        html = re.sub(r'data-image-base="[^"]*"', 'data-image-base="/api/"', html)
         # 页面在静态站上住在 oa/ 目录里，脚本写成相对路径就行；在 /、/en、/data 这些
         # 短地址上，相对路径会指到根上去，改成绝对路径才找得着。
         html = re.sub(r'(<script src=")(?:\.\./)*(roster\.js|clock\.js)', r'\1/oa/\2', html)
