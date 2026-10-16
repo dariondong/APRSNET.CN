@@ -19,6 +19,7 @@ import argparse
 import hmac
 import json
 import os
+import queue
 import re
 import signal
 import sys
@@ -43,6 +44,9 @@ DEFAULTS = {
     "OA_APRS_LOGIN": "",
     "OA_APRS_FILTER": "a/54/73/18/135 g/BG7LZQ-2",
     "OA_TX_PASSCODE": "",
+    "OA_AUTO_ACK": "1",
+    "OA_ACK_TEXT": "ACK",
+    "OA_ACK_MAX_PER_MINUTE": "12",
     "OA_ROUND_DUTY": "",
     "OA_PUBLISH_ROSTER": "",
     "OA_KEEP_OTHER": "2000",
@@ -105,6 +109,14 @@ class Runtime(object):
         self.site_root = os.path.realpath(root)
         self.link = None
         self.publish_path = conf["OA_PUBLISH_ROSTER"] or ""
+        self.auto_ack = (conf.get("OA_AUTO_ACK") or "").strip() not in ("", "0", "no", "false")
+        try:
+            self.ack_per_minute = int(conf.get("OA_ACK_MAX_PER_MINUTE") or 12)
+        except ValueError:
+            self.ack_per_minute = 12
+        self._sendq = queue.Queue()
+        self._sent_at = []
+        self._send_lock = threading.Lock()
         self._stop = threading.Event()
 
     def start_aprs(self):
@@ -120,9 +132,93 @@ class Runtime(object):
 
     def on_line(self, record):
         try:
-            self.store.add_packet(record)
+            result = self.store.add_packet(record)
         except Exception as exc:                     # 一条报文出错不能断接收
             sys.stderr.write("收报文出错：%s\n" % exc)
+            return
+        if record.get("kind") == "cq":
+            try:
+                self.maybe_auto_ack(record, result.get("round_id"))
+            except Exception as exc:
+                sys.stderr.write("自动回 ACK 出错：%s\n" % exc)
+
+    # ---- 发报文 ----
+
+    def can_send(self):
+        return bool(self.conf["OA_TX_PASSCODE"])
+
+    def rate_ok(self):
+        """一分钟内最多发这么多条，免得哪一阵子热闹起来往外刷。"""
+        now = time.time()
+        with self._send_lock:
+            self._sent_at = [t for t in self._sent_at if now - t < 60.0]
+            if len(self._sent_at) >= self.ack_per_minute:
+                return False
+            self._sent_at.append(now)
+            return True
+
+    def queue_send(self, src, dst, line, date=""):
+        """排队发一条。没配口令就只记进发件箱，主控自己发。"""
+        oid = self.store.queue_line(src, dst, line)
+        if not self.can_send():
+            self.store.mark_sent(oid, "只记不发：没配 OA_TX_PASSCODE")
+            return oid
+        job = {"id": oid, "date": date, "dst": dst, "line": line}
+        self._sendq.put(job)
+        return oid
+
+    def start_sender(self):
+        if not self.can_send():
+            sys.stderr.write("没有 OA_TX_PASSCODE，只收不发\n")
+            return
+        thread = threading.Thread(target=self._send_loop, name="oa-send")
+        thread.daemon = True
+        thread.start()
+        sys.stderr.write("发报文的通道开着，自动回 ACK %s\n" % ("开" if self.auto_ack else "关"))
+
+    def _send_loop(self):
+        while not self._stop.is_set():
+            try:
+                job = self._sendq.get(timeout=1)
+            except queue.Empty:
+                continue
+            if not self.rate_ok():
+                self.store.mark_sent(job["id"], "一分钟里发得太多了，这条没发")
+                continue
+            try:
+                oa_aprs.send_once(self.conf["OA_APRS_HOST"], self.conf["OA_APRS_PORT"],
+                                  self.duty_call(), self.conf["OA_TX_PASSCODE"], job["line"])
+                self.store.mark_sent(job["id"], "")
+                if job["date"] and job["dst"]:
+                    self.store.set_station(job["date"], job["dst"], status="acked", create=False)
+                sys.stderr.write("发出：%s\n" % job["line"][:110])
+            except Exception as exc:
+                self.store.mark_sent(job["id"], str(exc)[:200])
+                sys.stderr.write("发不出去：%s\n" % exc)
+
+    def duty_call(self):
+        active = self.store.active_round()
+        if active and active["duty"]:
+            return active["duty"].strip().upper()
+        return (self.conf["OA_ROUND_DUTY"] or "").strip().upper()
+
+    def maybe_auto_ack(self, record, rid):
+        """有人喊到就回一条 ACK，一台一轮只回一次。"""
+        if not self.auto_ack or not self.can_send():
+            return
+        active = self.store.active_round()
+        if not active or (rid is not None and active["id"] != rid):
+            return
+        src = (record.get("src") or "").strip().upper()
+        duty = self.duty_call()
+        if not src or not duty or src == duty:
+            return
+        station = self.store.get_station(active["date"], src)
+        if not station or station["status"] != "called":
+            return
+        text = self.conf["OA_ACK_TEXT"] or "ACK"
+        line = "%s>APRS::%s:%s" % (duty, src.ljust(9), text)
+        self.queue_send(duty, src, line, date=active["date"])
 
     def start_maintenance(self):
         """后台一件小事：清掉攒下的闲聊报文，需要时把名单写一份到磁盘。"""
@@ -168,7 +264,9 @@ class Runtime(object):
             "active_round": active["date"] if active else "",
             "duty": active["duty"] if active else self.conf["OA_ROUND_DUTY"],
             "rounds": len(self.store.rounds()),
-            "tx": bool(self.conf["OA_TX_PASSCODE"]),
+            "tx": self.can_send(),
+            "auto_ack": self.auto_ack and self.can_send(),
+            "ack_per_minute": self.ack_per_minute,
             "packets": data["packets"],
             "kinds": data["kinds"],
             "last_packet": data["last_packet"],
@@ -311,8 +409,8 @@ class Handler(BaseHTTPRequestHandler):
             if not record:
                 self._fail(400, "这行不是报文")
                 return
-            result = self.rt.store.add_packet(record)
-            self._json({"ok": True, "record": record, "stored": result})
+            self.rt.on_line(record)                  # 走同一条路：进来的报文都交给它
+            self._json({"ok": True, "record": record})
             return
         if path == "/api/admin/round":
             if not self._need_token():
@@ -380,17 +478,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._fail(400, "缺呼号：回谁、以谁的名义回")
                 return
             line = "%s>APRS::%s:%s" % (duty, call.ljust(9), text)
-            oid = self.rt.store.queue_line(duty, call, line)
-            error = ""
-            if body.get("send"):
-                try:
-                    oa_aprs.send_once(self.rt.conf["OA_APRS_HOST"], self.rt.conf["OA_APRS_PORT"],
-                                      duty, self.rt.conf["OA_TX_PASSCODE"], line)
-                except Exception as exc:
-                    error = str(exc)[:200]
-            self.rt.store.mark_sent(oid, error)
-            self.rt.store.set_station(date, call, status="acked", create=False)
-            self._json({"ok": not error, "error": error, "line": line, "id": oid})
+            oid = self.rt.queue_send(duty, call, line, date=date)
+            if not self.rt.can_send():
+                self.rt.store.set_station(date, call, status="acked", create=False)
+            self._json({"ok": True, "queued": self.rt.can_send(), "line": line, "id": oid})
             return
         self._fail(404, "没有这个接口")
 
@@ -432,6 +523,7 @@ class Handler(BaseHTTPRequestHandler):
 def serve(conf):
     rt = Runtime(conf)
     rt.start_aprs()
+    rt.start_sender()
     rt.start_maintenance()
     httpd = ThreadingHTTPServer((conf["OA_HOST"], int(conf["OA_PORT"])), Handler)
     httpd.runtime = rt

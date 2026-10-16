@@ -305,8 +305,8 @@ def send_once(host, port, login, passcode, line, timeout=12):
                     banner = head
             if banner:
                 break
-        if "verified" not in banner and "unverified" not in banner:
-            raise RuntimeError("登录没有回话：%s" % (banner or "（空）"))
+        if "verified" not in banner:
+            raise RuntimeError("登录没被认：%s" % (banner or "（没回话）"))
         sock.sendall((line.rstrip("\r\n") + "\r\n").encode("utf-8"))
         time.sleep(0.6)
         return banner

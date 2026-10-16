@@ -268,6 +268,15 @@ class Store(object):
                 (row["id"],)).fetchall()
         return [dict(r) for r in rows]
 
+    def get_station(self, date, call):
+        row = self.round_by_date(date)
+        if not row:
+            return None
+        with self.lock:
+            hit = self.db.execute("SELECT * FROM stations WHERE round_id=? AND call=?",
+                                  (row["id"], (call or "").strip().upper())).fetchone()
+        return dict(hit) if hit else None
+
     def set_station(self, date, call, grid=None, via=None, digi=None, at=None,
                     status=None, note=None, create=True):
         """手动写一台站：编辑、补录、标状态都走这里。create=False 时只改已有的，不新建。"""

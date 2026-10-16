@@ -63,6 +63,10 @@ a{color:inherit}
   <h2>本轮名单</h2>
   <div id="stations"></div>
 
+  <h2>发件箱</h2>
+  <p class="note">回出去的 ACK 都记在这里。发失败的那条会带一句原因。</p>
+  <div id="outbox"></div>
+
   <h2>手动加一台</h2>
   <form class="row" id="stForm">
     <div><label>呼号</label><input type="text" id="stCall" placeholder="BG7XXX-9"></div>
@@ -149,6 +153,7 @@ a{color:inherit}
       paintRounds(data.rounds, data.round);
       paintPackets(data.packets);
       paintStations(data.stations, data.round);
+      paintOutbox(data.outbox);
     });
   };
 
@@ -172,9 +177,11 @@ a{color:inherit}
     add("本轮", (round && round.date) || "没开");
     add("报文", (h && h.packets) || 0);
     add("发 ACK", (h && h.tx) ? "能发" : "只记不发");
+    if (h && h.tx) add("自动回 ACK", (h.auto_ack ? "开" : "关"));
     if (aprs.error) add("错误", aprs.error, "bad");
     $("txHint").textContent = (h && h.tx)
-      ? "发 ACK 走的是 OA_TX_PASSCODE 那条连接，点了就真发。"
+      ? ((h.auto_ack ? "有人喊到就自动回一条 ACK。" : "自动回 ACK 关着，只能自己点。") +
+         "一台一轮只回一次，一分钟最多 " + (h.ack_per_minute || 12) + " 条。")
       : "没有配 OA_TX_PASSCODE，回 ACK 只把报文记下来、复制给你自己发。";
   };
 
@@ -249,8 +256,7 @@ a{color:inherit}
     box.appendChild(table);
   };
 
-  var paintStations = function (stations, round) {
-    var box = $("stations");
+  var paintStations = function (stations, round) {    var box = $("stations");
     box.textContent = "";
     if (!round) {
       var p = document.createElement("div");
@@ -311,6 +317,36 @@ a{color:inherit}
           .then(function (d) { showErr(d && d.error); refresh(); });
       };
       ops.appendChild(del);
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+  };
+
+  var paintOutbox = function (rows) {
+    var box = $("outbox");
+    box.textContent = "";
+    if (!(rows || []).length) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = "还没发过。";
+      box.appendChild(p);
+      return;
+    }
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["时间", "发给", "报文", "结果"].forEach(function (label, i) {
+      var th = document.createElement("th");
+      th.textContent = label;
+      if (i === 2) th.className = "mono";
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      cell(tr, bjTime(r.created), "mono");
+      cell(tr, r.dst, "mono");
+      cell(tr, r.line, "mono");
+      cell(tr, r.error ? r.error : (r.sent ? "已发 " + bjTime(r.sent) : "排队中"), r.error ? "bad" : "");
       table.appendChild(tr);
     });
     box.appendChild(table);

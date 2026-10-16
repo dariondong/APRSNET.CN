@@ -11,7 +11,8 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 1. 连 APRS-IS（只收，`pass -1`），按区域过滤中国上空的报文，另外单独收发给轮值呼号的报文；
 2. 每行拆出呼号、路径、位置、网格、文字，文字里认出 `CQ CNNET`（喊到）与 `U CNNET`（确认）；
 3. 喊到的台站进当轮名单，状态 `called`；回过 U 的升到 `confirmed`；主控回过 ACK 的记 `acked`；
-4. 名单从 `stations` 表导出，格式和页面上 `roster.js` 读的那份 `roster.json` 一模一样。
+4. 有 `OA_TX_PASSCODE` 时，谁喊到就自动回一条 `ACK`（一台一轮只回一次），回过的改 `acked`；
+5. 名单从 `stations` 表导出，格式和页面上 `roster.js` 读的那份 `roster.json` 一模一样。
 
 射频还是网络：路径里有 `qAR`、有带 `*` 的中继、有 WIDE 这类别名，就按射频，中继按经过顺序写；
 只有 `TCPIP*` 与 `qAC` 这类 q 构造，就按网络。q 构造后面的网关与服务器不算中继。
@@ -41,6 +42,17 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 管理接口认 `X-OA-Token` 头、`token=` 参数或 `oa_token` cookie 里的口令，就是配置里的
 `OA_ADMIN_TOKEN`。没设口令时管理接口一律拒绝，不会敞着。
 
+## 发报文
+
+回 ACK 要轮值呼号的报文口令，写进 `OA_TX_PASSCODE` 才发得出去（口令按呼号算，站点上
+`passcode.html` 能核对）。口令对了登录回一句 `verified`，不对会被服务器当只收处理。
+
+- `OA_AUTO_ACK=1`：有人喊到就自动回一条 ACK，一台一轮只回一次；
+- `OA_ACK_MAX_PER_MINUTE=12`：一分钟最多发这么多条，防着热闹起来往外刷；
+- `OA_ACK_TEXT=ACK`：回过去的那句话；
+- 发出去的每一条都记在 `outbox` 表，主控台的「发件箱」里看得到，发失败的带原因；
+- 没配口令时，点「回 ACK」只把报文记下来并复制，主控自己发。
+
 ## 配置
 
 复制 `oa-server.env.example` 改成自己的，用 `--env` 指过去，或者直接给环境变量。
@@ -62,5 +74,5 @@ systemd 单元见 `oa-server.service`，路径按本机改成对的。
 
 - 只听得见上了 APRS-IS 的报文。完全走射频、没有网关收到的台站，主控自己在台上抄到了，
   就在主控台的「手动加一台」里补一行。
-- 发 ACK 需要轮值呼号的报文口令，写在 `OA_TX_PASSCODE` 里才会真发。不写的话，
-  点「回 ACK」只把报文记进发件箱并复制到剪贴板，主控自己发。
+- 自动回 ACK 是拿轮值呼号的名义发到 APRS-IS 上的真报文。不想让它自动发，把 `OA_AUTO_ACK` 设成 0，
+  改成主控在台面上一条条点。
