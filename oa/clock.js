@@ -1,13 +1,14 @@
-/* APRSNETCN OA 首屏：两个大钟倒计时，下面一行小字是当下的北京时间与 UTC。
+/* APRSNETCN OA 首屏：一只大钟倒计时，下面一行小字是当下的北京时间与 UTC。
 
    窗口固定是北京时间的周六 00:00 到 23:59，也就是两个绝对时刻，谁来看都差得一样多。
-   倒计时只有一种形态：进了窗口也走数字，距开始读到 00:00:00，另一个数接着往下走。
-   小字那两只钟各按自己的时区算，跟访问者的设备无关。
+   钟上只出一个数：窗口没开的时候倒数到开始，窗口开了就换成倒数到结束，过了窗口回到
+   下一个周六。数字的标签跟着换，告诉人这个数是什么。两只小钟各按自己的时区算。
 
    文案从页面的 data-* 上取，中英两页共用这一份脚本：
-     ul[data-oa-clock]       data-clock-day 天的单位 / data-clock-days 七个星期几，周日在前
-     span[data-clock=start]  距窗口开始
-     span[data-clock=end]    距窗口结束
+     ul[data-oa-clock]         data-clock-day 天的单位 / data-clock-days 七个星期几，周日在前
+                               data-clock-label-start / -end 两个标签文字
+     [data-clock=label]        数字的标签
+     [data-clock=value]        那只钟上的数
      span[data-clock=bj]     当下的北京时间（UTC+8）
      span[data-clock=utc]    当下的 UTC
 
@@ -19,13 +20,15 @@
   if (!box) return;
 
   var at = function (key) { return document.querySelector('[data-clock="' + key + '"]'); };
-  var startSlot = at("start");
-  var endSlot = at("end");
+  var labelSlot = at("label");
+  var valueSlot = at("value");
   var bjSlot = at("bj");
   var utcSlot = at("utc");
-  if (!startSlot && !endSlot && !bjSlot && !utcSlot) return;
+  if (!valueSlot && !bjSlot && !utcSlot) return;
 
   var dayUnit = box.getAttribute("data-clock-day") || "d";
+  var labelStart = box.getAttribute("data-clock-label-start") || "";
+  var labelEnd = box.getAttribute("data-clock-label-end") || "";
   var weekNames = (box.getAttribute("data-clock-days") || "").split(",");
 
   var DAY = 86400000;
@@ -65,8 +68,9 @@
     var now = Date.now();
     var w = windowAt(now);
     if (now >= w.end) w = { start: w.start + 7 * DAY, end: w.end + 7 * DAY };
-    if (startSlot) startSlot.textContent = countdown(w.start - now);
-    if (endSlot) endSlot.textContent = countdown(w.end - now);
+    var toStart = now < w.start;
+    if (valueSlot) valueSlot.textContent = countdown((toStart ? w.start : w.end) - now);
+    if (labelSlot) labelSlot.textContent = toStart ? labelStart : labelEnd;
     if (bjSlot) bjSlot.textContent = clockAt(now, 8 * HOUR);
     if (utcSlot) utcSlot.textContent = clockAt(now, 0);
   };

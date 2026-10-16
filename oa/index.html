@@ -56,12 +56,11 @@
 .oa-lang a:hover { color: var(--hot); }
 .oa-kicker { margin-top: 40px; border-top: 1px solid var(--line-strong); padding-top: 16px; font-size: 14px; color: var(--text-faint); }
 .oa-title { margin-top: 16px; font-size: clamp(30px, 5.6vw, 66px); font-weight: 700; letter-spacing: -.035em; line-height: 1.03; }
-.oa-clock { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; list-style: none; margin: 30px 0 0; padding: 1px; max-width: 820px; background: var(--line-strong); }
-.oa-clock li { background: var(--surface-1); padding: 18px 20px 20px; }
-.oa-clock b { display: block; font-size: 13.5px; font-weight: 400; letter-spacing: .04em; color: var(--text-faint); }
-.oa-clock span { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: clamp(26px, 5.6vw, 52px); line-height: 1.02; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.oa-clock { list-style: none; margin: 30px 0 0; padding: 1px; max-width: 820px; background: var(--line-strong); }
+.oa-clock li { background: var(--surface-1); padding: 20px 22px 24px; }
+.oa-clock b { display: block; font-size: 14px; font-weight: 400; letter-spacing: .04em; color: var(--text-faint); }
+.oa-clock span { display: block; margin-top: 12px; font-family: var(--font-mono); font-size: clamp(34px, 9vw, 84px); line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .oa-clock-note { margin-top: 12px; color: var(--text-faint); font-size: 14.5px; font-variant-numeric: tabular-nums; }
-@media (max-width: 640px) { .oa-clock { grid-template-columns: minmax(0, 1fr); } }
 .oa-state { margin-top: 10px; font-size: clamp(20px, 3vw, 34px); font-weight: 700; letter-spacing: -.02em; color: var(--hot); }
 .oa-lines { list-style: none; margin: 30px 0 0; padding-left: 18px; max-width: 62ch; border-top: 1px solid var(--line-strong); border-left: 2px solid var(--hot); }
 .oa-lines li { padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--text-dim); font-size: 16.5px; }
@@ -116,9 +115,9 @@
     <p class="oa-kicker">APRSNET.CN 独立活动 · 筹备中</p>
     <h1 class="oa-title">APRSNETCN OA</h1>
     <p class="oa-state">筹备中，尚未到活动时间</p>
-    <ul class="oa-clock" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六">
-      <li><b>距开始</b><span data-clock="start">—</span></li>
-      <li><b>距结束</b><span data-clock="end">—</span></li>
+    <ul class="oa-clock" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六"
+        data-clock-label-start="距开始" data-clock-label-end="距结束">
+      <li><b data-clock="label">距开始</b><span data-clock="value">—</span></li>
     </ul>
     <p class="oa-clock-note">北京时间 <span data-clock="bj">—</span> · UTC <span data-clock="utc">—</span></p>
     <ul class="oa-lines">
