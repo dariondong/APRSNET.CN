@@ -51,6 +51,7 @@ DEFAULTS = {
     "OA_ACK_MAX_PER_MINUTE": "12",
     "OA_ROUND_DUTY": "",
     "OA_TEST_NOTE": "",
+    "OA_TEST_NOTE_EN": "",
     "OA_AUTO_ROUND": "1",
     "OA_AUTO": "1",
     "OA_ACK_RETRY": "3",
@@ -750,6 +751,8 @@ class Handler(BaseHTTPRequestHandler):
         if row is None:
             row = {"date": date, "call": "", "stations": []}
         note = self.rt.conf.get("OA_TEST_NOTE") or ""
+        if lang == "en":
+            note = self.rt.conf.get("OA_TEST_NOTE_EN") or note
         try:
             body = steps[what](row, note=note, lang=lang)
         except Exception as exc:

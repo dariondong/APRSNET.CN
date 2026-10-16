@@ -423,6 +423,7 @@ def main():
         check("名单里有一轮", len(rounds), 1)
         check("名单里有一台", len(rounds[0]["stations"]) if rounds else 0, 1)
         check("默认没有测试字样", conf.get("OA_TEST_NOTE"), "")
+        check("默认也没有英文测试字样", conf.get("OA_TEST_NOTE_EN"), "")
         httpd = oa_server.ThreadingHTTPServer(("127.0.0.1", 0), oa_server.Handler)
         httpd.runtime = rt
         thread = threading.Thread(target=httpd.serve_forever, kwargs={"poll_interval": 0.1})

@@ -61,6 +61,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - 出图要 Pillow，没装回 503，页面别的照常；
 - 中文字体先找 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`，找不到就退回 Pillow 自带的位图字；
 - `OA_TEST_NOTE`：写在两张图副标题后面的一句小字（红），本机写着「测试轮次」；空着就不写。
+  英文图单独看 `OA_TEST_NOTE_EN`，空着就用 `OA_TEST_NOTE` 那一句。
 
 ## 发报文
 
