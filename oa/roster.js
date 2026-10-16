@@ -1,16 +1,17 @@
 /* APRSNETCN OA 的参与台名单：读 <ul id="oaRoster" data-roster="…"> 指到的那份 JSON，
    把选中那一轮的台站铺成行，旁边的 <select id="oaRound"> 用来切轮次。名单每周换一次，
-   数据由发布流程写入，机器人上线之前它是空的。
+   数据由发布流程写入，活动开始之前它是空的。
 
    文件格式（rounds 里新的在前，页面也会自己按 date 倒序排一遍）：
      {"updated": "2026-10-18",
       "rounds": [
-        {"date": "2026-10-17", "updated": "2026-10-18",
+        {"date": "2026-10-17", "updated": "2026-10-18", "call": "BG7LZQ",
          "stations": [{"call": "BG7XXX", "grid": "OL62", "via": "rf", "at": "2026-10-17"}]}
       ]}
 
    date 是这一轮的日期，也是切换格里的那一行文字。updated 是这一轮名单最后写入的日期，
-   有才显示。via 只有两种：rf = 射频送进来的，行末加一个标签；is = 网络送进来的，不加。
+   有才显示。call 是这一轮的轮值呼号，写进页面上 [data-oa-duty] 的位子，取最新的一轮；
+   没写 call 就留着 HTML 里那句占位文案。via 只有两种：rf = 射频送进来的，行末加一个标签；is = 网络送进来的，不加。
    标签文字、空状态与「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
 
    取不到、不是合法 JSON、一轮都没有时页面一动不动，留着 HTML 里写好的那条空状态。
@@ -94,6 +95,14 @@
     list.parentNode.insertBefore(p, list.nextSibling);
   };
 
+  /* 当周的轮值呼号：写进页面上所有 [data-oa-duty] 的位子 */
+  var fillDuty = function (round) {
+    var call = String(round && round.call != null ? round.call : "").trim();
+    if (!call) return;
+    var slots = document.querySelectorAll("[data-oa-duty]");
+    Array.prototype.forEach.call(slots, function (el) { el.textContent = call; });
+  };
+
   var paint = function (round) {
     var stations = (round && Array.isArray(round.stations)) ? round.stations : [];
     var frag = document.createDocumentFragment();
@@ -134,6 +143,7 @@
         box.hidden = false;
       }
 
+      fillDuty(rounds[0]);
       paint(rounds[0]);
     })
     .catch(function () {});
