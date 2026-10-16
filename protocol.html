@@ -87,7 +87,7 @@ main > section.section:not(:first-child):not(#proto-head) .section-head::before 
   <section class="section">
     <div class="section-head">
       <h1>APRSNET CN CONNECT v0.1.0（草案）</h1>
-      <p>APRSNET CN CONNECT 讲服务端那一侧：客户端怎么连进来，谁被放行，报文怎么转发出去。这一版是 v0.1.0，还是草案。</p>
+      <p>一份服务端接入与转发的草案：客户端怎么连进来，谁被放行，报文怎么转发出去。这一版是 v0.1.0。</p>
     </div>
   </section>
 
@@ -116,8 +116,8 @@ main > section.section:not(:first-child):not(#proto-head) .section-head::before 
         </li>
       </ul>
       <p class="prose">APRSNET CN CONNECT 讲的是服务端那一侧的事：自己架一台 APRS 服务器，给国内的爱好者用。客户端按 APRS-IS 的老办法连上来，呼号在名单里才放行，报文在服务器之间实时转发。</p>
-      <p class="prose">管理授权和转发报文分开跑，一边出问题不牽动另一边。客户端那边尽量少改，现有软件不用重写就能接进来。</p>
-      <p class="prose">本协议规范客户端接入、呼号授权、报文转发、过滤器处理、安全管理及运行维护要求。它属于技术规范草案，不构成监管批准或合规证明；具体部署参数、授权标准和运营规则由运营方另行明确。</p>
+      <p class="prose">管理授权和转发报文分开跑，一边出问题不牵动另一边。客户端那边尽量少改，现有软件不用重写就能接进来。</p>
+      <p class="prose">这份协议管的是客户端接入、呼号授权、报文转发、过滤器处理、安全管理与运行维护。它还是草案，不构成监管批准或合规证明。具体部署参数、授权标准和运营规则，由运营方另行明确。</p>
       <p class="prose">本站（APRSNET.CN）是中文资料站，只把这份规范当资料放出来。服务器怎么部署、名单怎么定、服务对外叫什么，都是服务端那边的另一件事。</p>
     </div>
   </section>
@@ -125,13 +125,11 @@ main > section.section:not(:first-child):not(#proto-head) .section-head::before 
   <section class="section" id="proto-general">
     <div class="section-head">
       <h2>总则</h2>
-      <p>先说清楚这套服务是干什么的、这份协议管哪些事、按什么原则做。</p>
+      <p>这套服务是干什么的，协议管哪些事，按什么原则做。</p>
     </div>
     <div class="section-body">
-      <p class="prose"><b>1.1 项目背景</b> APRS（Automatic Packet Reporting System，自动位置报告系统）是一种用于业余无线电位置报告、状态信息及相关数据交换的系统。APRS-IS 为相关客户端提供互联网报文接入与分发服务。</p>
-      <p class="prose">APRSNET CN CONNECT 讲的是服务端那一侧的事：自己架一台 APRS 服务器，给国内的爱好者用。客户端按 APRS-IS 的老办法连上来，呼号在名单里才放行，报文在服务器之间实时分发。</p>
-      <p class="prose">客户端那边尽量少改，现有软件不用重写就能接进来。授权与转发分开跑，互不牽动。</p>
-      <p class="prose"><b>1.2 制定目的</b> 本协议用于规范 APRSNET CN CONNECT 的客户端接入、呼号授权、报文转发、过滤器处理、安全管理及运行维护要求。主要目标包括：兼容现有 APRS-IS 客户端通信格式；建立统一的呼号白名单准入机制；实现国内客户端之间的实时 APRS 报文分发；实现授权管理与实时转发的职责分离；明确数据处理、安全管理和网络边界；为 APRSLocus 等兼容客户端提供统一的接入规范。</p>
+      <p class="prose"><b>1.1 项目背景</b> APRS（Automatic Packet Reporting System，自动位置报告系统）用于业余无线电的位置报告、状态信息及相关数据交换，APRS-IS 则为客户端提供互联网侧的报文接入与分发。</p>
+      <p class="prose"><b>1.2 制定目的</b> 本协议用于规范 APRSNET CN CONNECT 的客户端接入、呼号授权、报文转发、过滤器处理、安全管理与运行维护。目标有几条：兼容现有 APRS-IS 客户端的通信格式，建立统一的呼号白名单准入，让国内客户端之间的报文实时分发，授权管理与实时转发各管一头，写明数据处理、安全管理和网络边界，给 APRSLocus 这类客户端一份统一依据。</p>
       <p class="prose"><b>1.3 核心原则</b> APRSNET CN CONNECT 遵循以下原则。</p>
       <ul class="fact-list">
         <li>
@@ -391,7 +389,7 @@ main > section.section:not(:first-child):not(#proto-head) .section-head::before 
       <p>解释权、修订方式和生效条件。</p>
     </div>
     <div class="section-body">
-      <p class="prose"><b>10.1 协议解释</b> 本协议用于规范 APRSNET CN CONNECT 的技术架构和通信行为。具体部署参数、授权标准和运营规则由运营方另行明确。</p>
+      <p class="prose"><b>10.1 协议解释</b> 这份文件管的是 APRSNET CN CONNECT 的技术架构与通信行为。部署参数、授权标准、运营规则属于运营方的事，不在这里定。</p>
       <p class="prose"><b>10.2 修订机制</b> 后续修订应明确版本号及修改内容。涉及登录格式、授权规则或报文处理方式的修改，应进行兼容性评估。</p>
       <p class="prose"><b>10.3 生效条件</b> 本协议经完善、验证并正式发布后，作为 APRSNET CN CONNECT 服务的技术规范依据。</p>
     </div>
