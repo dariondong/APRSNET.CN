@@ -147,7 +147,28 @@
   </div>
 </section>
 
-<section class="section" id="oa-time">
+<section class="section" id="oa-roster">
+  <div class="section-head">
+    <h2>Stations taking part</h2>
+    <p>Once the net is open, one line appears per station, and a station heard over the air carries an RF tag at the end of its row.</p>
+  </div>
+  <div class="section-body">
+    <ul class="link-list" id="oaRoster" data-roster="../roster.json" data-tag-rf="RF" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
+      <li>
+        <div class="link-row is-static">
+          <span class="lr-main">
+            <b>The list is still empty</b>
+            <span>The net has not opened yet, so no station has sent a message.</span>
+          </span>
+        </div>
+      </li>
+    </ul>
+    <p class="oa-note">This section keeps the newest round only. The earlier rounds and the totals are on the <a href="data.html">data panel</a>.</p>
+    <p class="oa-note">Apart from the callsign and the grid, nothing is recorded.</p>
+  </div>
+</section>
+
+<section class="section alt" id="oa-time">
   <div class="section-head">
     <h2>Time and regions</h2>
     <p>The Saturday is counted in Beijing time, 00:00 to 23:59. In other clocks that is one of these rows.</p>
@@ -164,7 +185,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-rf">
+<section class="section" id="oa-rf">
   <div class="section-head">
     <h2>Joining over RF</h2>
     <p>Both paths reach the duty station. The RF path is encouraged.</p>
@@ -180,7 +201,7 @@
   </div>
 </section>
 
-<section class="section" id="oa-join">
+<section class="section alt" id="oa-join">
   <div class="section-head">
     <h2>How to take part</h2>
     <p>Two steps: send a CQ, then send one U once the ACK arrives.</p>
@@ -212,7 +233,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-format">
+<section class="section" id="oa-format">
   <div class="section-head">
     <h2>Message formats and examples</h2>
     <p>Three lines. Fill in your own callsign.</p>
@@ -237,30 +258,6 @@
     </ul>
     <p class="prose">Three rules: carry the prefix CNNET in every message, write the callsign on your licence, and wait for the ACK before the next line.</p>
     <p class="oa-note">The message prefix is CNNET, and the object name is the callsign on duty that week.</p>
-  </div>
-</section>
-
-<section class="section" id="oa-roster">
-  <div class="section-head">
-    <h2>Stations taking part</h2>
-    <p>Once the net is open, one line appears per station, and a station heard over the air carries an RF tag at the end of its row. The list is renewed every week, and you can switch back to earlier rounds.</p>
-  </div>
-  <div class="section-body">
-    <div class="oa-switch" id="oaSwitch" hidden>
-      <label for="oaRound">Round</label>
-      <select id="oaRound"></select>
-    </div>
-    <ul class="link-list" id="oaRoster" data-roster="../roster.json" data-tag-rf="RF" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
-      <li>
-        <div class="link-row is-static">
-          <span class="lr-main">
-            <b>The list is still empty</b>
-            <span>The net has not opened yet, so no station has sent a message.</span>
-          </span>
-        </div>
-      </li>
-    </ul>
-    <p class="oa-note">The list grows with the messages the duty station receives. Apart from the callsign and the grid, nothing is recorded.</p>
   </div>
 </section>
 
@@ -380,7 +377,7 @@
 </a>
 
 <script src="../clock.js?v=1"></script>
-<script src="../roster.js?v=3"></script>
+<script src="../roster.js?v=4"></script>
 <script src="../../main.js?v=13"></script>
 </body>
 </html>
