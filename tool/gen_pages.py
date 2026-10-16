@@ -135,7 +135,7 @@ PAGES = [
     ),
     dict(
         file="docs.html", nav="文档", h1="规范与文档",
-        lead="中文整理和英文原文分开列：自己重写的几篇在上面，官方 PDF 与规范原文在下面。",
+        lead="读不懂原文时先看中文的几篇；要调参数、写解析，还是回头翻官方原文。",
         title="APRS 规范与文档 — APRS101、APRS-IS 实施细则",
         desc="APRS 规范与官方文档入口：APRS101、APRS-IS 规范与实施细则、服务器列表与过滤器语法、TAPR 历年资料（英文原文）。",
         og="APRS 规范与文档：APRS101、APRS-IS 实施细则与官方入口。",
@@ -146,7 +146,7 @@ PAGES = [
     dict(
         file="protocol.html", nav="", nav_active="docs.html",
         h1="APRSNET CN CONNECT v0.1.0（草案）",
-        lead="APRSNET CN CONNECT 是一份 APRS 服务器的接入与转发规范：客户端怎么连进来、谁被放行、报文怎么转发出去。这一版是 v0.1.0，还是草案。",
+        lead="APRSNET CN CONNECT 讲服务端那一侧：客户端怎么连进来，谁被放行，报文怎么转发出去。这一版是 v0.1.0，还是草案。",
         title="APRSNET CN CONNECT v0.1.0（草案）— 接入与报文转发规范",
         desc="APRSNET CN CONNECT v0.1.0 草案：客户端接入与登录格式、Passcode 与白名单准入、报文处理与转发、APRS-IS 过滤器、安全运维、网络边界与测试要求。",
         og="APRSNET CN CONNECT v0.1.0（草案）：接入、授权、转发与运维要求。",
@@ -168,7 +168,7 @@ PAGES = [
     ),
     dict(
         file="aprsis.html", nav="", nav_active="docs.html", h1="APRS-IS 文档（中文）",
-        lead="APRS-IS 官方文档的中文整理：怎么连上网络、登录行怎么写、UDP 与只发端口怎么用。过滤器、网关细则和 q 构造各有专篇。",
+        lead="官方文档的中文整理：怎么连上网络，登录行怎么写，UDP 和只发端口怎么用。过滤器、网关细则和 q 构造另开了三页。",
         title="APRS-IS 中文文档 — 连接、登录行、端口与过滤器",
         desc="APRS-IS 官方文档的中文整理：TCP/UDP 端口怎么选（14501 / 10152 / 14580 / 23000）、登录行与 passcode、呼号与 SSID 规则、只发端口与 HTTP/WebSocket 返回码，附原文入口。",
         og="APRS-IS 中文文档：连上网络、登录行、UDP 与只发端口。",
@@ -178,7 +178,7 @@ PAGES = [
     ),
     dict(
         file="filter.html", nav="", nav_active="docs.html", h1="APRS-IS 过滤器",
-        lead="服务器会把哪些包推给你，全看这一行 filter。官方文档里每个条件都在这一页摊开写。",
+        lead="服务器推给你哪些包，全看这一行 filter。每个条件在这一页摊开写。",
         title="APRS-IS 过滤器 — filter 命令与条件清单（中文）",
         desc="APRS-IS 服务器端过滤器中文整理：filter 命令怎么写、包含与排除、按位置 / 台站 / 类型 / 符号 / q 构造的每个条件怎么填，附官方原文入口。",
         og="APRS-IS 过滤器中文整理：filter 怎么写，每个条件分别管什么。",
@@ -189,7 +189,7 @@ PAGES = [
     ),
     dict(
         file="igate.html", nav="", nav_active="docs.html", h1="iGate 细则",
-        lead="网关把空中和互联网两头接起来。转什么、不转什么、路径怎么改，官方细则都在这一页。",
+        lead="网关把空中和互联网两头接起来。哪些包送上网、哪些包放回空中，逐一都在这一页。",
         title="iGate 细则 — 网关转什么、不转什么、路径怎么写（中文）",
         desc="APRS-IS 官方的 iGate 细则中文整理：哪些包该送上互联网、哪几类不转，消息什么条件下发回空中，qAR 与 qAO 怎么加，第三方格式怎么拼，附原文入口。",
         og="iGate 细则中文整理：转什么、不转什么、路径和第三方格式怎么写。",
@@ -200,7 +200,7 @@ PAGES = [
     ),
     dict(
         file="qconstruct.html", nav="", nav_active="docs.html", h1="q 构造",
-        lead="包进了 APRS-IS 之后，末尾会多出一小段 q 开头的标记。这一页把每个标记是谁写的、什么意思讲清。",
+        lead="包进了 APRS-IS，末尾会多出一小段 q 开头的标记。谁写上去的、什么意思，逐个讲。",
         title="q 构造 — APRS-IS 包里那段 q 标记是什么（中文）",
         desc="APRS-IS 的 q 构造中文整理：qAC、qAX、qAU、qAo、qAO、qAS、qAr、qAR、qAZ、qAI 各自是谁写上去的、什么意思，登录名与跟踪的几条规矩，附两个例子与官方原文。",
         og="q 构造中文整理：从 qAC 到 qAI，每个标记是谁写的、什么意思。",
