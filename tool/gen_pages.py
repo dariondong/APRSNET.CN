@@ -255,9 +255,12 @@ PAGES = [
 # 但地址要出现在 sitemap.xml 里，所以在这儿登记一条 (路径, priority)。
 EXTRA_URLS = (
     # 手写的独立页：/oa 是 APRSNETCN OA 的活动页（目录形式，文件是 oa/index.html），
-    # /oa/en 是它的英文版（oa/en/index.html）
+    # /oa/en 是它的英文版（oa/en/index.html），
+    # /oa/data.html 与 /oa/en/data.html 是数据面板（每轮名单与汇总数字）
     ("oa", "0.9"),
     ("oa/en", "0.8"),
+    ("oa/data.html", "0.6"),
+    ("oa/en/data.html", "0.5"),
 )
 
 # 手写页也能占一格导航：一条 = (导航文字, 链接, 插在哪一项之后)。
