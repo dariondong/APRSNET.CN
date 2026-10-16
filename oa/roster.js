@@ -15,7 +15,8 @@
    没写 call 就留着 HTML 里那句占位文案。grid 是网格，digi 是报文经过的中继（按经过顺序写，
    空数组就是没经过中继），at 是参与时间。
 
-   一台站画成一块：呼号一行，下面跟着带字段名的几项（网格 / 路径 / 时间）。路径那一项把 via 与 digi
+   一台站画成一块：呼号一行，下面跟着带字段名的几项（网格 / 路径 / 时间）。呼号后面跟着由呼号前缀
+   认出来的国家地区与国旗，认不出来就不写。路径那一项把 via 与 digi
    合成一句话——走射频又过了中继是「射频 · A → B」，只走射频是「射频」，走网络是「网络」。
    字段名、路径的两种写法、空状态、「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
 
@@ -64,6 +65,216 @@
     dl.appendChild(wrap);
   };
 
+  /* 呼号前缀认地区与国旗：长前缀先匹配，「B」宽在后面接着。
+     "XX-YY" 是首两位落在区间里的（含两端），一对一的写法就是普通前缀。
+     认不出来的不写那一行。中文页与英文页共一份，靠 <html lang> 选哪个名字。 */
+  var REGIONS = [
+    ["VR2", "中国香港", "Hong Kong", "\ud83c\udded\ud83c\uddf0"],
+    ["XX9", "中国澳门", "Macao", "\ud83c\uddf2\ud83c\uddf4"],
+    ["BM", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BN", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BO", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BP", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BQ", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BU", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BV", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BW", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["BX", "中国台湾", "Taiwan, China", "\ud83c\uddf9\ud83c\uddfc"],
+    ["B", "中国", "China", "\ud83c\udde8\ud83c\uddf3"],
+    ["JA-JS", "日本", "Japan", "\ud83c\uddef\ud83c\uddf5"],
+    ["7J-7N", "日本", "Japan", "\ud83c\uddef\ud83c\uddf5"],
+    ["8J-8N", "日本", "Japan", "\ud83c\uddef\ud83c\uddf5"],
+    ["HL", "韩国", "South Korea", "\ud83c\uddf0\ud83c\uddf7"],
+    ["6K", "韩国", "South Korea", "\ud83c\uddf0\ud83c\uddf7"],
+    ["6L", "韩国", "South Korea", "\ud83c\uddf0\ud83c\uddf7"],
+    ["DS-DT", "韩国", "South Korea", "\ud83c\uddf0\ud83c\uddf7"],
+    ["D7-D9", "韩国", "South Korea", "\ud83c\uddf0\ud83c\uddf7"],
+    ["P5", "朝鲜", "North Korea", "\ud83c\uddf0\ud83c\uddf5"],
+    ["JT-JV", "蒙古", "Mongolia", "\ud83c\uddf2\ud83c\uddf3"],
+    ["RA-RZ", "俄罗斯", "Russia", "\ud83c\uddf7\ud83c\uddfa"],
+    ["UA-UI", "俄罗斯", "Russia", "\ud83c\uddf7\ud83c\uddfa"],
+    ["UR-UZ", "乌克兰", "Ukraine", "\ud83c\uddfa\ud83c\udde6"],
+    ["EU-EW", "白俄罗斯", "Belarus", "\ud83c\udde7\ud83c\uddfe"],
+    ["ER", "摩尔多瓦", "Moldova", "\ud83c\uddf2\ud83c\udde9"],
+    ["ES", "爱沙尼亚", "Estonia", "\ud83c\uddea\ud83c\uddea"],
+    ["YL", "拉脱维亚", "Latvia", "\ud83c\uddf1\ud83c\uddfb"],
+    ["LY", "立陶宛", "Lithuania", "\ud83c\uddf1\ud83c\uddf9"],
+    ["UJ-UM", "乌兹别克斯坦", "Uzbekistan", "\ud83c\uddfa\ud83c\uddff"],
+    ["UN-UQ", "哈萨克斯坦", "Kazakhstan", "\ud83c\uddf0\ud83c\uddff"],
+    ["4L", "格鲁吉亚", "Georgia", "\ud83c\uddec\ud83c\uddea"],
+    ["EK", "亚美尼亚", "Armenia", "\ud83c\udde6\ud83c\uddf2"],
+    ["4J-4K", "阿塞拜疆", "Azerbaijan", "\ud83c\udde6\ud83c\uddff"],
+    ["EX", "吉尔吉斯斯坦", "Kyrgyzstan", "\ud83c\uddf0\ud83c\uddec"],
+    ["EY", "塔吉克斯坦", "Tajikistan", "\ud83c\uddf9\ud83c\uddeb"],
+    ["VU", "印度", "India", "\ud83c\uddee\ud83c\uddf3"],
+    ["AT", "印度", "India", "\ud83c\uddee\ud83c\uddf3"],
+    ["8T-8Y", "印度", "India", "\ud83c\uddee\ud83c\uddf3"],
+    ["AP-AS", "巴基斯坦", "Pakistan", "\ud83c\uddf5\ud83c\uddf0"],
+    ["S2", "孟加拉国", "Bangladesh", "\ud83c\udde7\ud83c\udde9"],
+    ["4S", "斯里兰卡", "Sri Lanka", "\ud83c\uddf1\ud83c\uddf0"],
+    ["9N", "尼泊尔", "Nepal", "\ud83c\uddf3\ud83c\uddf5"],
+    ["A5", "不丹", "Bhutan", "\ud83c\udde7\ud83c\uddf9"],
+    ["HS", "泰国", "Thailand", "\ud83c\uddf9\ud83c\udded"],
+    ["E2", "泰国", "Thailand", "\ud83c\uddf9\ud83c\udded"],
+    ["XV", "越南", "Vietnam", "\ud83c\uddfb\ud83c\uddf3"],
+    ["3W", "越南", "Vietnam", "\ud83c\uddfb\ud83c\uddf3"],
+    ["XW", "老挝", "Laos", "\ud83c\uddf1\ud83c\udde6"],
+    ["XU", "柬埔寨", "Cambodia", "\ud83c\uddf0\ud83c\udded"],
+    ["XY-XZ", "缅甸", "Myanmar", "\ud83c\uddf2\ud83c\uddf2"],
+    ["9M", "马来西亚", "Malaysia", "\ud83c\uddf2\ud83c\uddfe"],
+    ["9V", "新加坡", "Singapore", "\ud83c\uddf8\ud83c\uddec"],
+    ["V8", "文莱", "Brunei", "\ud83c\udde7\ud83c\uddf3"],
+    ["YB-YH", "印度尼西亚", "Indonesia", "\ud83c\uddee\ud83c\udde9"],
+    ["DU-DZ", "菲律宾", "Philippines", "\ud83c\uddf5\ud83c\udded"],
+    ["4D-4I", "菲律宾", "Philippines", "\ud83c\uddf5\ud83c\udded"],
+    ["VK", "澳大利亚", "Australia", "\ud83c\udde6\ud83c\uddfa"],
+    ["ZL-ZM", "新西兰", "New Zealand", "\ud83c\uddf3\ud83c\uddff"],
+    ["P2", "巴布亚新几内亚", "Papua New Guinea", "\ud83c\uddf5\ud83c\uddec"],
+    ["A", "美国", "United States", "\ud83c\uddfa\ud83c\uddf8"],
+    ["W", "美国", "United States", "\ud83c\uddfa\ud83c\uddf8"],
+    ["K", "美国", "United States", "\ud83c\uddfa\ud83c\uddf8"],
+    ["N", "美国", "United States", "\ud83c\uddfa\ud83c\uddf8"],
+    ["VA-VE", "加拿大", "Canada", "\ud83c\udde8\ud83c\udde6"],
+    ["VO", "加拿大", "Canada", "\ud83c\udde8\ud83c\udde6"],
+    ["VY", "加拿大", "Canada", "\ud83c\udde8\ud83c\udde6"],
+    ["CY-CZ", "加拿大", "Canada", "\ud83c\udde8\ud83c\udde6"],
+    ["CF-CK", "加拿大", "Canada", "\ud83c\udde8\ud83c\udde6"],
+    ["XL-XO", "加拿大", "Canada", "\ud83c\udde8\ud83c\udde6"],
+    ["XA-XI", "墨西哥", "Mexico", "\ud83c\uddf2\ud83c\uddfd"],
+    ["4A-4C", "墨西哥", "Mexico", "\ud83c\uddf2\ud83c\uddfd"],
+    ["6D-6J", "墨西哥", "Mexico", "\ud83c\uddf2\ud83c\uddfd"],
+    ["PP-PY", "巴西", "Brazil", "\ud83c\udde7\ud83c\uddf7"],
+    ["ZV-ZZ", "巴西", "Brazil", "\ud83c\udde7\ud83c\uddf7"],
+    ["LO-LW", "阿根廷", "Argentina", "\ud83c\udde6\ud83c\uddf7"],
+    ["AY-AZ", "阿根廷", "Argentina", "\ud83c\udde6\ud83c\uddf7"],
+    ["CA-CE", "智利", "Chile", "\ud83c\udde8\ud83c\uddf1"],
+    ["XQ-XR", "智利", "Chile", "\ud83c\udde8\ud83c\uddf1"],
+    ["OA-OC", "秘鲁", "Peru", "\ud83c\uddf5\ud83c\uddea"],
+    ["CV-CX", "乌拉圭", "Uruguay", "\ud83c\uddfa\ud83c\uddfe"],
+    ["HJ-HK", "哥伦比亚", "Colombia", "\ud83c\udde8\ud83c\uddf4"],
+    ["YV-YY", "委内瑞拉", "Venezuela", "\ud83c\uddfb\ud83c\uddea"],
+    ["HC-HD", "厄瓜多尔", "Ecuador", "\ud83c\uddea\ud83c\udde8"],
+    ["G", "英国", "United Kingdom", "\ud83c\uddec\ud83c\udde7"],
+    ["M", "英国", "United Kingdom", "\ud83c\uddec\ud83c\udde7"],
+    ["2E", "英国", "United Kingdom", "\ud83c\uddec\ud83c\udde7"],
+    ["2I", "英国", "United Kingdom", "\ud83c\uddec\ud83c\udde7"],
+    ["2M", "英国", "United Kingdom", "\ud83c\uddec\ud83c\udde7"],
+    ["2W", "英国", "United Kingdom", "\ud83c\uddec\ud83c\udde7"],
+    ["EI", "爱尔兰", "Ireland", "\ud83c\uddee\ud83c\uddea"],
+    ["EJ", "爱尔兰", "Ireland", "\ud83c\uddee\ud83c\uddea"],
+    ["F", "法国", "France", "\ud83c\uddeb\ud83c\uddf7"],
+    ["TK", "法国", "France", "\ud83c\uddeb\ud83c\uddf7"],
+    ["DA-DR", "德国", "Germany", "\ud83c\udde9\ud83c\uddea"],
+    ["PA-PI", "荷兰", "Netherlands", "\ud83c\uddf3\ud83c\uddf1"],
+    ["ON-OT", "比利时", "Belgium", "\ud83c\udde7\ud83c\uddea"],
+    ["LX", "卢森堡", "Luxembourg", "\ud83c\uddf1\ud83c\uddfa"],
+    ["HB", "瑞士", "Switzerland", "\ud83c\udde8\ud83c\udded"],
+    ["OE", "奥地利", "Austria", "\ud83c\udde6\ud83c\uddf9"],
+    ["I", "意大利", "Italy", "\ud83c\uddee\ud83c\uddf9"],
+    ["EA-EH", "西班牙", "Spain", "\ud83c\uddea\ud83c\uddf8"],
+    ["CT-CU", "葡萄牙", "Portugal", "\ud83c\uddf5\ud83c\uddf9"],
+    ["LA-LN", "挪威", "Norway", "\ud83c\uddf3\ud83c\uddf4"],
+    ["JW", "挪威", "Norway", "\ud83c\uddf3\ud83c\uddf4"],
+    ["JX", "挪威", "Norway", "\ud83c\uddf3\ud83c\uddf4"],
+    ["SA-SM", "瑞典", "Sweden", "\ud83c\uddf8\ud83c\uddea"],
+    ["7S", "瑞典", "Sweden", "\ud83c\uddf8\ud83c\uddea"],
+    ["8S", "瑞典", "Sweden", "\ud83c\uddf8\ud83c\uddea"],
+    ["OF-OJ", "芬兰", "Finland", "\ud83c\uddeb\ud83c\uddee"],
+    ["OZ", "丹麦", "Denmark", "\ud83c\udde9\ud83c\uddf0"],
+    ["OU-OY", "丹麦", "Denmark", "\ud83c\udde9\ud83c\uddf0"],
+    ["5P-5Q", "丹麦", "Denmark", "\ud83c\udde9\ud83c\uddf0"],
+    ["TF", "冰岛", "Iceland", "\ud83c\uddee\ud83c\uddf8"],
+    ["SP-SQ", "波兰", "Poland", "\ud83c\uddf5\ud83c\uddf1"],
+    ["SO", "波兰", "Poland", "\ud83c\uddf5\ud83c\uddf1"],
+    ["SN", "波兰", "Poland", "\ud83c\uddf5\ud83c\uddf1"],
+    ["3Z", "波兰", "Poland", "\ud83c\uddf5\ud83c\uddf1"],
+    ["HF", "波兰", "Poland", "\ud83c\uddf5\ud83c\uddf1"],
+    ["OK", "捷克", "Czechia", "\ud83c\udde8\ud83c\uddff"],
+    ["OL", "捷克", "Czechia", "\ud83c\udde8\ud83c\uddff"],
+    ["OM", "斯洛伐克", "Slovakia", "\ud83c\uddf8\ud83c\uddf0"],
+    ["HA-HG", "匈牙利", "Hungary", "\ud83c\udded\ud83c\uddfa"],
+    ["YO-YR", "罗马尼亚", "Romania", "\ud83c\uddf7\ud83c\uddf4"],
+    ["LZ", "保加利亚", "Bulgaria", "\ud83c\udde7\ud83c\uddec"],
+    ["SV-SZ", "希腊", "Greece", "\ud83c\uddec\ud83c\uddf7"],
+    ["J4", "希腊", "Greece", "\ud83c\uddec\ud83c\uddf7"],
+    ["9A", "克罗地亚", "Croatia", "\ud83c\udded\ud83c\uddf7"],
+    ["S5", "斯洛文尼亚", "Slovenia", "\ud83c\uddf8\ud83c\uddee"],
+    ["YT-YU", "塞尔维亚", "Serbia", "\ud83c\uddf7\ud83c\uddf8"],
+    ["E7", "波黑", "Bosnia and Herzegovina", "\ud83c\udde7\ud83c\udde6"],
+    ["Z3", "北马其顿", "North Macedonia", "\ud83c\uddf2\ud83c\uddf0"],
+    ["4O", "黑山", "Montenegro", "\ud83c\uddf2\ud83c\uddea"],
+    ["ZA", "阿尔巴尼亚", "Albania", "\ud83c\udde6\ud83c\uddf1"],
+    ["TA-TC", "土耳其", "Turkey", "\ud83c\uddf9\ud83c\uddf7"],
+    ["YM", "土耳其", "Turkey", "\ud83c\uddf9\ud83c\uddf7"],
+    ["4X", "以色列", "Israel", "\ud83c\uddee\ud83c\uddf1"],
+    ["4Z", "以色列", "Israel", "\ud83c\uddee\ud83c\uddf1"],
+    ["HZ", "沙特阿拉伯", "Saudi Arabia", "\ud83c\uddf8\ud83c\udde6"],
+    ["7Z", "沙特阿拉伯", "Saudi Arabia", "\ud83c\uddf8\ud83c\udde6"],
+    ["A6", "阿联酋", "United Arab Emirates", "\ud83c\udde6\ud83c\uddea"],
+    ["A7", "卡塔尔", "Qatar", "\ud83c\uddf6\ud83c\udde6"],
+    ["A9", "巴林", "Bahrain", "\ud83c\udde7\ud83c\udded"],
+    ["A4", "阿曼", "Oman", "\ud83c\uddf4\ud83c\uddf2"],
+    ["9K", "科威特", "Kuwait", "\ud83c\uddf0\ud83c\uddfc"],
+    ["JY", "约旦", "Jordan", "\ud83c\uddef\ud83c\uddf4"],
+    ["OD", "黎巴嫩", "Lebanon", "\ud83c\uddf1\ud83c\udde7"],
+    ["EP-EQ", "伊朗", "Iran", "\ud83c\uddee\ud83c\uddf7"],
+    ["YI", "伊拉克", "Iraq", "\ud83c\uddee\ud83c\uddf6"],
+    ["YK", "叙利亚", "Syria", "\ud83c\uddf8\ud83c\uddfe"],
+    ["5B", "塞浦路斯", "Cyprus", "\ud83c\udde8\ud83c\uddfe"],
+    ["C4", "塞浦路斯", "Cyprus", "\ud83c\udde8\ud83c\uddfe"],
+    ["P3", "塞浦路斯", "Cyprus", "\ud83c\udde8\ud83c\uddfe"],
+    ["AF0-AF9", "南极", "Antarctica", "\ud83c\udde6\ud83c\uddf6"],
+    ["ZR-ZU", "南非", "South Africa", "\ud83c\uddff\ud83c\udde6"],
+    ["SU", "埃及", "Egypt", "\ud83c\uddea\ud83c\uddec"],
+    ["SS", "埃及", "Egypt", "\ud83c\uddea\ud83c\uddec"],
+    ["6A-6B", "埃及", "Egypt", "\ud83c\uddea\ud83c\uddec"],
+    ["CN", "摩洛哥", "Morocco", "\ud83c\uddf2\ud83c\udde6"],
+    ["5C-5G", "摩洛哥", "Morocco", "\ud83c\uddf2\ud83c\udde6"],
+    ["7X", "阿尔及利亚", "Algeria", "\ud83c\udde9\ud83c\uddff"],
+    ["7R", "阿尔及利亚", "Algeria", "\ud83c\udde9\ud83c\uddff"],
+    ["3V", "突尼斯", "Tunisia", "\ud83c\uddf9\ud83c\uddf3"],
+    ["5A", "利比亚", "Libya", "\ud83c\uddf1\ud83c\uddfe"],
+    ["5N", "尼日利亚", "Nigeria", "\ud83c\uddf3\ud83c\uddec"],
+    ["5Z", "肯尼亚", "Kenya", "\ud83c\uddf0\ud83c\uddea"],
+    ["ET", "埃塞俄比亚", "Ethiopia", "\ud83c\uddea\ud83c\uddf9"],
+    ["9G", "加纳", "Ghana", "\ud83c\uddec\ud83c\udded"],
+    ["Z2", "津巴布韦", "Zimbabwe", "\ud83c\uddff\ud83c\uddfc"]
+  ];
+
+  var chinese = /^zh/i.test(document.documentElement.lang || "");
+  var ordered = false;
+
+  /* "XX-YY" 是首两位落在区间里的（含两端），其余的就是普通前缀 */
+  var hitPrefix = function (call, pat) {
+    var dash = pat.indexOf("-");
+    if (dash > 0) {
+      var lo = pat.slice(0, dash);
+      var hi = pat.slice(dash + 1);
+      var head = call.slice(0, lo.length);
+      return head >= lo && head <= hi;
+    }
+    return call.indexOf(pat) === 0;
+  };
+
+  var widthOf = function (pat) {
+    var dash = pat.indexOf("-");
+    return dash > 0 ? dash : pat.length;
+  };
+
+  /* 前缀长的先匹配：VR2 比 B 先，JA-JS 比 J 先；同长的按表里的顺序 */
+  var regionOf = function (call) {
+    var c = String(call == null ? "" : call).trim().toUpperCase().replace(/-\d+$/, "");
+    if (!c) return null;
+    if (!ordered) {
+      REGIONS.sort(function (a, b) { return widthOf(b[0]) - widthOf(a[0]); });
+      ordered = true;
+    }
+    for (var i = 0; i < REGIONS.length; i++) {
+      if (hitPrefix(c, REGIONS[i][0])) return REGIONS[i];
+    }
+    return null;
+  };
+
   /* 一台站：呼号一行，下面跟着网格 / 路径 / 参与时间 */
   var makeRow = function (st) {
     var call = String(st && st.call != null ? st.call : "").trim();
@@ -83,10 +294,20 @@
 
     var li = document.createElement("li");
     li.className = "st";
+    var head = document.createElement("div");
+    head.className = "st-head";
     var b = document.createElement("b");
     b.className = "st-call";
     b.textContent = call;
-    li.appendChild(b);
+    head.appendChild(b);
+    var region = regionOf(call);
+    if (region) {
+      var where = document.createElement("span");
+      where.className = "st-region";
+      where.textContent = (chinese ? region[1] : region[2]) + " " + region[3];
+      head.appendChild(where);
+    }
+    li.appendChild(head);
 
     var dl = document.createElement("dl");
     dl.className = "st-fields";
