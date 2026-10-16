@@ -119,6 +119,9 @@ def main():
                                             digi=["BG7LZQ-1"], status="confirmed") is not None, True)
         check("删掉它", store.drop_station(rnd["date"], "BG9ZZZ"), True)
         check("删完又只剩三台", len(store.stations(rnd["date"])), 3)
+        check("只改不建的写不动新呼号", store.set_station(rnd["date"], "BG0NOPE", status="acked",
+                                                      create=False), None)
+        check("那台没被建出来", len(store.stations(rnd["date"])), 3)
 
         store.close()
     finally:

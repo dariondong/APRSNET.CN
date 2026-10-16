@@ -269,8 +269,8 @@ class Store(object):
         return [dict(r) for r in rows]
 
     def set_station(self, date, call, grid=None, via=None, digi=None, at=None,
-                    status=None, note=None):
-        """手动写一台站：编辑、补录、标状态都走这里。"""
+                    status=None, note=None, create=True):
+        """手动写一台站：编辑、补录、标状态都走这里。create=False 时只改已有的，不新建。"""
         rid = self.ensure_round(date)
         if not call:
             raise ValueError("没有呼号")
@@ -279,6 +279,8 @@ class Store(object):
         with self.lock:
             row = self.db.execute("SELECT * FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
             chain = "" if digi is None else ",".join([d.strip().upper() for d in digi if d and d.strip()])
+            if row is None and not create:
+                return None
             if row is None:
                 self.db.execute(
                     "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts,note)"

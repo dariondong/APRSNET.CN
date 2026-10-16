@@ -376,7 +376,7 @@ class Handler(BaseHTTPRequestHandler):
             if not call or not duty:
                 self._fail(400, "缺呼号：回谁、以谁的名义回")
                 return
-            line = "%s>APRS,TCPIP*::%s:%s" % (duty, call.ljust(9), text)
+            line = "%s>APRS::%s:%s" % (duty, call.ljust(9), text)
             oid = self.rt.store.queue_line(duty, call, line)
             error = ""
             if body.get("send"):
@@ -386,7 +386,7 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception as exc:
                     error = str(exc)[:200]
             self.rt.store.mark_sent(oid, error)
-            self.rt.store.set_station(date, call, status="acked")
+            self.rt.store.set_station(date, call, status="acked", create=False)
             self._json({"ok": not error, "error": error, "line": line, "id": oid})
             return
         self._fail(404, "没有这个接口")
