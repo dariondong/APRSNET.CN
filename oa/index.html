@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>周六 APRS OA | APRSNET.CN 独立活动</title>
 <meta name="description" content="APRSNET.CN 独立发起的周六 APRS OA：每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 报文，收到 ACK 再回一条。OA 就是 On Air。当前筹备中，机器人尚未上线，请勿发送。">
-<meta name="keywords" content="周六 APRS OA,APRS OA,On Air,APRS 报文活动,CNNET,APRS 中文引导,业余无线电,APRS 报文,APRSNET.CN,独立活动,非官方活动">
+<meta name="keywords" content="周六 APRS OA,APRS OA,On Air,APRS 报文活动,APRS 射频,APRS 网关,iGate,CNNET,APRS 中文引导,业余无线电,APRS 报文,APRSNET.CN,独立活动,非官方活动">
 <meta name="author" content="BG7LZQ (Darion)">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
@@ -105,7 +105,7 @@
     <ul class="fact-list oa-status">
       <li><b>活动名称</b><span>周六 APRS OA</span></li>
       <li><b>活动时间</b><span>每周六 UTC 00:00 到 23:59</span></li>
-      <li><b>参与方式</b><span>向机器人发送 CNNET 报文</span></li>
+      <li><b>参与方式</b><span>向机器人发送 CNNET 报文，射频或网络都行</span></li>
       <li><b>当前状态</b><span>筹备中，尚未到活动时间</span></li>
       <li><b>说明</b><span>本活动由 APRSNET.CN 独立发起，与 APRS Thursday、APRS OTA 均无隶属关系。</span></li>
     </ul>
@@ -115,6 +115,7 @@
     <ul class="oa-lines">
       <li>机器人尚未上线，请勿发送报文。</li>
       <li>一步发 CQ，一步回 U：先发 CQ CNNET 你的信息，收到 ACK 再发 U CNNET。</li>
+      <li>射频与网络两条路都收得到，更鼓励走射频那一条。</li>
       <li>本页只做引导与说明，不收集数据，不统计。</li>
       <li>开放时间以本页后续公告为准。</li>
     </ul>
@@ -133,6 +134,7 @@
     <p class="prose">周六 APRS OA 由 APRSNET.CN 独立发起，非活动主办方代管。OA 就是 On Air。机器人收到报文后回一条 ACK，其余的事情就到这里。</p>
     <p class="prose">没有报名这一步，也没有名单。到时间把报文发给机器人就行，发完就可以关设备。</p>
     <p class="prose">时间按 UTC 算，整 24 小时，什么时候方便就什么时候发。没有先后顺序，也不比谁更早。</p>
+    <p class="prose">射频与网络两条路都算参加，更希望你是从射频进来的。周围的链路响起来，一个地方的 APRS 才立得住。</p>
     <p class="oa-note">机器人尚未上线。上线之前发出去的报文没有人收。</p>
   </div>
 </section>
@@ -154,7 +156,23 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-join">
+<section class="section alt" id="oa-rf">
+  <div class="section-head">
+    <h2>通过射频加入</h2>
+    <p>网络、射频两条路都收得到。更希望你是走射频那一条。</p>
+  </div>
+  <div class="section-body">
+    <p class="prose">APRS-IS 是网络侧。手机或电脑连上服务器，报文在服务器之间走。射频是空中侧。用手台或车台把报文发出去，附近的台站先听到，再由网关送进网络。</p>
+    <ul class="fact-list">
+      <li><b>网络侧（APRS-IS）</b><span>连上服务器就能发，手边没有电台也行</span></li>
+      <li><b>空中侧（射频）</b><span>用手台或车台发，经本地中继与网关进网络</span></li>
+    </ul>
+    <p class="prose">走射频对本地更有意义。你的报文被周围听到，周围的人才可能把电台打开。一个地方常年有信号，这个地方的 APRS 才立得住。周六 APRS OA 想推的就是这件事：各地的业余无线电 APRS 都长起来。</p>
+    <p class="oa-note">射频发射要用自己的呼号与执照，频率与路径按当地规定来。本地网关怎么接，见 <a href="../igate.html">iGate 细则</a>。</p>
+  </div>
+</section>
+
+<section class="section" id="oa-join">
   <div class="section-head">
     <h2>参与方式</h2>
     <p>两步：先发 CQ，收到 ACK 再发一条 U。</p>
@@ -187,7 +205,7 @@
   </div>
 </section>
 
-<section class="section" id="oa-format">
+<section class="section alt" id="oa-format">
   <div class="section-head">
     <h2>报文格式与示例</h2>
     <p>三行报文，照着填自己的呼号就行。</p>
@@ -215,7 +233,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-first">
+<section class="section" id="oa-first">
   <div class="section-head">
     <h2>第一次发 APRS 报文</h2>
     <p>没发过 APRS 报文的话，先把站里这几页看一眼。跟本页规则无关，只是底子。</p>
@@ -232,7 +250,7 @@
   </div>
 </section>
 
-<section class="section" id="oa-faq">
+<section class="section alt" id="oa-faq">
   <div class="section-head">
     <h2>常见问题</h2>
     <p>现在最常被问到的几件事。</p>
@@ -280,6 +298,14 @@
         <p>能发 APRS 报文就行。手机加声卡线、手台加 TNC、或者带 APRS 的电台都可以，「上手与设备」那一页有说明。</p>
       </details>
       <details>
+        <summary>一定要用射频吗？</summary>
+        <p>不是硬性要求，走网络也收得到。但更希望你是从射频进来的。</p>
+      </details>
+      <details>
+        <summary>我这边没有网关怎么办？</summary>
+        <p>没有网关，射频发出的报文就上不了 APRS-IS。先用网络发也行，或者按「iGate 细则」找找附近的网关。</p>
+      </details>
+      <details>
         <summary>和 APRS Thursday 有关系吗？</summary>
         <p>没有。本活动由 APRSNET.CN 独立发起，与 APRS Thursday、APRS OTA 均无隶属关系。</p>
       </details>
@@ -291,7 +317,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-terms">
+<section class="section" id="oa-terms">
   <div class="section-head">
     <h2>独立声明</h2>
     <p>下面几条现在也一样有效。</p>

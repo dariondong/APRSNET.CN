@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Saturday APRS On Air | An APRSNET.CN independent project</title>
 <meta name="description" content="An independent Saturday APRS On Air net from APRSNET.CN: send the CNNET message to the bot any time from UTC 00:00 to 23:59 on Saturday, then answer with U CNNET once the ACK arrives. Still in preparation, the bot is not online yet.">
-<meta name="keywords" content="Saturday APRS On Air,APRS On Air,APRS check-in net,CNNET,APRS guide in Chinese,amateur radio,APRS message,APRSNET.CN,independent net,unofficial net">
+<meta name="keywords" content="Saturday APRS On Air,APRS On Air,APRS check-in net,RF path,APRS gateway,iGate,CNNET,APRS guide in Chinese,amateur radio,APRS message,APRSNET.CN,independent net,unofficial net">
 <meta name="author" content="BG7LZQ (Darion)">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
@@ -105,7 +105,7 @@
     <ul class="fact-list oa-status">
       <li><b>Net name</b><span>Saturday APRS On Air</span></li>
       <li><b>Net time</b><span>Every Saturday, UTC 00:00 to 23:59</span></li>
-      <li><b>How to take part</b><span>Send the CNNET message to the bot</span></li>
+      <li><b>How to take part</b><span>Send the CNNET message to the bot, over RF or over the network</span></li>
       <li><b>Status</b><span>In preparation, not open yet</span></li>
       <li><b>Note</b><span>This net is run independently by APRSNET.CN. It is not affiliated with APRS Thursday or APRS OTA.</span></li>
     </ul>
@@ -115,6 +115,7 @@
     <ul class="oa-lines">
       <li>The bot is not online yet. Please do not send any message.</li>
       <li>Two steps: send <code>CQ CNNET your info</code> first, then send <code>U CNNET</code> once the ACK arrives.</li>
+      <li>Both paths reach the bot. The RF path is the one we would rather see.</li>
       <li>This page is a guide and an explanation only. It collects nothing.</li>
       <li>The opening time will be announced on this page.</li>
     </ul>
@@ -133,6 +134,7 @@
     <p class="prose">Saturday APRS On Air is run independently by APRSNET.CN, with no other organiser in the middle. OA stands for On Air. The bot answers each message with an ACK, and nothing else follows.</p>
     <p class="prose">There is no sign-up and no list. When the time comes, send the message to the bot and switch the station off. That is all of it.</p>
     <p class="prose">The net runs on UTC, all 24 hours of the Saturday. Send whenever it suits you. There is no order and no prize for being first.</p>
+    <p class="prose">Both paths count as taking part, and the RF path is the one we would rather hear. When the links around you light up, APRS stands up in that place.</p>
     <p class="oa-note">The bot is not online yet. A message sent today reaches nobody.</p>
   </div>
 </section>
@@ -154,7 +156,23 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-join">
+<section class="section alt" id="oa-rf">
+  <div class="section-head">
+    <h2>Joining over RF</h2>
+    <p>Both paths reach the bot. The RF one is the one we would rather see.</p>
+  </div>
+  <div class="section-body">
+    <p class="prose">APRS-IS is the network side: a phone or a computer connects to a server and the message travels between servers. RF is the air side: a handheld or a mobile sends the message out, nearby stations hear it, and a local gateway passes it into the network.</p>
+    <ul class="fact-list">
+      <li><b>Over the network (APRS-IS)</b><span>Connect to a server and send. No radio needed.</span></li>
+      <li><b>Over the air (RF)</b><span>Send from a handheld or a mobile, then a local digipeater and gateway carry it into the network.</span></li>
+    </ul>
+    <p class="prose">The RF path is what counts locally. When your message is heard around you, other people may switch their radios on. A region with signals all year is a region where APRS stands up. That is the whole aim of Saturday APRS On Air: to get amateur radio APRS growing in each country.</p>
+    <p class="oa-note">RF transmissions need your own callsign and licence, on the frequencies and paths your local rules allow. To put a local gateway together, see <a href="../../igate.html">iGate 细则</a> (in Chinese).</p>
+  </div>
+</section>
+
+<section class="section" id="oa-join">
   <div class="section-head">
     <h2>How to take part</h2>
     <p>Two steps: send a CQ, then send one U once the ACK arrives.</p>
@@ -187,7 +205,7 @@
   </div>
 </section>
 
-<section class="section" id="oa-format">
+<section class="section alt" id="oa-format">
   <div class="section-head">
     <h2>Message formats and examples</h2>
     <p>Three lines. Fill in your own callsign.</p>
@@ -215,7 +233,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-first">
+<section class="section" id="oa-first">
   <div class="section-head">
     <h2>New to APRS messages?</h2>
     <p>If you have never sent an APRS message, start with these pages on the site. They are background only, not net rules.</p>
@@ -232,7 +250,7 @@
   </div>
 </section>
 
-<section class="section" id="oa-faq">
+<section class="section alt" id="oa-faq">
   <div class="section-head">
     <h2>Questions</h2>
     <p>The few things people ask first.</p>
@@ -280,6 +298,14 @@
         <p>Anything that can send an APRS message will do. A phone with a sound card cable, a handheld with a TNC, or a radio with APRS built in. The 上手与设备 page covers it.</p>
       </details>
       <details>
+        <summary>Do I have to use RF?</summary>
+        <p>It is not a requirement, and the network path reaches the bot as well. The RF path is the one we would rather hear.</p>
+      </details>
+      <details>
+        <summary>What if there is no gateway near me?</summary>
+        <p>Without a gateway, a message sent over RF never reaches APRS-IS. Send over the network for now, or look for a gateway close by.</p>
+      </details>
+      <details>
         <summary>Is this related to APRS Thursday?</summary>
         <p>No. The net is run independently by APRSNET.CN, and it is not affiliated with APRS Thursday or APRS OTA.</p>
       </details>
@@ -291,7 +317,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-terms">
+<section class="section" id="oa-terms">
   <div class="section-head">
     <h2>Independence statement</h2>
     <p>These lines apply today as well.</p>
