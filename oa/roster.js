@@ -238,14 +238,19 @@
     }
   });
 
-  fetch(url, { credentials: "omit", cache: "no-cache" })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (data) {
-      var rounds = ((data && data.rounds) || []).filter(function (r) { return r && r.date; });
-      if (!rounds.length) return;
-      rounds.sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; });
+  /* 名单会自己变：服务端把 data-roster 指到 /api/roster（绝对路径），隔一会儿再读一次；
+     静态站上它是相对路径，读一次就不动了。 */
+  var live = url.charAt(0) === "/";
+  var shown = 0;
+  var last = [];
+  var dates = "";
 
-      if (box && picker) {
+  var fill = function (rounds) {
+    last = rounds;
+    if (box && picker) {
+      var key = rounds.map(function (r) { return String(r.date); }).join(",");
+      if (key !== dates) {            /* 轮次没变就不动下拉框，别把展开的那一下收掉 */
+        dates = key;
         picker.textContent = "";
         rounds.forEach(function (r, i) {
           var opt = document.createElement("option");
@@ -253,17 +258,44 @@
           opt.textContent = String(r.date);
           picker.appendChild(opt);
         });
-        picker.value = "0";
-        picker.addEventListener("change", function () {
-          var i = parseInt(picker.value, 10);
-          paint(rounds[i >= 0 && i < rounds.length ? i : 0]);
-        });
-        box.hidden = false;
       }
+      picker.value = String(shown);
+      box.hidden = false;
+    }
+    fillStats(rounds);
+    fillDuty(rounds[0]);
+    paint(rounds[shown] || rounds[0]);
+  };
 
-      fillStats(rounds);
-      fillDuty(rounds[0]);
-      paint(rounds[0]);
-    })
-    .catch(function () {});
+  var load = function () {
+    if (live && document.hidden) return;
+    fetch(url, { credentials: "omit", cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        var rounds = ((data && data.rounds) || []).filter(function (r) { return r && r.date; });
+        if (!rounds.length) return;
+        rounds.sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; });
+        if (shown >= rounds.length) shown = 0;
+        fill(rounds);
+      })
+      .catch(function () {});
+  };
+
+  /* 换一轮就画那一轮，不重新拉 */
+  if (box && picker) {
+    picker.addEventListener("change", function () {
+      var i = parseInt(picker.value, 10);
+      shown = (i >= 0 && i < last.length) ? i : 0;
+      paint(last[shown] || last[0]);
+    });
+  }
+
+  if (live) {
+    setInterval(load, 20000);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) load();
+    });
+  }
+
+  load();
 })();
