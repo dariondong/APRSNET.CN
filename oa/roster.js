@@ -111,7 +111,7 @@
     stamp(round);
   };
 
-  fetch(url, { credentials: "omit" })
+  fetch(url, { credentials: "omit", cache: "no-cache" })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (data) {
       var rounds = ((data && data.rounds) || []).filter(function (r) { return r && r.date; });
