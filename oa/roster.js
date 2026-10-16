@@ -15,11 +15,12 @@
    没写 call 就留着 HTML 里那句占位文案。grid 是网格，digi 是报文经过的中继（按经过顺序写，
    空数组就是没经过中继），at 是参与时间。status 是这一台的状态（called / acked / confirmed，
    三个词从页面的 data-status-* 上取），packets 是收到的几条报文，first 与 last 是第一次与
-   最后一次的时间（都写成 10-17 15:04）。后四项没有就不写。firstUtc / lastUtc / atUtc 是同一个
-   时间点的 UTC 写法，三处时间都写成两个时区（10-17 15:04 UTC+8 · 10-17 07:04 UTC）：标 UTC+8 的
-   那一串一直写，UTC 那一串名单里给了才接上（静态那份 JSON 手写时可以不写）。
+   最后一次的时间（都写成 10-17 15:04），页面上不写这两项，名单里还是带着，给别的用处。后四项
+   没有就不写。名单里的时间是 UTC+8 的写法，atUtc 是同一个时间点的 UTC 写法，页面只在「时间」
+   那一项写一遍：10-17 15:04 UTC+8 · 10-17 07:04 UTC。标 UTC+8 的那一串一直写，UTC 那一串
+   名单里给了才接上（静态那份 JSON 手写时可以不写）。
 
-   一台站画成一块：呼号一行，后面跟着由呼号前缀认出来的国家地区与国旗、状态、报文数与首末时间，
+   一台站画成一块：呼号一行，后面跟着由呼号前缀认出来的国家地区与国旗、状态与报文数，
    下面跟着带字段名的几项（网格 / 路径 / 时间；网格没写着就写一个占位横线）。路径那一项把 via 与 digi
    合成一句话——走射频又过了中继是「射频 · A → B」，只走射频是「射频」，走网络是「网络」。
    字段名、路径的两种写法、空状态、「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
@@ -49,8 +50,6 @@
   var pathIs = list.getAttribute("data-path-is") || "Network";
   var updatedLabel = list.getAttribute("data-updated-label") || "";
   var packetsLabel = list.getAttribute("data-label-packets") || "";
-  var firstLabel = list.getAttribute("data-label-first") || "";
-  var lastLabel = list.getAttribute("data-label-last") || "";
   var statusWords = {
     called: list.getAttribute("data-status-called") || "",
     acked: list.getAttribute("data-status-acked") || "",
@@ -306,7 +305,7 @@
     head.appendChild(span);
   };
 
-  /* 一台站：呼号一行，下面跟着网格 / 路径 / 参与时间 */
+  /* 一台站：呼号一行，下面跟着网格 / 路径 / 时间（这一台签到的时间） */
   var makeRow = function (st) {
     var call = String(st && st.call != null ? st.call : "").trim();
     if (!call) return null;
@@ -340,11 +339,6 @@
     }
     addMeta(head, statusWords[String(st.status == null ? "" : st.status)] || "");
     if (st.packets) addMeta(head, packetsLabel ? packetsLabel + " " + st.packets : "");
-    addMeta(head, (firstLabel && st.first)
-      ? firstLabel + " " + zonesOf(st.first, st.firstUtc) : "");
-    /* 只发过一条的台站，第一次与最后一次是同一个时间，写两遍没意思 */
-    addMeta(head, (lastLabel && st.last && String(st.last) !== String(st.first))
-      ? lastLabel + " " + zonesOf(st.last, st.lastUtc) : "");
     li.appendChild(head);
 
     var dl = document.createElement("dl");
