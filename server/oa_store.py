@@ -139,6 +139,12 @@ def bj_at(text):
     return bj(dt).strftime("%m-%d %H:%M") if dt else ""
 
 
+def utc_at(text):
+    """同一个时间点的 UTC 写法，名单上与北京时间并排给。"""
+    dt = parse_iso(text)
+    return dt.strftime("%m-%d %H:%M") if dt else ""
+
+
 def bj_now_date():
     return bj(datetime.now(UTC)).strftime("%Y-%m-%d")
 
@@ -401,6 +407,7 @@ class Store(object):
                     "SELECT * FROM stations WHERE round_id=? ORDER BY first_ts ASC, call ASC",
                     (rnd["id"],)).fetchall()
             for row in rows:
+                first = bj_at(row["first_ts"])
                 stations.append({
                     "call": row["call"],
                     "grid": row["grid"],
@@ -409,8 +416,12 @@ class Store(object):
                     "at": row["at"],
                     "status": row["status"],
                     "packets": row["packets"],
-                    "first": bj_at(row["first_ts"]),
+                    "first": first,
                     "last": bj_at(row["last_ts"]),
+                    # 参与时间是自己手写的时候（和第一次进名单的时间不是一个点）就不给 UTC
+                    "atUtc": utc_at(row["first_ts"]) if row["at"] == first else "",
+                    "firstUtc": utc_at(row["first_ts"]),
+                    "lastUtc": utc_at(row["last_ts"]),
                 })
                 if row["last_ts"] > last:
                     last = row["last_ts"]

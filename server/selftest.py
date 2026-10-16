@@ -116,6 +116,11 @@ def main():
         check("名单里带报文数", by_call["BG7XXX-9"].get("packets"), 2)
         check("名单里带首次与最后一次时间",
               bool(by_call["BG7XXX-9"].get("first")) and bool(by_call["BG7XXX-9"].get("last")), True)
+        utc_first = by_call["BG7XXX-9"].get("firstUtc") or ""
+        check("名单里另给一份 UTC 时间",
+              bool(utc_first) and utc_first != by_call["BG7XXX-9"].get("first"), True)
+        check("参与时间与第一次一致时也给 UTC",
+              bool(by_call["BG7XXX-9"].get("atUtc")), True)
 
         out = os.path.join(work, "roster.json")
         check("第一次写盘有变化", store.write_roster(out), True)
