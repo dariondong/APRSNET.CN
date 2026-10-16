@@ -323,11 +323,9 @@ class Store(object):
             return
         old = STATUS_ORDER.get(row["status"], 0)
         new_status = status if STATUS_ORDER.get(status, 0) > old else row["status"]
-        new_via = via or row["via"]
-        new_digi = digi or row["digi"]
-        if row["via"] == "rf" and via == "is":
-            new_via = "rf"                     # 喊到那一下走的是射频，后面回消息走网络也不改
-            new_digi = row["digi"] or digi
+        # 路径按喊到那一下算：这一台后面的报文（回过 U、换链路再发）不改它
+        new_via = row["via"] or via
+        new_digi = row["digi"] or digi
         acked_ts = row["acked_ts"] or (ts if new_status in ("acked", "confirmed") else "")
         confirmed_ts = row["confirmed_ts"] or (ts if new_status == "confirmed" else "")
         self.db.execute(

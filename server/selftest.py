@@ -202,6 +202,27 @@ def main():
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
+    # 名单里的路径按喊到那一下算：那一台后面换了链路再发，不改这一行
+    via_dir = tempfile.mkdtemp(prefix="oa-selftest-via-")
+    try:
+        via_store = oa_store.Store(via_dir, default_duty="BG7LZQ-2")
+        day = oa_store.round_date_of(oa_aprs.now_iso())
+        via_store.open_round(day, "BG7LZQ-2")
+        for line in ("BH5DDD>APRS,TCPIP*,qAC,T2X:!2233.33N/11400.00E> CQ CNNET OL63",
+                     "BH5DDD>APRS,WIDE1-1,qAR,BG7YAB-3::BG7LZQ-2 :U CNNET",
+                     "BH6EEE>APRS,BG7LZQ-1*,qAR,BG7YAB-3:!2233.33N/11400.00E> CQ CNNET OL64",
+                     "BH6EEE>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :U CNNET"):
+            via_store.add_packet(oa_aprs.parse_line(line))
+        via_rows = dict((r["call"], r) for r in via_store.stations(day))
+        check("网上喊到的，后面走射频也不改成射频", via_rows["BH5DDD"]["via"], "is")
+        check("喊到时过的中继留着", via_rows["BH6EEE"]["digi"], "BG7LZQ-1")
+        check("喊到走射频的，后面走网络也留着射频", via_rows["BH6EEE"]["via"], "rf")
+        check("两台都算确认了", sorted(r["status"] for r in via_store.stations(day)),
+              ["confirmed", "confirmed"])
+        via_store.close()
+    finally:
+        shutil.rmtree(via_dir, ignore_errors=True)
+
     # 老库补列：建库时还没有 acked_ts / confirmed_ts，打开时应自己补上
     old = tempfile.mkdtemp(prefix="oa-selftest-old-")
     try:
