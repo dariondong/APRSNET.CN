@@ -682,8 +682,8 @@ class Handler(BaseHTTPRequestHandler):
         except (IOError, OSError):
             self._fail(404, "站上找不到 %s" % rel)
             return
-        html = html.replace('data-roster="../roster.json"', 'data-roster="/api/roster"')
-        html = html.replace('data-roster="roster.json"', 'data-roster="/api/roster"')
+        # 静态那份 data-roster 指的是反代上的 /api/roster；本机自己发页面时直接指本机。
+        html = re.sub(r'data-roster="[^"]*"', 'data-roster="/api/roster"', html)
         # 页面在静态站上住在 oa/ 目录里，脚本写成相对路径就行；在 /、/en、/data 这些
         # 短地址上，相对路径会指到根上去，改成绝对路径才找得着。
         html = re.sub(r'(<script src=")(?:\.\./)*(roster\.js|clock\.js)', r'\1/oa/\2', html)
