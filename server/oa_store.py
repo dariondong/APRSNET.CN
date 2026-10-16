@@ -407,6 +407,10 @@ class Store(object):
                     "via": row["via"],
                     "digi": [d for d in (row["digi"] or "").split(",") if d],
                     "at": row["at"],
+                    "status": row["status"],
+                    "packets": row["packets"],
+                    "first": bj_at(row["first_ts"]),
+                    "last": bj_at(row["last_ts"]),
                 })
                 if row["last_ts"] > last:
                     last = row["last_ts"]

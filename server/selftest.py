@@ -112,6 +112,10 @@ def main():
         check("参与时间写法", by_call["BG7XXX-9"]["at"][:2], rnd["date"][5:7])
         check("BH4AAA 走网络", by_call["BH4AAA"]["via"], "is")
         check("名单更新日期", rnd["updated"], rnd["date"])
+        check("名单里带状态", by_call["BG7XXX-9"].get("status"), "confirmed")
+        check("名单里带报文数", by_call["BG7XXX-9"].get("packets"), 2)
+        check("名单里带首次与最后一次时间",
+              bool(by_call["BG7XXX-9"].get("first")) and bool(by_call["BG7XXX-9"].get("last")), True)
 
         out = os.path.join(work, "roster.json")
         check("第一次写盘有变化", store.write_roster(out), True)
