@@ -560,6 +560,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         html = html.replace('data-roster="../roster.json"', 'data-roster="/api/roster"')
         html = html.replace('data-roster="roster.json"', 'data-roster="/api/roster"')
+        # 页面在静态站上住在 oa/ 目录里，脚本写成相对路径就行；在 /、/en、/data 这些
+        # 短地址上，相对路径会指到根上去，改成绝对路径才找得着。
+        html = re.sub(r'(<script src=")(?:\.\./)*(roster\.js|clock\.js)', r'\1/oa/\2', html)
         self._send(200, html, "text/html; charset=utf-8")
 
     def _file(self, path, cookie=None):
