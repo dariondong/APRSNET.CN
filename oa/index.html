@@ -81,6 +81,9 @@
 .st-fields dt { color: var(--text-faint); font-size: 14px; }
 .st-fields dd { margin: 0; color: var(--text-dim); font-size: 15px; }
 .st-note { display: block; margin-top: 8px; color: var(--text-faint); font-size: 15px; }
+/* 主控呼号：点一下复制，按钮上的字短暂换成「已复制」。 */
+.oa-copy { font: inherit; color: inherit; background: none; border: 0; border-bottom: 1px dotted currentColor; padding: 0; cursor: pointer; }
+.oa-copy:hover, .oa-copy:focus-visible { color: var(--text); }
 </style>
 </head>
 
@@ -130,7 +133,7 @@
     </ul>
     <p class="oa-clock-note">北京时间 <span data-clock="bj">—</span> · UTC <span data-clock="utc">—</span></p>
     <ul class="oa-lines">
-      <li>轮值呼号 BG7LZQ-2。</li>
+      <li>轮值呼号 <button class="oa-copy" type="button" data-oa-duty title="复制呼号">BG7LZQ-2</button>。</li>
       <li>先发 CQ CNNET 你的信息，收到 ACK 再发 U CNNET。</li>
     </ul>
     <div class="oa-actions">
@@ -157,7 +160,7 @@
     <p>每收到一台就记一行，行里写着网格、路径与时间。</p>
   </div>
   <div class="section-body">
-    <ul class="st-list" id="oaRoster" data-roster="roster.json" data-label-grid="网格" data-label-path="路径" data-label-at="时间" data-path-rf="射频" data-path-is="网络" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
+    <ul class="st-list" id="oaRoster" data-roster="roster.json" data-copy-done="已复制" data-label-grid="网格" data-label-path="路径" data-label-at="时间" data-path-rf="射频" data-path-is="网络" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
       <li>
         <b class="st-call">名单还空着</b>
         <span class="st-note">本轮还没有台站。</span>
@@ -174,7 +177,7 @@
   </div>
   <div class="section-body">
     <ul class="fact-list">
-      <li><b>轮值呼号</b><span data-oa-duty>BG7LZQ-2</span></li>
+      <li><b>轮值呼号</b><button class="oa-copy" type="button" data-oa-duty title="复制呼号">BG7LZQ-2</button></li>
       <li><b>对象名</b><span>当周的轮值呼号</span></li>
       <li><b>报文前缀</b><span>CNNET</span></li>
       <li><b>状态</b><span>测试轮次</span></li>
@@ -298,7 +301,7 @@
     <ul class="fact-list oa-status">
       <li><b>活动名称</b><span>APRSNETCN OA</span></li>
       <li><b>活动时间</b><span>北京时间的周六，00:00 到 23:59</span></li>
-      <li><b>轮值呼号</b><span data-oa-duty>BG7LZQ-2</span></li>
+      <li><b>轮值呼号</b><button class="oa-copy" type="button" data-oa-duty title="复制呼号">BG7LZQ-2</button></li>
       <li><b>参与方式</b><span>向当周的轮值呼号发送 CNNET 报文</span></li>
     </ul>
   </div>
@@ -368,7 +371,7 @@
 </a>
 
 <script src="clock.js?v=1"></script>
-<script src="roster.js?v=6"></script>
+<script src="roster.js?v=7"></script>
 <script src="../main.js?v=13"></script>
 </body>
 </html>

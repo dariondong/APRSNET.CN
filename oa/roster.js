@@ -25,7 +25,10 @@
    活动页没有这些位子，什么也不做。
 
    取不到、不是合法 JSON、一轮都没有时页面一动不动，留着 HTML 里写好的那条空状态。
-   一律用 textContent 写入，不拼 HTML 字符串。 */
+   一律用 textContent 写入，不拼 HTML 字符串。
+
+   主控呼号那几个位子写的是 [data-oa-duty]，点一下就复制（按钮上的字先换成
+   名单 ul 上 data-copy-done 的那句话，过一会儿换回来）。 */
 (function () {
   "use strict";
 
@@ -181,6 +184,59 @@
     list.appendChild(frag);
     stamp(round);
   };
+
+  /* 主控呼号：点一下复制。老浏览器或非安全来源没有 navigator.clipboard，
+     退回选中再复制的老办法。 */
+  var copyDone = list.getAttribute("data-copy-done") || "";
+
+  var copied = function (el) {
+    if (!copyDone) return;
+    if (!el.getAttribute("data-label")) el.setAttribute("data-label", el.textContent);
+    el.textContent = copyDone;
+    setTimeout(function () {
+      var label = el.getAttribute("data-label");
+      if (label) el.textContent = label;
+    }, 1600);
+  };
+
+  var fallbackCopy = function (text, el) {
+    var box = document.createElement("textarea");
+    box.value = text;
+    box.setAttribute("readonly", "");
+    box.style.position = "fixed";
+    box.style.top = "-1000px";
+    document.body.appendChild(box);
+    box.select();
+    try {
+      document.execCommand("copy");
+      copied(el);
+    } catch (e) {
+      /* 复制不成也看得见呼号，不折腾 */
+    }
+    document.body.removeChild(box);
+  };
+
+  var copyText = function (text, el) {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { copied(el); },
+        function () { fallbackCopy(text, el); });
+      return;
+    }
+    fallbackCopy(text, el);
+  };
+
+  /* 呼号那个位子可能是按钮，也可能还是一段文字，点它就复制 */
+  document.addEventListener("click", function (e) {
+    var el = e.target;
+    while (el && el.nodeType === 1 && el !== document) {
+      if (el.hasAttribute("data-oa-duty")) {
+        copyText(String(el.getAttribute("data-label") || el.textContent || "").trim(), el);
+        return;
+      }
+      el = el.parentNode;
+    }
+  });
 
   fetch(url, { credentials: "omit", cache: "no-cache" })
     .then(function (r) { return r.ok ? r.json() : null; })
