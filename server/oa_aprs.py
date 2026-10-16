@@ -20,6 +20,10 @@ _ACK = re.compile(r"^ACK", re.I)
 _LAT = re.compile(r"^[0-9]{4}\.[0-9]{2}[NS]$")
 _LON = re.compile(r"^[0-9]{5}\.[0-9]{2}[EW]$")
 _ALIAS = re.compile(r"^(WIDE|RELAY|TRACE|GATE|SGATE|RFONLY|NOGATE)\d*", re.I)
+# 模式标记（DMR 之类的中转软件写在路径上）：说明走过空中，但不是中继台呼号
+_MARK = re.compile(r"^(DMR|DSTAR|DPRS|FUSION|YSF|NXDN|P25|M17)\d*$", re.I)
+# 网关从射频转上来的两个 q 构造：qAR/qAr（双向与远程网关）、qAO/qAo（网关收-发）；
+# 其余（qAC/qAX/qAU/qAS/qAZ/qAI）是客户端或服务器直传。见 path_parts()。
 _FIELD = "ABCDEFGHIJKLMNOPQR"
 # 签到那行报的那句话里的梅登黑德网格：OL62 或 OL62aa，前后不能再接着字母数字
 _GRID_TEXT = re.compile(r"(?<![A-Za-z0-9])([A-Ra-r]{2}[0-9]{2}(?:[A-Xa-x]{2})?)(?![A-Za-z0-9])")
@@ -98,35 +102,47 @@ def _position(rest):
     return None, rest
 
 
-def path_parts(path):
+def path_parts(path, src=""):
     """路径拆成 (走射频还是走网络, 经过的中继呼号)。
 
-    qAR / 带 * 的中继 / WIDE 这类别名都算射频；TCPIP* 与 qAC 这类 q 构造算网络。
+    看三处证据：路径里有没有真的中继台或 WIDE 这类别名（有就是走过空中）；
+    有没有 TCPIP* / TCPXX*（网口直上来的）；q 构造是哪一个。
+    qAR / qAr 是网关从射频转上来的，算射频；qAO / qAo 是网关收-发，只在没带
+    TCPIP* 且后面不跟本台呼号时算射频（带着的那两种是发送口直上来的，算网络）；
+    其余 q 构造（qAC / qAX / qAU / qAS / qAZ / qAI）都是客户端或服务器直接上传的。
     """
-    on_air = False
+    items = [x.strip() for x in (path or "").split(",") if x.strip()]
+    on_air = False                       # 路径里有真的中继或别名
+    tcp = False                          # 网口直上来的 TCPIP* / TCPXX*
+    q = ""                               # 第一个 q 构造（大写前三位）
+    q_next = ""                          # 它后面跟的那个呼号
     digi = []
-    seen_q = False
-    for raw in (path or "").split(","):
-        item = raw.strip()
-        if not item:
-            continue
+    for i, item in enumerate(items):
         core = item.rstrip("*").strip()
         upper = core.upper()
         if upper.startswith("TCPIP") or upper.startswith("TCPXX"):
+            tcp = True
             continue
         if len(core) >= 2 and core[0] in "qQ" and core[1] in "aAiIxXzZ":
-            if upper == "QAR":
-                on_air = True
-            seen_q = True
+            if not q:
+                q = upper[:3]
+                if i + 1 < len(items):
+                    q_next = items[i + 1].rstrip("*").strip().upper()
             continue
-        if seen_q:
+        if q:
             continue                     # q 构造后面是网关与服务器，不算中继
-        if _ALIAS.match(core):
+        if _ALIAS.match(core) or _MARK.match(core):
             on_air = True
             continue
         on_air = True
         digi.append(core)
-    return ("rf" if on_air else "is"), digi
+    if on_air:
+        return "rf", digi
+    if q == "QAR":
+        return "rf", digi
+    if q == "QAO" and not tcp and q_next != (src or "").strip().upper():
+        return "rf", digi
+    return "is", digi
 
 
 def parse_info(src, info):
@@ -163,7 +179,7 @@ def parse_line(line, ts=None):
         return None
     src, dst, path, info = hit.group(1).strip(), hit.group(2).strip(), (hit.group(3) or ""), hit.group(4)
     kind, text, msgto, lat, lon = parse_info(src, info)
-    via, digi = path_parts(path)
+    via, digi = path_parts(path, src)
     return {
         "ts": ts or now_iso(),
         "src": src.upper(),

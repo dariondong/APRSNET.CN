@@ -45,6 +45,29 @@ LINES = [
 
 CHECKS = []
 
+# 路径识别的几个硬骨头：(整行, 该算射频还是网络, 该记下的中继)
+PATHS = [
+    # 射频：经网关转上来（qAR / qAr），中继台呼号进中继
+    ("BG7XXX-9>APRS,BG7LZQ-1*,WIDE2-1,qAR,BG7YAB-3:!2233.33N/11400.00E>", "rf", ["BG7LZQ-1"]),
+    # 只有别名，没经过台站：算射频，但不记中继
+    ("N0CALL>APRS,WIDE1-1,WIDE2-1:!2233.33N/11400.00E>", "rf", []),
+    # 收发网关（qAO）从射频转上来的：算射频
+    ("BG7OXS-3>APALOC,qAO,BG7OXS-10::PD3RON   :ack9383", "rf", []),
+    # 网关自己把自己的射频信标转上来，也叫 qAR：算射频
+    ("BI2SC-10>APDW18,qAR,BI2SC-10:!3903.72NT12150.78E&", "rf", []),
+    # 网口直上：TCPIP* + qAC 算网络
+    ("BH4AAA>APRS,TCPIP*,qAC,T2CHILE:!3113.00N/12122.00E>", "is", []),
+    # 发送口直上：qAO 后面跟着本台呼号，算网络
+    ("BM2MIJ-10>APDW14,qAO,BM2MIJ-10:!2500.79N/12128.07Er", "is", []),
+    # 服务器不带转递的 qAO / qAS / qAU：算网络
+    ("BA7OFL-12>APZL10,TCPIP*,qAO,AE5PL-JF:>162155z Unattended.", "is", []),
+    ("BG7LZQ-2>APRS,qAS,BG7LZQ-3::BG7LZQ-2 :ACK", "is", []),
+    # 射频上发的又经网口上传（TCPIP* 与 WIDE 同现）：算射频
+    ("BH2WAV-1>APRS2,WIDE1-1,TCPIP*,qAC,BH2WAV-1:!3907.27N/11704.45Ey", "rf", []),
+    # 模式标记（DMR 之类）说明走过空中，不是中继台呼号，不记进中继
+    ("KB3KAV>APRS,KB3KAV,DMR*,qAR,KB3KAV:=2907.06N/11943.75E", "rf", ["KB3KAV"]),
+]
+
 
 def check(name, got, want):
     ok = got == want
@@ -168,6 +191,12 @@ def main():
         with open(os.path.join(arch_dir, "round-%s-stations.csv" % rnd["date"]), "rb") as fh:
             check("CSV 带 BOM", fh.read(3), b"\xef\xbb\xbf")
         check("没这一轮就归档不出东西", store.archive_round("1999-01-02", arch_dir), [])
+
+        # 路径怎么算射频、怎么算网络：网关从射频转上来、网口直上、别名与模式标记各一套
+        for line, want, want_digi in PATHS:
+            rec = oa_aprs.parse_line(line)
+            check("路径：%s" % line.split(">", 1)[1].split(":", 1)[0], (rec["via"], rec["digi"]),
+                  (want, want_digi))
 
         store.close()
     finally:
