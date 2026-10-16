@@ -90,7 +90,7 @@
       <p>用法就一件事：拿一个客户端，连到某台服务器的一个端口上。端口选哪个，决定你能收到多少、以及能不能发。</p>
     </div>
     <div class="section-body">
-      <p class="prose">APRS-IS 是互联网那一侧的那张网：世界各地的服务器互相转发收到的包，你只要连上其中一台，就等于站在整张网里：收得到别人的包，验证通过之后，自己发的包也会被转发出去。每台服务器都有状态页，用浏览器打开 <code>http://服务器地址:14501</code>，它开了哪些端口就一目了然。</p>
+      <p class="prose">APRS-IS 是互联网那一侧的那张网。各地的服务器互相转发收到的包，连上其中一台，就等于站在整张网里：收得到别人的包，验证通过之后自己发的包也会被转发出去。每台服务器都有状态页，浏览器打开 <code>http://服务器地址:14501</code>，开了哪些端口一目了然。</p>
       <ul class="fact-list">
         <li>
           <b>14501</b>
@@ -113,7 +113,7 @@
           HTTP 和/或 UDP 只发端口，标准 HTTP 端口；javAPRSSrvr 系在这上面还支持 WebSocket。
         </li>
       </ul>
-      <p class="prose">两个常踩的坑：双向客户端连 APRS-IS 时要关掉 Nagle（<code>TCP_NODELAY</code>），不然收发会明显延迟；只想先看看、不打算发射，也要用自己的呼号，passcode 填 <code>-1</code> 就表示只收。</p>
+      <p class="prose">双向客户端连 APRS-IS 时要关掉 Nagle（<code>TCP_NODELAY</code>），不然收发会明显延迟。只想先看看、不打算发射，也要用自己的呼号，passcode 填 <code>-1</code> 就表示只收。</p>
       <p class="prose">本页根据官方的 <a href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">Connecting to APRS-IS</a> 整理。端口和参数跟着官方走，措辞按中文习惯重写。要填一遍，见<a href="tutorial.html#tut-listen">先在手机上听</a>那一节。</p>
     </div>
   </section>
@@ -134,7 +134,7 @@
         <li>
           <b>一个只收的例子（连 14580）</b>
           <code>user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50</code>
-          <code>pass -1</code> 表示只收不发；末尾那段是服务器命令，这里让服务器把 33.25N 96.5W 五十公里内的台站包都推过来（过滤器写法见<a href="filter.html#filter-basics">另一篇</a>）。
+          <code>pass -1</code> 表示只收不发。末尾那段是服务器命令，这里让服务器把 33.25N 96.5W 五十公里内的台站包都推过来，写法见<a href="filter.html#filter-basics">APRS-IS 过滤器</a>。
         </li>
       </ul>
       <ul class="fact-list">
@@ -159,9 +159,9 @@
           给服务器看的指令，最常见的就是 <code>filter</code>。可以带空格。
         </li>
       </ul>
-      <p class="prose">呼号和 SSID 有几条硬规矩：只能用 ASCII 字母数字，中间最多一个连字符加一两位 SSID；呼号本体至少 3 位，含 SSID 在内不超过 9 位。大小写虽然允许，但服务器按大写算同一个台站；发消息、上 RF 直发、给 Yaesu 电台发消息，都要求大写和 AX.25 的 SSID（0–15，同样不用 <code>-0</code>）。拿不准就一律大写。</p>
+      <p class="prose">呼号和 SSID 有几条硬规矩。只能用 ASCII 字母数字，中间最多一个连字符加一两位 SSID。呼号本体至少 3 位，连上 SSID 不超过 9 位。大小写都收，但服务器按大写算同一个台站。发消息、上射频、给 Yaesu 电台发消息，都要求大写，SSID 也要写成 AX.25 的 0–15，同样不用 <code>-0</code>。拿不准就一律大写。</p>
       <p class="prose">passcode 的算法官方文档没有公布，各家开源客户端都在本地按同一套老算法算。填上自己的呼号，<a href="passcode.html">passcode 计算器</a>也能算出来。这道门槛的作用，是让 APRS-IS 只留给业余无线电使用，别拿别人的呼号登服务器。</p>
-      <p class="prose">服务器回的每一行都以 <code>#</code> 开头的是注释，客户端直接忽略；登录成功失败的结论也在里面（例如 <code>#login AE5PL-TS unverified</code> 就是只收）。空闲一阵子服务器还会周期性发 <code>#</code> 开头的行探活。</p>
+      <p class="prose">服务器回的注释行都以 <code>#</code> 开头，客户端直接忽略。登录成没成功也在里面，例如 <code>#login AE5PL-TS unverified</code> 就是只收。空闲一阵子，服务器还会定期发 <code>#</code> 开头的行探活。</p>
       <p class="prose">最后一条：发进 APRS-IS 的包必须是 TNC2 格式、以回车换行结尾，一整行不超过 512 字节（含回车换行）。没有效 passcode 的客户端发什么都没人收。</p>
     </div>
   </section>

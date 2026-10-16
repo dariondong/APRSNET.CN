@@ -4,7 +4,7 @@
       <p>用法就一件事：拿一个客户端，连到某台服务器的一个端口上。端口选哪个，决定你能收到多少、以及能不能发。</p>
     </div>
     <div class="section-body">
-      <p class="prose">APRS-IS 是互联网那一侧的那张网：世界各地的服务器互相转发收到的包，你只要连上其中一台，就等于站在整张网里：收得到别人的包，验证通过之后，自己发的包也会被转发出去。每台服务器都有状态页，用浏览器打开 <code>http://服务器地址:14501</code>，它开了哪些端口就一目了然。</p>
+      <p class="prose">APRS-IS 是互联网那一侧的那张网。各地的服务器互相转发收到的包，连上其中一台，就等于站在整张网里：收得到别人的包，验证通过之后自己发的包也会被转发出去。每台服务器都有状态页，浏览器打开 <code>http://服务器地址:14501</code>，开了哪些端口一目了然。</p>
       <ul class="fact-list">
         <li>
           <b>14501</b>
@@ -27,7 +27,7 @@
           HTTP 和/或 UDP 只发端口，标准 HTTP 端口；javAPRSSrvr 系在这上面还支持 WebSocket。
         </li>
       </ul>
-      <p class="prose">两个常踩的坑：双向客户端连 APRS-IS 时要关掉 Nagle（<code>TCP_NODELAY</code>），不然收发会明显延迟；只想先看看、不打算发射，也要用自己的呼号，passcode 填 <code>-1</code> 就表示只收。</p>
+      <p class="prose">双向客户端连 APRS-IS 时要关掉 Nagle（<code>TCP_NODELAY</code>），不然收发会明显延迟。只想先看看、不打算发射，也要用自己的呼号，passcode 填 <code>-1</code> 就表示只收。</p>
       <p class="prose">本页根据官方的 <a href="https://www.aprs-is.net/Connecting.aspx" target="_blank" rel="noopener">Connecting to APRS-IS</a> 整理。端口和参数跟着官方走，措辞按中文习惯重写。要填一遍，见<a href="tutorial.html#tut-listen">先在手机上听</a>那一节。</p>
     </div>
   </section>
