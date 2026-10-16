@@ -35,7 +35,7 @@
    一律用 textContent 写入，不拼 HTML 字符串。
 
    主控呼号那几个位子写的是 [data-oa-duty]，点一下就复制（按钮上的字先换成
-   名单 ul 上 data-copy-done 的那句话，过一会儿换回来）。 */
+   名单 ul 上 data-copy-done 的那句话，过一会儿换回来）。
    数据面板上还有两个下载按钮，位子是 [data-oa-image]，地址前半截取自名单 ul 的
    data-image-base，后半截是 board.png / points.png，后面接上选中那一轮与页面语言。 */
 (function () {

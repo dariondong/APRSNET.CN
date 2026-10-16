@@ -7,6 +7,7 @@
 """
 import json
 import os
+import re
 import shutil
 import sqlite3
 import sys
@@ -445,7 +446,10 @@ def main():
             page = urllib.request.urlopen("%s/data" % base, timeout=10).read().decode("utf-8")
             check("页面里名单指本机", 'data-roster="/api/roster"' in page, True)
             check("页面里下载按钮指本机", 'data-image-base="/api/"' in page, True)
-            check("页面里脚本走绝对路径", 'src="/oa/roster.js?v=15"' in page, True)
+            # 脚本版本号从磁盘上那份页面里取，升级 ?v= 时这里不用跟着改
+            src = open(os.path.join(conf["OA_SITE_ROOT"], "oa/data.html"), encoding="utf-8").read()
+            ver = re.search(r'roster\.js\?v=(\d+)', src)
+            check("页面里脚本走绝对路径", 'src="/oa/roster.js?v=%s"' % ver.group(1) in page, True)
         finally:
             httpd.shutdown()
             httpd.server_close()
