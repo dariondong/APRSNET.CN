@@ -72,6 +72,7 @@ PAGES = {
     "/data": "oa/data.html",
     "/en/data": "oa/en/data.html",
     "/data.html": "oa/data.html",
+    "/en/data.html": "oa/en/data.html",
 }
 
 MIME = {
