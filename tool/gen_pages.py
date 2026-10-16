@@ -254,10 +254,16 @@ PAGES = [
 # 手写的独立页：不归生成器管（不在 PAGES 里，也就不会进导航和页脚目录），
 # 但地址要出现在 sitemap.xml 里，所以在这儿登记一条 (路径, priority)。
 EXTRA_URLS = (
-    # 手写的独立页：/oa 是周六 APRS 签到网的引导页（目录形式，文件是 oa/index.html），
+    # 手写的独立页：/oa 是周六 APRS OA 的引导页（目录形式，文件是 oa/index.html），
     # /oa/en 是它的英文版（oa/en/index.html）
     ("oa", "0.9"),
     ("oa/en", "0.8"),
+)
+
+# 手写页也能占一格导航：一条 = (导航文字, 链接, 插在哪一项之后)。
+# 链接从站点根算（/oa 是目录形式，带尾斜杠）；两字一条是这套导航的规矩。
+NAV_EXTRA = (
+    ("活动", "oa/", "工具"),
 )
 
 # 区块 → 所在页面（跨页链接、页脚链接都靠这张表算，不用手写）
@@ -500,10 +506,15 @@ def render(page):
             return ' class="active"'
         return ""
 
+    # 导航：PAGES 里带 nav 的页面，再加上手写页那条（NAV_EXTRA，按「插在哪一项之后」落位）
+    nav_items = [("./" if p["file"] == "index.html" else p["file"], nav_state(p), p["nav"])
+                 for p in PAGES if p.get("nav")]
+    for label, href, after in NAV_EXTRA:
+        at = next((i + 1 for i, it in enumerate(nav_items) if it[2] == after), len(nav_items))
+        nav_items.insert(at, (href, "", label))
     nav = "\n".join(
-        '      <a href="%s"%s>%s</a>' % (
-            "./" if p["file"] == "index.html" else p["file"], nav_state(p), p["nav"])
-        for p in PAGES if p.get("nav"))
+        '      <a href="%s"%s>%s</a>' % (href, state, label)
+        for href, state, label in nav_items)
     # 页脚目录：三栏，一页一条；每页自己的分节从那一页里进
     groups = []
     for label, rows in footer_groups():
