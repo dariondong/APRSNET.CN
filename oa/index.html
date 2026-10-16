@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>周六 APRS 签到网 | APRSNET.CN 独立活动</title>
-<meta name="description" content="APRSNET.CN 独立发起的周六 APRS 签到网：每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文。当前筹备中，机器人尚未上线，请勿发送。">
-<meta name="keywords" content="周六 APRS 签到网,APRS 签到网,APRS 报文活动,CNNET,APRS 中文引导,业余无线电,APRS 报文,APRS 签到,APRSNET.CN,独立活动,非官方活动">
+<title>周六 APRS 签到 | APRSNET.CN 独立活动</title>
+<meta name="description" content="APRSNET.CN 独立发起的周六 APRS 签到：每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文，收到 ACK 再回一条。当前筹备中，机器人尚未上线，请勿发送。">
+<meta name="keywords" content="周六 APRS 签到,APRS 签到,APRS 报文活动,CNNET,APRS 中文引导,业余无线电,APRS 报文,APRSNET.CN,独立活动,非官方活动">
 <meta name="author" content="BG7LZQ (Darion)">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
 <meta name="theme-color" content="#f2f0ea">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="APRSNET.CN">
-<meta property="og:title" content="周六 APRS 签到网 | APRSNET.CN 独立活动">
-<meta property="og:description" content="每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文。当前筹备中，机器人尚未上线。">
+<meta property="og:title" content="周六 APRS 签到 | APRSNET.CN 独立活动">
+<meta property="og:description" content="每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文，收到 ACK 再回一条。当前筹备中，机器人尚未上线。">
 <meta property="og:url" content="https://aprsnet.cn/oa">
 <meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
 <meta property="og:image:width" content="512">
@@ -27,11 +27,11 @@
 <link rel="icon" type="image/png" href="../assets/favicon.png?v=5">
 <link rel="apple-touch-icon" href="../assets/icon.png?v=5">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="周六 APRS 签到网 | APRSNET.CN 独立活动">
-<meta name="twitter:description" content="每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文。当前筹备中，机器人尚未上线。">
+<meta name="twitter:title" content="周六 APRS 签到 | APRSNET.CN 独立活动">
+<meta name="twitter:description" content="每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文，收到 ACK 再回一条。当前筹备中，机器人尚未上线。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
 <link rel="stylesheet" href="../style.css?v=34">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"周六 APRS 签到网","url":"https://aprsnet.cn/oa","inLanguage":"zh-CN","description":"APRSNET.CN 独立发起的周六 APRS 签到网：每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文。当前筹备中，机器人尚未上线，请勿发送。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"周六 APRS 签到","url":"https://aprsnet.cn/oa","inLanguage":"zh-CN","description":"APRSNET.CN 独立发起的周六 APRS 签到：每周六 UTC 00:00 到 23:59，向机器人发送 CNNET 签到报文，收到 ACK 再回一条。当前筹备中，机器人尚未上线，请勿发送。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -46,7 +46,7 @@
 })();
 </script>
 <style>
-/* 本页自用样式：签到网引导页的版面。颜色一律走 style.css 的 token，不写死颜色。 */
+/* 本页自用样式：签到引导页的版面。颜色一律走 style.css 的 token，不写死颜色。 */
 .oa-top { padding: clamp(104px, 15vh, 168px) var(--gut) clamp(40px, 6vh, 66px); border-bottom: 1px solid var(--line); }
 .oa-top-inner { max-width: var(--measure); margin: 0 auto; }
 .oa-status { max-width: 940px; margin: 0; }
@@ -103,18 +103,19 @@
   <div class="oa-top-inner">
     <p class="oa-lang"><strong>中文</strong><a href="en/" hreflang="en" lang="en">English</a></p>
     <ul class="fact-list oa-status">
-      <li><b>活动名称</b><span>周六 APRS 签到网</span></li>
+      <li><b>活动名称</b><span>周六 APRS 签到</span></li>
       <li><b>活动时间</b><span>每周六 UTC 00:00 到 23:59</span></li>
       <li><b>参与方式</b><span>向机器人发送签到报文</span></li>
       <li><b>当前状态</b><span>筹备中，尚未到活动时间</span></li>
       <li><b>说明</b><span>本活动由 APRSNET.CN 独立发起，与 APRS Thursday、APRS OTA 均无隶属关系。</span></li>
     </ul>
     <p class="oa-kicker">APRSNET.CN 独立活动 · 筹备中</p>
-    <h1 class="oa-title">周六 APRS 签到网</h1>
+    <h1 class="oa-title">周六 APRS 签到</h1>
     <p class="oa-state">筹备中，尚未到活动时间</p>
     <ul class="oa-lines">
       <li>机器人尚未上线，请勿发送签到报文。</li>
-      <li>本页只做引导与说明，不收集数据。</li>
+      <li>一次签到两步：先发 CQ CNNET 你的信息，收到 ACK 再发 U CNNET。</li>
+      <li>本页只做引导与说明，不收集数据，不统计。</li>
       <li>开放时间以本页后续公告为准。</li>
     </ul>
     <div class="oa-actions">
@@ -129,17 +130,34 @@
     <p>每周六，把呼号与网格发到机器人，机器人回一条 ACK，这一天就算签到了。</p>
   </div>
   <div class="section-body">
-    <p class="prose">周六 APRS 签到网由 APRSNET.CN 独立发起，非活动主办方代管。机器人收到报文后回一条 ACK，其余的事情就到这里。</p>
-    <p class="prose">活动时间按 UTC 算，也就是每周六 UTC 00:00 到 23:59。换算到 UTC+8，是周六 08:00 到周日 07:59。</p>
-    <p class="prose">本页只做引导与说明，不收集数据，不统计。</p>
+    <p class="prose">周六 APRS 签到由 APRSNET.CN 独立发起，非活动主办方代管。机器人收到报文后回一条 ACK，其余的事情就到这里。</p>
+    <p class="prose">没有报名这一步，也没有名单。到时间把报文发给机器人就行，发完就可以关设备。</p>
+    <p class="prose">时间按 UTC 算，整 24 小时，什么时候方便就什么时候发。没有先后顺序，也不比谁更早。</p>
     <p class="oa-note">机器人尚未上线。上线之前发出去的签到报文没有人收。</p>
   </div>
 </section>
 
-<section class="section" id="oa-join">
+<section class="section" id="oa-time">
+  <div class="section-head">
+    <h2>时间与地区</h2>
+    <p>每周六 UTC 00:00 到 23:59。换成各地区的钟点，就是下面这几行。</p>
+  </div>
+  <div class="section-body">
+    <ul class="fact-list">
+      <li><b>UTC</b><span>周六 00:00 到 23:59</span></li>
+      <li><b>UTC+8（北京时间）</b><span>周六 08:00 到周日 07:59</span></li>
+      <li><b>UTC+9（日本）</b><span>周六 09:00 到周日 08:59</span></li>
+      <li><b>UTC+5:30（印度）</b><span>周六 05:30 到周日 05:29</span></li>
+      <li><b>UTC-5（美东）</b><span>周五 19:00 到周六 18:59</span></li>
+    </ul>
+    <p class="oa-note">这几行只按固定的时区偏移算。有夏令时的地区，按当周的实际偏移自己折算。</p>
+  </div>
+</section>
+
+<section class="section alt" id="oa-join">
   <div class="section-head">
     <h2>参与方式</h2>
-    <p>三步走完：发 CQ，收到 ACK，再发一条 U。</p>
+    <p>一次签到两步：先发 CQ，收到 ACK 再发一条 U。</p>
   </div>
   <div class="section-body">
     <ul class="fact-list">
@@ -150,16 +168,16 @@
     </ul>
     <ol class="steps">
       <li>
-        <b>发出签到</b>
-        向机器人发送 <code>CQ CNNET 你的信息</code>，示例是 <code>CQ CNNET BG7XXX from OL62</code>。「你的信息」换成自己的呼号与网格。
+        <b>第一步：发出签到</b>
+        向机器人发送 <code>CQ CNNET 你的信息</code>。把「你的信息」换成自己的呼号与网格，示例是 <code>CQ CNNET BG7XXX from OL62</code>。CQ 是呼叫，CNNET 是报文前缀。
       </li>
       <li>
-        <b>收到 ACK 后回一条</b>
-        机器人回 ACK，表示这条签到已经收到。这时再向机器人发送 <code>U CNNET</code>，签到完成。
+        <b>第二步：收到 ACK 再回一条</b>
+        机器人回一条 ACK，表示这条签到已经收到。这时再向机器人发送 <code>U CNNET</code>，一次签到就完成了。
       </li>
       <li>
-        <b>静默签到（可选）</b>
-        不想发 CQ 的话，直接向机器人发送 <code>CNNET 你的信息</code>。
+        <b>可选：静默签到</b>
+        不想发 CQ 的话，直接向机器人发送 <code>CNNET 你的信息</code>。收到 ACK 一样算签到。
       </li>
     </ol>
     <p class="oa-note">机器人尚未上线，以上三步现在都发不出去。</p>
@@ -169,7 +187,7 @@
   </div>
 </section>
 
-<section class="section alt" id="oa-format">
+<section class="section" id="oa-format">
   <div class="section-head">
     <h2>报文格式与示例</h2>
     <p>三行报文，照着填自己的呼号就行。</p>
@@ -184,15 +202,33 @@
       <li>
         <b>签到：确认后回一条</b>
         <code>U CNNET</code>
-        <span>收到机器人回的 ACK 之后发这一条。</span>
+        <span>收到机器人回的 ACK 之后发这一条，一次签到到这里结束。</span>
       </li>
       <li>
         <b>静默签到（可选）</b>
         <code>CNNET 你的信息</code>
-        <span>不发 CQ 的写法，收到 ACK 也算签到。</span>
+        <span>不发 CQ 的写法。收到 ACK 同样算签到。</span>
       </li>
     </ul>
+    <p class="prose">写的时候注意三件事：前缀 CNNET 每一条都要带上；呼号就写自己执照上的那个；一条报文只做一件事，收到 ACK 再发下一条。</p>
     <p class="oa-note">报文前缀是 CNNET，机器人是 APRSNETCN，对象名同样是 APRSNETCN。机器人尚未上线，请勿发送。</p>
+  </div>
+</section>
+
+<section class="section alt" id="oa-first">
+  <div class="section-head">
+    <h2>第一次发 APRS 报文</h2>
+    <p>没发过 APRS 报文的话，先把站里这几页看一眼。跟签到规则无关，只是底子。</p>
+  </div>
+  <div class="section-body">
+    <ul class="link-list">
+      <li><a class="link-row" href="../guide.html"><span class="lr-main"><b>上手与设备</b><span>参数、频率与路径怎么填，电台与网关怎么串起来</span></span><span class="lr-go">→</span></a></li>
+      <li><a class="link-row" href="../tutorial.html"><span class="lr-main"><b>从零上手教程</b><span>先在手机上听，再接电台发射，发不出去时怎么查</span></span><span class="lr-go">→</span></a></li>
+      <li><a class="link-row" href="../packet.html"><span class="lr-main"><b>报文与字段</b><span>一条报文里每一段是什么，字段怎么读</span></span><span class="lr-go">→</span></a></li>
+      <li><a class="link-row" href="../tocall.html"><span class="lr-main"><b>官方 TOCALL 查询</b><span>呼号后面那段是什么设备，粘一整行报文也能查</span></span><span class="lr-go">→</span></a></li>
+      <li><a class="link-row" href="../aprsis.html"><span class="lr-main"><b>APRS-IS 文档（中文）</b><span>怎么连上网络，登录行与端口怎么写</span></span><span class="lr-go">→</span></a></li>
+    </ul>
+    <p class="oa-note">呼号与执照的事情这里不代办。所有发射都要用合法呼号，按当地规定来。</p>
   </div>
 </section>
 
@@ -208,12 +244,20 @@
         <p>还不能。筹备中，尚未到活动时间，机器人尚未上线，现在发出去的报文没有人收。</p>
       </details>
       <details>
-        <summary>签到要几步？</summary>
-        <p>两步：先发 CQ CNNET 你的信息，收到 ACK 之后再发一条 U CNNET。</p>
+        <summary>一次签到要几步？</summary>
+        <p>两步。先发 CQ CNNET 你的信息，收到 ACK 之后再发一条 U CNNET。</p>
       </details>
       <details>
         <summary>不想发 CQ 可以吗？</summary>
-        <p>可以。直接发 CNNET 你的信息，这一条是静默签到。</p>
+        <p>可以。直接发 CNNET 你的信息，这一条是静默签到，收到 ACK 一样算。</p>
+      </details>
+      <details>
+        <summary>一定要在周六发吗？按哪个时间？</summary>
+        <p>按 UTC 算，每周六 UTC 00:00 到 23:59。换成北京时间是周六 08:00 到周日 07:59，别按错日子。</p>
+      </details>
+      <details>
+        <summary>一天可以发几次？</summary>
+        <p>还没定下来，以开放公告为准。机器人上线之前发几次都不算。</p>
       </details>
       <details>
         <summary>要报名吗？</summary>
@@ -226,6 +270,14 @@
       <details>
         <summary>机器人叫什么？</summary>
         <p>APRSNETCN，对象名也是 APRSNETCN，报文前缀是 CNNET。现在尚未上线。</p>
+      </details>
+      <details>
+        <summary>机器人没回 ACK 怎么办？</summary>
+        <p>机器人上线之后，一直没回音就先等一会儿，再发一次。具体排查办法以开放公告为准。</p>
+      </details>
+      <details>
+        <summary>要专门的设备吗？</summary>
+        <p>能发 APRS 报文就行。手机加声卡线、手台加 TNC、或者带 APRS 的电台都可以，「上手与设备」那一页有说明。</p>
       </details>
       <details>
         <summary>和 APRS Thursday 有关系吗？</summary>
@@ -287,14 +339,14 @@
       <div class="footer-group">
         <b>本页</b>
         <ul>
-          <li><a href="./">周六 APRS 签到网</a></li>
+          <li><a href="./">周六 APRS 签到</a></li>
           <li><a href="#oa-terms">独立声明</a></li>
           <li><a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">源码仓库</a></li>
           <li><a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a></li>
         </ul>
       </div>
     </nav>
-    <p class="footer-note">本页是周六 APRS 签到网的引导页，机器人尚未上线，本页不收集数据。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
+    <p class="footer-note">本页是周六 APRS 签到的引导页，机器人尚未上线，本页不收集数据。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
     <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/oa/index.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>。</p>
     <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
   </div>
