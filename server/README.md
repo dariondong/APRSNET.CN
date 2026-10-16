@@ -12,7 +12,8 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 2. 每行拆出呼号、路径、位置、网格、文字，文字里认出 `CQ CNNET`（喊到）与 `U CNNET`（确认）；
 3. 喊到的台站进当轮名单，状态 `called`；回过 U 的升到 `confirmed`；主控回过 ACK 的记 `acked`；
 4. 有 `OA_TX_PASSCODE` 时，谁喊到就自动回一条 `ACK`（一台一轮只回一次），回过的改 `acked`；
-5. 名单从 `stations` 表导出，格式和页面上 `roster.js` 读的那份 `roster.json` 一模一样。
+5. 发给轮值呼号、又不是签到那两步的报文（闲聊、写错格式、少写了 CQ），回一句怎么做；
+6. 名单从 `stations` 表导出，格式和页面上 `roster.js` 读的那份 `roster.json` 一模一样。
 
 射频还是网络：路径里有真的中继台呼号、有 WIDE 这类别名、有 DMR 这类模式标记，就按射频，
 中继按经过顺序写（别名与模式标记不写进中继）。网关从射频转上来的 `qAR` / `qAr` 算射频，
@@ -57,6 +58,8 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - `OA_ACK_TEXT=ACK`：回过去的那句话；
 - `OA_BAD_TEXT=INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>`：签到那行没写出网格时回的那句话，
   同一台同一轮只回一条。名单里的网格就从这行报的那句话里读（读不到网格的不进名单）；
+- `OA_HELP_TEXT=APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET`：发给轮值呼号、又不是
+  签到那两步时回的那句话，同样一台一轮只回一条；
 - 发出去的每一条都记在 `outbox` 表，主控台的「发件箱」里看得到，发失败的带原因；
 - 没配口令时，点「回 ACK」只把报文记下来并复制，主控自己发。
 

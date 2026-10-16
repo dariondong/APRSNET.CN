@@ -336,6 +336,31 @@ def main():
             "BG9YYY-2>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :U CNNET"))
         check("回过 U 就是已确认（没再写网格也算）",
               rt.store.get_station(today, "BG9YYY-2")["status"], "confirmed")
+        # 发给本台但不是签到那两步：回一条怎么做；不是发给本台的不回
+        rt.on_line(oa_aprs.parse_line(
+            "BG7AAA-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :你好，在吗"))
+        rows = rt.store.outbox_for("BG7AAA-9")
+        check("发给本台但不对的回了怎么做",
+              rows[0]["line"].startswith("BG7LZQ-2>APRS::BG7AAA-9 :"), True)
+        check("那句就是怎么做", bool(rows) and rows[0]["line"].endswith(
+            ":APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET"), True)
+        check("不对的报文不进名单", rt.store.get_station(today, "BG7AAA-9"), None)
+        rt.on_line(oa_aprs.parse_line(
+            "BG7AAA-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :还是我"))
+        check("同一台同一轮同一句只回一条", len(rt.store.outbox_for("BG7AAA-9")), 1)
+        rt.on_line(oa_aprs.parse_line(
+            "BG7AAA-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET OL62"))
+        check("改成对的就回 ACK",
+              rt.store.outbox_for("BG7AAA-9")[-1]["line"].endswith(":ACK"), True)
+        rt.on_line(oa_aprs.parse_line(
+            "BG6BBB-5>APRS,TCPIP*,qAC,T2X::BD9ZZZ   :你好"))
+        check("发给别人的不回", rt.store.outbox_for("BG6BBB-5"), [])
+        rt.on_line(oa_aprs.parse_line(
+            "BG6BBB-5>APRS,TCPIP*,qAC,T2X:>一句广播"))
+        check("没有收件人的广播不回", rt.store.outbox_for("BG6BBB-5"), [])
+        rt.on_line(oa_aprs.parse_line(
+            "BG6BBB-5>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :ack9383"))
+        check("机器回的 ACK 不回", rt.store.outbox_for("BG6BBB-5"), [])
         rt.store.close()
     finally:
         shutil.rmtree(bad_dir, ignore_errors=True)

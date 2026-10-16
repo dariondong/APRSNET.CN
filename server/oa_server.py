@@ -47,6 +47,7 @@ DEFAULTS = {
     "OA_AUTO_ACK": "1",
     "OA_ACK_TEXT": "ACK",
     "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>",
+    "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET",
     "OA_ACK_MAX_PER_MINUTE": "12",
     "OA_ROUND_DUTY": "",
     "OA_AUTO_ROUND": "1",
@@ -184,16 +185,19 @@ class Runtime(object):
         except Exception as exc:                     # 一条报文出错不能断接收
             sys.stderr.write("收报文出错：%s\n" % exc)
             return
-        if record.get("kind") in ("cq", "u") and result.get("incomplete"):
-            try:
-                self.note_incomplete(record)          # 没写网格：回一条无效提示
-            except Exception as exc:
-                sys.stderr.write("回无效提示出错：%s\n" % exc)
-        elif record.get("kind") == "cq":
-            try:
-                self.maybe_auto_ack(record, result.get("round_id"))
-            except Exception as exc:
-                sys.stderr.write("自动回 ACK 出错：%s\n" % exc)
+        # 发给轮值呼号的报文，对的那一步走流程，不对的告诉他该发什么。
+        # 不是发给本台的（区域里的位置报文之类）不回，免得往天上刷。
+        kind = record.get("kind")
+        try:
+            if kind in ("cq", "u"):
+                if result.get("incomplete"):
+                    self.note_hint(record, self.conf["OA_BAD_TEXT"])   # 没写网格
+                elif kind == "cq":
+                    self.maybe_auto_ack(record, result.get("round_id"))
+            elif kind != "ack" and self.to_duty(record):
+                self.note_hint(record, self.conf["OA_HELP_TEXT"])      # 不是签到那两步
+        except Exception as exc:
+            sys.stderr.write("回提示出错：%s\n" % exc)
 
     # ---- 发报文 ----
 
@@ -289,15 +293,19 @@ class Runtime(object):
         text = self.conf["OA_ACK_TEXT"] or "ACK"
         return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
 
-    def bad_line(self, call, duty=""):
-        """签到信息不全时回的那行。"""
-        text = self.conf["OA_BAD_TEXT"] or "INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>"
+    def hint_line(self, call, text, duty=""):
+        """回给某个台站的那句提示：呼号列补到 9 格。"""
         return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
 
-    def note_incomplete(self, record):
-        """签到信息没写网格：回一条无效提示，让对台补上再发一遍。
+    def to_duty(self, record):
+        """这条是不是发给轮值呼号的（看报文里那个收件人）。"""
+        duty = self.duty_call()
+        return bool(duty) and (record.get("msgto") or "").strip().upper() == duty
 
-        同一台同一轮只回一条，免得它一直重发的时候一直答。
+    def note_hint(self, record, text):
+        """给对台回一条提示，让他知道该发什么。
+
+        只在当轮里回，同一台同一轮同一句话只回一条，免得它一直重发的时候一直答。
         """
         if not self.auto_ack_on or not self.can_send():
             return
@@ -308,11 +316,14 @@ class Runtime(object):
         src = (record.get("src") or "").strip().upper()
         if not src or src == duty:
             return
-        mark = (self.conf["OA_BAD_TEXT"] or "INVALID")[:12]
+        hint = (text or "").strip()
+        if not hint:
+            return
+        mark = hint[:12]
         for row in self.store.outbox_for(src, active["opened"] or ""):
             if mark and mark in (row["line"] or ""):
                 return
-        self.queue_send(duty, src, self.bad_line(src, duty), date=active["date"])
+        self.queue_send(duty, src, self.hint_line(src, hint, duty), date=active["date"])
 
     def maybe_auto_ack(self, record, rid):
         """有人喊到就回一条 ACK，一台一轮只回一次。"""
