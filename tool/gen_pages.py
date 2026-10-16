@@ -254,7 +254,10 @@ PAGES = [
 # 手写的独立页：不归生成器管（不在 PAGES 里，也就不会进导航和页脚目录），
 # 但地址要出现在 sitemap.xml 里，所以在这儿登记一条 (路径, priority)。
 EXTRA_URLS = (
-    ("oa", "0.9"),  # APRSNETCN-OA 活动占位页：aprsnet.cn/oa（目录形式，文件是 oa/index.html）
+    # 手写的独立页：/oa 是周六 APRS 签到网的引导页（目录形式，文件是 oa/index.html），
+    # /oa/en 是它的英文版（oa/en/index.html）
+    ("oa", "0.9"),
+    ("oa/en", "0.8"),
 )
 
 # 区块 → 所在页面（跨页链接、页脚链接都靠这张表算，不用手写）
