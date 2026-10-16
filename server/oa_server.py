@@ -46,6 +46,7 @@ DEFAULTS = {
     "OA_TX_PASSCODE": "",
     "OA_AUTO_ACK": "1",
     "OA_ACK_TEXT": "ACK",
+    "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>",
     "OA_ACK_MAX_PER_MINUTE": "12",
     "OA_ROUND_DUTY": "",
     "OA_AUTO_ROUND": "1",
@@ -182,7 +183,12 @@ class Runtime(object):
         except Exception as exc:                     # 一条报文出错不能断接收
             sys.stderr.write("收报文出错：%s\n" % exc)
             return
-        if record.get("kind") == "cq":
+        if record.get("kind") in ("cq", "u") and result.get("incomplete"):
+            try:
+                self.note_incomplete(record)          # 没写网格：回一条无效提示
+            except Exception as exc:
+                sys.stderr.write("回无效提示出错：%s\n" % exc)
+        elif record.get("kind") == "cq":
             try:
                 self.maybe_auto_ack(record, result.get("round_id"))
             except Exception as exc:
@@ -281,6 +287,31 @@ class Runtime(object):
         """回给某台站的那行报文：呼号列补到 9 格。"""
         text = self.conf["OA_ACK_TEXT"] or "ACK"
         return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
+
+    def bad_line(self, call, duty=""):
+        """签到信息不全时回的那行。"""
+        text = self.conf["OA_BAD_TEXT"] or "INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>"
+        return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
+
+    def note_incomplete(self, record):
+        """签到信息没写网格：回一条无效提示，让对台补上再发一遍。
+
+        同一台同一轮只回一条，免得它一直重发的时候一直答。
+        """
+        if not self.auto_ack_on or not self.can_send():
+            return
+        active = self.store.active_round()
+        duty = self.duty_call()
+        if not active or not duty:
+            return
+        src = (record.get("src") or "").strip().upper()
+        if not src or src == duty:
+            return
+        mark = (self.conf["OA_BAD_TEXT"] or "INVALID")[:12]
+        for row in self.store.outbox_for(src, active["opened"] or ""):
+            if mark and mark in (row["line"] or ""):
+                return
+        self.queue_send(duty, src, self.bad_line(src, duty), date=active["date"])
 
     def maybe_auto_ack(self, record, rid):
         """有人喊到就回一条 ACK，一台一轮只回一次。"""

@@ -39,6 +39,8 @@ LINES = [
     "BG7LZQ-2>APALOC,TCPIP*,qAC,T2YANTAI:>APRSNETCN OA 主控待命 收 CQ CNNET 即回 ACK",
     # 主控自己喊到也不算参与台
     "BG7LZQ-2>APRS,TCPIP*,qAC,T2TAIWAN:!2233.33N/11400.00E> CQ CNNET 试一下",
+    # 签到那行没写出网格：不进名单，标成 incomplete（服务器据此回一条无效提示）
+    "BG8ZZZ>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET 试一下",
 ]
 
 CHECKS = []
@@ -57,11 +59,12 @@ def main():
     try:
         store = oa_store.Store(work, default_duty="BG7LZQ-2")
         records = []
+        results = []
         for line in LINES:
             record = oa_aprs.parse_line(line)
             if record:
                 records.append(record)
-                store.add_packet(record)
+                results.append(store.add_packet(record))
 
         check("横幅被跳过", len(records), len(LINES) - 1)
 
@@ -122,6 +125,9 @@ def main():
         check("参与时间与第一次一致时也给 UTC",
               bool(by_call["BG7XXX-9"].get("atUtc")), True)
         check("名单里带这台报的那句话", by_call["BG7XXX-9"].get("msg"), "OL62")
+        check("网格从报文里读", by_call["BG7XXX-9"]["grid"], "OL62")
+        check("信息里没写网格的不进名单", "BG8ZZZ" in live, False)
+        check("没写网格的标成 incomplete", results[-1].get("incomplete"), True)
 
         out = os.path.join(work, "roster.json")
         check("第一次写盘有变化", store.write_roster(out), True)
@@ -145,7 +151,7 @@ def main():
         check("数字：射频两台", stats["rf"], 2)
         check("数字：网络一台", stats["is"], 1)
         check("数字：一个中继", stats["digis"], 1)
-        check("数字：只数喊到与确认那几句", stats["packets"], 5)
+        check("数字：只数喊到与确认那几句", stats["packets"], 6)
         check("数字：最后一条有时间", bool(stats["last"]), True)
         check("没开过的轮数字全是零", store.round_stats("1999-01-02")["stations"], 0)
 
@@ -156,7 +162,7 @@ def main():
                "round-%s.json" % rnd["date"]])
         with open(os.path.join(arch_dir, "round-%s.json" % rnd["date"]), "r", encoding="utf-8") as fh:
             arch = json.load(fh)
-        check("归档里有名单与流水", (len(arch["stations"]), len(arch["packets"])), (3, 5))
+        check("归档里有名单与流水", (len(arch["stations"]), len(arch["packets"])), (3, 6))
         check("归档里的数字", arch["stats"]["confirmed"], 1)
         check("归档写了收轮时间", bool(arch["closed"]), True)
         with open(os.path.join(arch_dir, "round-%s-stations.csv" % rnd["date"]), "rb") as fh:
@@ -250,6 +256,39 @@ def main():
         again.store.close()
     finally:
         shutil.rmtree(auto_dir, ignore_errors=True)
+
+    # 网格从签到那行报的话里读；没写网格的回一条无效提示，不进名单
+    bad_dir = tempfile.mkdtemp(prefix="oa-selftest-bad-")
+    try:
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = bad_dir
+        conf["OA_TX_PASSCODE"] = "23736"
+        rt = oa_server.Runtime(conf)
+        today = oa_store.round_date_of(oa_aprs.now_iso())
+        rt.store.open_round(today, "BG7LZQ-2")
+        rt.on_line(oa_aprs.parse_line(
+            "BG8ZZZ-1>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET 忘了写网格"))
+        rows = rt.store.outbox_for("BG8ZZZ-1")
+        check("没写网格的回了无效提示", bool(rows) and rows[0]["line"].endswith(
+            ":INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>"), True)
+        check("没写网格的不进名单", rt.store.get_station(today, "BG8ZZZ-1"), None)
+        rt.on_line(oa_aprs.parse_line(
+            "BG8ZZZ-1>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET 又忘了"))
+        check("同一台同一轮只回一条", len(rt.store.outbox_for("BG8ZZZ-1")), 1)
+        rt.on_line(oa_aprs.parse_line(
+            "BG9YYY-2>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET from PM01"))
+        check("写了网格的进名单", bool(rt.store.get_station(today, "BG9YYY-2")), True)
+        check("名单里的网格取自报文",
+              rt.store.get_station(today, "BG9YYY-2")["grid"], "PM01")
+        check("写了网格的回的是 ACK",
+              rt.store.outbox_for("BG9YYY-2")[0]["line"].endswith(":ACK"), True)
+        rt.on_line(oa_aprs.parse_line(
+            "BG9YYY-2>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :U CNNET"))
+        check("回过 U 就是已确认（没再写网格也算）",
+              rt.store.get_station(today, "BG9YYY-2")["status"], "confirmed")
+        rt.store.close()
+    finally:
+        shutil.rmtree(bad_dir, ignore_errors=True)
 
     print("\n%d 项，过了 %d 项" % (len(CHECKS), sum(1 for c in CHECKS if c)))
     return 0 if all(CHECKS) else 1

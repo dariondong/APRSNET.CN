@@ -267,13 +267,18 @@ class Store(object):
         return self.ensure_round(round_date_of(ts))
 
     def add_packet(self, record):
-        """一条报文进库；喊到与回复顺带并进当轮名单。"""
+        """一条报文进库；喊到与回复顺带并进当轮名单。
+
+        签到那行没写出网格、名单里又还没有这一台时，先不往名单里放，
+        返回的 incomplete 为真，由服务器回一条无效提示。
+        """
         ts = record.get("ts") or now_iso()
         digi = ",".join(record.get("digi") or [])
         items = (ts, record.get("src", ""), record.get("dst", ""), record.get("msgto", ""),
                  record.get("path", ""), record.get("kind", "other"), record.get("text", ""),
                  record.get("lat"), record.get("lon"), record.get("grid", ""),
                  record.get("via", ""), digi, record.get("raw", ""))
+        incomplete = False
         with self.lock:
             cur = self.db.execute(
                 "INSERT INTO packets (ts,src,dst,msgto,path,kind,text,lat,lon,grid,via,digi,raw)"
@@ -283,10 +288,16 @@ class Store(object):
             if record.get("kind") in ("cq", "u"):
                 rid = self.round_id_for(ts)
                 self.db.execute("UPDATE packets SET round_id=? WHERE id=?", (rid, pid))
-                self._touch(rid, record.get("src", ""), ts, record,
-                            "confirmed" if record.get("kind") == "u" else "called")
+                call = record.get("src", "")
+                known = call and self.db.execute(
+                    "SELECT 1 FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
+                if known or record.get("msg_grid") or record.get("grid"):
+                    self._touch(rid, call, ts, record,
+                                "confirmed" if record.get("kind") == "u" else "called")
+                else:
+                    incomplete = True
             self.db.commit()
-        return {"id": pid, "round_id": rid}
+        return {"id": pid, "round_id": rid, "incomplete": incomplete}
 
     def _touch(self, rid, call, ts, record, status):
         """一台站进了名单：有就更新，没有就新建。空字段不覆盖已有的值。
@@ -298,7 +309,7 @@ class Store(object):
         duty = self.db.execute("SELECT duty FROM rounds WHERE id=?", (rid,)).fetchone()
         if duty and duty["duty"] and duty["duty"].strip().upper() == call.strip().upper():
             return
-        grid = record.get("grid", "") or ""
+        grid = record.get("msg_grid") or record.get("grid") or ""
         via = record.get("via", "") or ""
         digi = ",".join(record.get("digi") or [])
         row = self.db.execute("SELECT * FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()

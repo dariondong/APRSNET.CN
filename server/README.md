@@ -52,6 +52,8 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - `OA_AUTO_ACK=1`：有人喊到就自动回一条 ACK，一台一轮只回一次；
 - `OA_ACK_MAX_PER_MINUTE=12`：一分钟最多发这么多条，防着热闹起来往外刷；
 - `OA_ACK_TEXT=ACK`：回过去的那句话；
+- `OA_BAD_TEXT=INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>`：签到那行没写出网格时回的那句话，
+  同一台同一轮只回一条。名单里的网格就从这行报的那句话里读（读不到网格的不进名单）；
 - 发出去的每一条都记在 `outbox` 表，主控台的「发件箱」里看得到，发失败的带原因；
 - 没配口令时，点「回 ACK」只把报文记下来并复制，主控自己发。
 

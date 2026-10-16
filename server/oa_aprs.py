@@ -21,10 +21,18 @@ _LAT = re.compile(r"^[0-9]{4}\.[0-9]{2}[NS]$")
 _LON = re.compile(r"^[0-9]{5}\.[0-9]{2}[EW]$")
 _ALIAS = re.compile(r"^(WIDE|RELAY|TRACE|GATE|SGATE|RFONLY|NOGATE)\d*", re.I)
 _FIELD = "ABCDEFGHIJKLMNOPQR"
+# 签到那行报的那句话里的梅登黑德网格：OL62 或 OL62aa，前后不能再接着字母数字
+_GRID_TEXT = re.compile(r"(?<![A-Za-z0-9])([A-Ra-r]{2}[0-9]{2}(?:[A-Xa-x]{2})?)(?![A-Za-z0-9])")
 
 
 def now_iso():
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def grid_text(text):
+    """报文里报的网格（签到那行后面那句里的），没读到就是空串。"""
+    hit = _GRID_TEXT.search(str(text or ""))
+    return hit.group(1).upper() if hit else ""
 
 
 def grid_of(lat, lon):
@@ -167,6 +175,7 @@ def parse_line(line, ts=None):
         "lat": lat,
         "lon": lon,
         "grid": grid_of(lat, lon),
+        "msg_grid": grid_text(text) if kind in ("cq", "u") else "",
         "via": via,
         "digi": digi,
         "raw": raw,
