@@ -254,7 +254,7 @@ PAGES = [
 # 手写的独立页：不归生成器管（不在 PAGES 里，也就不会进导航和页脚目录），
 # 但地址要出现在 sitemap.xml 里，所以在这儿登记一条 (路径, priority)。
 EXTRA_URLS = (
-    # 手写的独立页：/oa 是 APRSNETCN OA 的引导页（目录形式，文件是 oa/index.html），
+    # 手写的独立页：/oa 是 APRSNETCN OA 的活动页（目录形式，文件是 oa/index.html），
     # /oa/en 是它的英文版（oa/en/index.html）
     ("oa", "0.9"),
     ("oa/en", "0.8"),
