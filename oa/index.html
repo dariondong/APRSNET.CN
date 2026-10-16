@@ -21,6 +21,9 @@
 <meta property="og:image:alt" content="APRSNET.CN">
 <meta property="og:locale" content="zh_CN">
 <link rel="canonical" href="https://aprsnet.cn/oa">
+<link rel="alternate" hreflang="zh-CN" href="https://aprsnet.cn/oa">
+<link rel="alternate" hreflang="en" href="https://aprsnet.cn/oa/en/">
+<link rel="alternate" hreflang="x-default" href="https://aprsnet.cn/oa">
 <link rel="icon" type="image/png" href="../assets/favicon.png?v=5">
 <link rel="apple-touch-icon" href="../assets/icon.png?v=5">
 <meta name="twitter:card" content="summary">
@@ -47,6 +50,10 @@
 .oa-top { padding: clamp(104px, 15vh, 168px) var(--gut) clamp(40px, 6vh, 66px); border-bottom: 1px solid var(--line); }
 .oa-top-inner { max-width: var(--measure); margin: 0 auto; }
 .oa-status { max-width: 940px; margin: 0; }
+.oa-lang { display: flex; gap: 14px; margin-bottom: 30px; font-size: 14.5px; }
+.oa-lang strong { font-weight: 700; }
+.oa-lang a { color: var(--text-dim); transition: color .2s var(--ease); }
+.oa-lang a:hover { color: var(--hot); }
 .oa-kicker { margin-top: 40px; border-top: 1px solid var(--line-strong); padding-top: 16px; font-size: 14px; color: var(--text-faint); }
 .oa-title { margin-top: 16px; font-size: clamp(30px, 5.6vw, 66px); font-weight: 700; letter-spacing: -.035em; line-height: 1.03; }
 .oa-state { margin-top: 10px; font-size: clamp(20px, 3vw, 34px); font-weight: 700; letter-spacing: -.02em; color: var(--hot); }
@@ -94,6 +101,7 @@
 
 <section class="oa-top">
   <div class="oa-top-inner">
+    <p class="oa-lang"><strong>中文</strong><a href="en/" hreflang="en" lang="en">English</a></p>
     <ul class="fact-list oa-status">
       <li><b>活动名称</b><span>周六 APRS 签到网</span></li>
       <li><b>活动时间</b><span>每周六 UTC 00:00 到 23:59</span></li>

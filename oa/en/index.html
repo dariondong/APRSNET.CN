@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saturday APRS Check-in Net | An APRSNET.CN independent project</title>
+<meta name="description" content="An independent Saturday APRS check-in net from APRSNET.CN: send the CNNET check-in message to the bot any time from UTC 00:00 to 23:59 on Saturday. Still in preparation, the bot is not online yet.">
+<meta name="keywords" content="Saturday APRS check-in net,APRS check-in net,APRS message net,CNNET,APRS guide in Chinese,amateur radio,APRS message,APRS check-in,APRSNET.CN,independent net,unofficial net">
+<meta name="author" content="BG7LZQ (Darion)">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
+<meta name="theme-color" content="#f2f0ea">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="APRSNET.CN">
+<meta property="og:title" content="Saturday APRS Check-in Net | An APRSNET.CN independent project">
+<meta property="og:description" content="Send the CNNET check-in message to the bot from UTC 00:00 to 23:59 on Saturday. Still in preparation, the bot is not online yet.">
+<meta property="og:url" content="https://aprsnet.cn/oa/en/">
+<meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="APRSNET.CN">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://aprsnet.cn/oa/en/">
+<link rel="alternate" hreflang="zh-CN" href="https://aprsnet.cn/oa">
+<link rel="alternate" hreflang="en" href="https://aprsnet.cn/oa/en/">
+<link rel="alternate" hreflang="x-default" href="https://aprsnet.cn/oa">
+<link rel="icon" type="image/png" href="../../assets/favicon.png?v=5">
+<link rel="apple-touch-icon" href="../../assets/icon.png?v=5">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Saturday APRS Check-in Net | An APRSNET.CN independent project">
+<meta name="twitter:description" content="Send the CNNET check-in message to the bot from UTC 00:00 to 23:59 on Saturday. Still in preparation, the bot is not online yet.">
+<meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
+<link rel="stylesheet" href="../../style.css?v=34">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Saturday APRS Check-in Net","url":"https://aprsnet.cn/oa/en/","inLanguage":"en","description":"An independent Saturday APRS check-in net from APRSNET.CN: send the CNNET check-in message to the bot any time from UTC 00:00 to 23:59 on Saturday. Still in preparation, the bot is not online yet.","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script>
+/* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
+   必须在首帧前执行，否则会闪一下深底。 */
+(function () {
+  try {
+    var t = localStorage.getItem('theme');
+    if (t !== 'dark' && t !== 'light') t = 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+  } catch (e) {}
+})();
+</script>
+<style>
+/* 本页自用样式：签到网引导页的版面。颜色一律走 style.css 的 token，不写死颜色。 */
+.oa-top { padding: clamp(104px, 15vh, 168px) var(--gut) clamp(40px, 6vh, 66px); border-bottom: 1px solid var(--line); }
+.oa-top-inner { max-width: var(--measure); margin: 0 auto; }
+.oa-status { max-width: 940px; margin: 0; }
+.oa-lang { display: flex; gap: 14px; margin-bottom: 30px; font-size: 14.5px; }
+.oa-lang strong { font-weight: 700; }
+.oa-lang a { color: var(--text-dim); transition: color .2s var(--ease); }
+.oa-lang a:hover { color: var(--hot); }
+.oa-kicker { margin-top: 40px; border-top: 1px solid var(--line-strong); padding-top: 16px; font-size: 14px; color: var(--text-faint); }
+.oa-title { margin-top: 16px; font-size: clamp(30px, 5.6vw, 66px); font-weight: 700; letter-spacing: -.035em; line-height: 1.03; }
+.oa-state { margin-top: 10px; font-size: clamp(20px, 3vw, 34px); font-weight: 700; letter-spacing: -.02em; color: var(--hot); }
+.oa-lines { list-style: none; margin: 30px 0 0; padding-left: 18px; max-width: 62ch; border-top: 1px solid var(--line-strong); border-left: 2px solid var(--hot); }
+.oa-lines li { padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--text-dim); font-size: 16.5px; }
+.oa-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.oa-btn { font-family: inherit; opacity: .55; }
+.oa-btn:hover { background: transparent; color: var(--text); border-color: var(--text); }
+.oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
+</style>
+</head>
+
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="read-bar" id="readBar" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../../"><img class="brand-mark" src="../../assets/icon.png?v=5" alt="APRSNET.CN" width="64" height="64"></a>
+    <nav class="nav-links" id="navLinks" aria-label="页面导航">
+      <a href="../../">认识</a>
+      <a href="../../guide.html">上手</a>
+      <a href="../../packet.html">报文</a>
+      <a href="../../tocall.html">查询</a>
+      <a href="../../faq.html">问答</a>
+      <a href="../../docs.html">文档</a>
+      <a href="../../tools.html">工具</a>
+      <a href="../../links.html">友链</a>
+      <a href="../../about.html">关于</a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
+        <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
+      </button>
+      <a class="nav-brand-aside" href="../../about.html" aria-label="关于本站">
+        <img src="../../assets/icon.png?v=5" alt="" width="64" height="64">
+        <span>信标不止，回响不息。</span>
+      </a>
+    </nav>
+    <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="oa-top">
+  <div class="oa-top-inner">
+    <p class="oa-lang"><a href="../" hreflang="zh-CN" lang="zh-CN">中文</a><strong>English</strong></p>
+    <ul class="fact-list oa-status">
+      <li><b>Net name</b><span>Saturday APRS Check-in Net</span></li>
+      <li><b>Net time</b><span>Every Saturday, UTC 00:00 to 23:59</span></li>
+      <li><b>How to take part</b><span>Send the check-in message to the bot</span></li>
+      <li><b>Status</b><span>In preparation, not open yet</span></li>
+      <li><b>Note</b><span>This net is run independently by APRSNET.CN. It is not affiliated with APRS Thursday or APRS OTA.</span></li>
+    </ul>
+    <p class="oa-kicker">An APRSNET.CN independent net · in preparation</p>
+    <h1 class="oa-title">Saturday APRS Check-in Net</h1>
+    <p class="oa-state">In preparation, not open yet</p>
+    <ul class="oa-lines">
+      <li>The bot is not online yet. Please do not send any check-in message.</li>
+      <li>This page is a guide and an explanation only. It collects nothing.</li>
+      <li>The opening time will be announced on this page.</li>
+    </ul>
+    <div class="oa-actions">
+      <button class="btn btn-ghost oa-btn" type="button" disabled>Not open yet</button>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="oa-about">
+  <div class="section-head">
+    <h2>About this net</h2>
+    <p>Every Saturday, send your callsign and grid to the bot. The bot answers with an ACK. That is the whole check-in.</p>
+  </div>
+  <div class="section-body">
+    <p class="prose">The Saturday APRS Check-in Net is run independently by APRSNET.CN, with no other organiser in the middle. The bot answers each message with an ACK, and nothing else follows.</p>
+    <p class="prose">The net runs on UTC: every Saturday from 00:00 to 23:59 UTC.</p>
+    <p class="prose">This page is a guide and an explanation. It collects nothing, keeps no scores, and hands out nothing.</p>
+    <p class="oa-note">The bot is not online yet. A check-in message sent today reaches nobody.</p>
+  </div>
+</section>
+
+<section class="section" id="oa-join">
+  <div class="section-head">
+    <h2>How to take part</h2>
+    <p>Three steps: send a CQ, get the ACK, then send one U.</p>
+  </div>
+  <div class="section-body">
+    <ul class="fact-list">
+      <li><b>Bot name</b><span>APRSNETCN</span></li>
+      <li><b>Object name</b><span>APRSNETCN</span></li>
+      <li><b>Message prefix</b><span>CNNET</span></li>
+      <li><b>Status</b><span>Not online yet, do not send</span></li>
+    </ul>
+    <ol class="steps">
+      <li>
+        <b>Send the check-in</b>
+        Send <code>CQ CNNET your info</code> to the bot. One example is <code>CQ CNNET BG7XXX from OL62</code>. Put your own callsign and grid in place of that.
+      </li>
+      <li>
+        <b>Answer after the ACK</b>
+        The bot answers with an ACK, which means the check-in arrived. Send <code>U CNNET</code> to the bot and the check-in is done.
+      </li>
+      <li>
+        <b>Silent check-in (optional)</b>
+        If you would rather not send a CQ, send <code>CNNET your info</code> straight to the bot.
+      </li>
+    </ol>
+    <p class="oa-note">The bot is not online yet, so none of the three steps goes through today.</p>
+    <div class="oa-actions">
+      <button class="btn btn-ghost oa-btn" type="button" disabled>Not open yet</button>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="oa-format">
+  <div class="section-head">
+    <h2>Message formats and examples</h2>
+    <p>Three lines. Fill in your own callsign.</p>
+  </div>
+  <div class="section-body">
+    <ul class="pkt-list">
+      <li>
+        <b>Check-in: the call</b>
+        <code>CQ CNNET your info</code>
+        <span>Example <strong>CQ CNNET BG7XXX from OL62</strong>. CQ is the call, CNNET is the message prefix, and the rest is your own callsign and grid.</span>
+      </li>
+      <li>
+        <b>Check-in: the answer</b>
+        <code>U CNNET</code>
+        <span>Send this line after the bot has answered with an ACK.</span>
+      </li>
+      <li>
+        <b>Silent check-in (optional)</b>
+        <code>CNNET your info</code>
+        <span>The same check-in without a CQ. The ACK still counts.</span>
+      </li>
+    </ul>
+    <p class="oa-note">The message prefix is CNNET, the bot is APRSNETCN, and the object name is APRSNETCN as well. The bot is not online yet. Please do not send.</p>
+  </div>
+</section>
+
+<section class="section" id="oa-faq">
+  <div class="section-head">
+    <h2>Questions</h2>
+    <p>The few things people ask first.</p>
+  </div>
+  <div class="section-body">
+    <div class="faq">
+      <details>
+        <summary>Can I check in now?</summary>
+        <p>Not yet. The net is still in preparation and the bot is not online, so a message sent today reaches nobody.</p>
+      </details>
+      <details>
+        <summary>How many steps does one check-in take?</summary>
+        <p>Two. Send CQ CNNET your info first, then send U CNNET once the ACK arrives.</p>
+      </details>
+      <details>
+        <summary>Can I skip the CQ?</summary>
+        <p>Yes. Send CNNET your info instead. That is the silent check-in.</p>
+      </details>
+      <details>
+        <summary>Do I have to sign up?</summary>
+        <p>No. When the net opens, send the message to the bot. There is no sign-up form on this page.</p>
+      </details>
+      <details>
+        <summary>Does anything get counted?</summary>
+        <p>No. This page collects nothing and hands out nothing.</p>
+      </details>
+      <details>
+        <summary>What is the bot called?</summary>
+        <p>APRSNETCN. The object name is APRSNETCN and the message prefix is CNNET. It is not online yet.</p>
+      </details>
+      <details>
+        <summary>Is this related to APRS Thursday?</summary>
+        <p>No. The net is run independently by APRSNET.CN, and it is not affiliated with APRS Thursday or APRS OTA.</p>
+      </details>
+      <details>
+        <summary>What do I need?</summary>
+        <p>A valid amateur radio callsign and licence, plus a station that can send APRS.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="oa-terms">
+  <div class="section-head">
+    <h2>Independence statement</h2>
+    <p>These lines apply today as well.</p>
+  </div>
+  <div class="section-body">
+    <ul class="oa-lines">
+      <li>This page is made independently by APRSNET.CN.</li>
+      <li>The net is run independently by APRSNET.CN. It is not affiliated with the official APRS Thursday, and it is not affiliated with the official APRS OTA.</li>
+      <li>This page does not collect callsigns, does not keep any scores, does not issue badges, and does not provide a leaderboard.</li>
+      <li>Every transmission must use a valid amateur radio callsign and a valid licence.</li>
+      <li>The net must not be used for commercial gain, and it must not transmit broadcast-type signals.</li>
+    </ul>
+    <p class="oa-note">The bot going online and the opening time will be announced on this page.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
+      <span>信标不止，回响不息。</span>
+    </div>
+    <nav class="footer-index" aria-label="站内目录">
+      <div class="footer-group">
+        <b>On this site</b>
+        <ul>
+          <li><a href="../../">认识 APRS</a></li>
+          <li><a href="../../guide.html">上手与设备</a></li>
+          <li><a href="../../tutorial.html">从零上手教程</a></li>
+          <li><a href="../../packet.html">报文与字段</a></li>
+          <li><a href="../../tocall.html">官方 TOCALL 查询</a></li>
+          <li><a href="../../faq.html">常见问题</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>Docs</b>
+        <ul>
+          <li><a href="../../docs.html">规范与文档</a></li>
+          <li><a href="../../tools.html">工具与链接</a></li>
+          <li><a href="../../about.html">关于本站</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>This page</b>
+        <ul>
+          <li><a href="../">周六 APRS 签到网</a></li>
+          <li><a href="#oa-terms">Independence statement</a></li>
+          <li><a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">Source repo</a></li>
+          <li><a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">Open an issue</a></li>
+        </ul>
+      </div>
+    </nav>
+    <p class="footer-note">This page is the guide for the Saturday APRS Check-in Net. The bot is not online yet, and the page collects nothing. Follow your local radio regulations and transmit only on frequencies you are allowed to use.</p>
+    <p class="footer-edit">Spotted a mistake?<a href="https://github.com/dariondong/APRSNET.CN/edit/main/oa/en/index.html" target="_blank" rel="noopener">Edit this page on GitHub</a>.</p>
+    <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
+  </div>
+</footer>
+
+<a class="backtop" id="backTop" href="#main" aria-label="Back to top">
+  <svg class="backtop-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="17"/><circle class="ring-fg" id="ringFg" cx="20" cy="20" r="17"/></svg>
+  <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
+</a>
+
+<script src="../../main.js?v=13"></script>
+</body>
+</html>
