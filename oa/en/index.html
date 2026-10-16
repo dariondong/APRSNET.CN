@@ -56,6 +56,12 @@
 .oa-lang a:hover { color: var(--hot); }
 .oa-kicker { margin-top: 40px; border-top: 1px solid var(--line-strong); padding-top: 16px; font-size: 14px; color: var(--text-faint); }
 .oa-title { margin-top: 16px; font-size: clamp(30px, 5.6vw, 66px); font-weight: 700; letter-spacing: -.035em; line-height: 1.03; }
+.oa-clock { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; list-style: none; margin: 26px 0 0; padding: 1px; max-width: 560px; background: var(--line-strong); }
+.oa-clock li { background: var(--surface-1); padding: 14px 16px 16px; }
+.oa-clock b { display: block; font-size: 13.5px; font-weight: 400; letter-spacing: .04em; color: var(--text-faint); }
+.oa-clock span { display: block; margin-top: 8px; font-family: var(--font-mono); font-size: clamp(20px, 3.4vw, 30px); font-variant-numeric: tabular-nums; }
+.oa-clock span.is-live { color: var(--hot); }
+.oa-clock-note { margin-top: 12px; color: var(--text-faint); font-size: 14.5px; }
 .oa-state { margin-top: 10px; font-size: clamp(20px, 3vw, 34px); font-weight: 700; letter-spacing: -.02em; color: var(--hot); }
 .oa-lines { list-style: none; margin: 30px 0 0; padding-left: 18px; max-width: 62ch; border-top: 1px solid var(--line-strong); border-left: 2px solid var(--hot); }
 .oa-lines li { padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--text-dim); font-size: 16.5px; }
@@ -117,6 +123,11 @@
     <p class="oa-kicker">An APRSNET.CN independent net · in preparation</p>
     <h1 class="oa-title">APRSNETCN OA</h1>
     <p class="oa-state">In preparation, not open yet</p>
+    <ul class="oa-clock" data-oa-clock data-clock-live="Live now" data-clock-day="d" data-clock-days="Sun,Mon,Tue,Wed,Thu,Fri,Sat">
+      <li><b>Starts in</b><span data-clock="start">—</span></li>
+      <li><b>Ends in</b><span data-clock="end">—</span></li>
+    </ul>
+    <p class="oa-clock-note">The window runs on Beijing time, Saturday 00:00 to 23:59 (in your clock: <span data-clock="from">—</span> to <span data-clock="to">—</span>)</p>
     <ul class="oa-lines">
       <li>The callsign on duty for the week is not arranged yet. Please do not send any message.</li>
       <li>Two steps: send <code>CQ CNNET your info</code> first, then send <code>U CNNET</code> once the ACK arrives.</li>
@@ -360,6 +371,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
+<script src="../clock.js?v=1"></script>
 <script src="../roster.js?v=3"></script>
 <script src="../../main.js?v=13"></script>
 </body>
