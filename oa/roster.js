@@ -18,7 +18,7 @@
    最后一次的时间（都写成 10-17 15:04）。后四项没有就不写。
 
    一台站画成一块：呼号一行，后面跟着由呼号前缀认出来的国家地区与国旗、状态、报文数与首末时间，
-   下面跟着带字段名的几项（网格 / 路径 / 时间）。路径那一项把 via 与 digi
+   下面跟着带字段名的几项（网格 / 路径 / 时间；网格没写着就写一个占位横线）。路径那一项把 via 与 digi
    合成一句话——走射频又过了中继是「射频 · A → B」，只走射频是「射频」，走网络是「网络」。
    字段名、路径的两种写法、空状态、「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
 
@@ -59,9 +59,10 @@
   var box = document.getElementById("oaSwitch");
   var picker = document.getElementById("oaRound");
 
-  /* 一个字段：值空着就不写，字段名空着就只写值 */
-  var addField = function (dl, label, value) {
+  /* 一个字段：值空着就不写，字段名空着就只写值；给了占位就写占位 */
+  var addField = function (dl, label, value, blank) {
     var v = String(value == null ? "" : value).trim();
+    if (!v) v = String(blank == null ? "" : blank).trim();
     if (!v) return;
     var wrap = document.createElement("div");
     if (label) {
@@ -337,7 +338,8 @@
 
     var dl = document.createElement("dl");
     dl.className = "st-fields";
-    addField(dl, gridLabel, st.grid);
+    /* 网格空着也留一行，写个横线，读的人知道这台的网格是空的 */
+    addField(dl, gridLabel, st.grid, "\u2014");
     addField(dl, pathLabel, path);
     addField(dl, atLabel, st.at);
     li.appendChild(dl);
