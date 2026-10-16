@@ -72,6 +72,15 @@
 .oa-switch label { color: var(--text-faint); font-size: 14.5px; }
 .oa-switch select { font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 6px 10px; }
 .oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
+/* 参与台那一块：一台一段，字段名与值并排，窄屏自己换行。 */
+.st-list { list-style: none; margin: 30px 0; border-top: 1px solid var(--line-strong); }
+.st-list > li { padding: 15px 0; border-bottom: 1px solid var(--line); }
+.st-call { display: block; font-size: 17px; }
+.st-fields { display: flex; flex-wrap: wrap; column-gap: 26px; row-gap: 5px; margin: 7px 0 0; }
+.st-fields > div { display: flex; gap: 8px; align-items: baseline; }
+.st-fields dt { color: var(--text-faint); font-size: 14px; }
+.st-fields dd { margin: 0; color: var(--text-dim); font-size: 15px; }
+.st-note { display: block; margin-top: 8px; color: var(--text-faint); font-size: 15px; }
 </style>
 </head>
 
@@ -114,7 +123,7 @@
     <p class="oa-lang"><strong>中文</strong><a href="en/" hreflang="en" lang="en">English</a></p>
     <p class="oa-kicker">APRSNET.CN 独立活动 · 筹备中</p>
     <h1 class="oa-title">APRSNETCN OA</h1>
-    <p class="oa-state">筹备中，尚未到活动时间</p>
+    <p class="oa-state">活动还没开始</p>
     <ul class="oa-clock" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六"
         data-clock-label-start="距开始" data-clock-label-end="距结束">
       <li><b data-clock="label">距开始</b><span data-clock="value">—</span></li>
@@ -122,10 +131,9 @@
     <p class="oa-clock-note">北京时间 <span data-clock="bj">—</span> · UTC <span data-clock="utc">—</span></p>
     <ul class="oa-lines">
       <li>当周的轮值呼号还没排出来，先别发报文。</li>
-      <li>一步发 CQ，一步回 U：先发 CQ CNNET 你的信息，收到 ACK 再发 U CNNET。</li>
-      <li>射频与网络两条路都收得到，鼓励走射频。</li>
+      <li>先发 CQ CNNET 你的信息，收到 ACK 再发 U CNNET。</li>
       <li>本页不收集数据，不统计。</li>
-      <li>开放时间以本页后续公告为准。</li>
+      <li>开放时间见本页公告。</li>
     </ul>
     <div class="oa-actions">
       <button class="btn btn-ghost oa-btn" type="button" disabled>尚未开放</button>
@@ -136,42 +144,36 @@
 <section class="section alt" id="oa-about">
   <div class="section-head">
     <h2>活动简介</h2>
-    <p>北京时间的周六，把呼号与网格发给当周的轮值呼号。收到 ACK 就算参加。</p>
+    <p>按北京时间的周六，把呼号与网格发给当周的轮值呼号，收到 ACK 就算参加。</p>
   </div>
   <div class="section-body">
-    <p class="prose">本活动由 APRSNET.CN 独立发起，没有其他主办方。OA 是 On Air 的缩写。轮值台收到报文后回一条 ACK。</p>
+    <p class="prose">活动由 APRSNET.CN 独立发起，没有其他主办方。OA 是 On Air 的缩写。</p>
     <p class="prose">不用报名，没有签到表。到时间把报文发给当周的轮值呼号。</p>
-    <p class="prose">时间按北京时间算，周六 00:00 到 23:59，整 24 小时。这 24 小时里任一时刻发都算。</p>
-    <p class="prose">射频与网络两条路都算参加。行末的标签写清是哪一条路。</p>
-    <p class="oa-note">当周的轮值呼号还没排出来。排出来之前发出去的报文没有人收。</p>
+    <p class="prose">时间按北京时间算，周六 00:00 到 23:59。这中间什么时候发都算。</p>
+    <p class="oa-note">排出来之前发出去的报文没有人收。</p>
   </div>
 </section>
 
 <section class="section" id="oa-roster">
   <div class="section-head">
     <h2>参与的台</h2>
-    <p>活动开始之后，每收到一台就记一行。行末的标签写清是走射频还是走网络。</p>
+    <p>活动开始后，每收到一台就记一行，行里写着网格、路径与时间。</p>
   </div>
   <div class="section-body">
-    <ul class="link-list" id="oaRoster" data-roster="roster.json" data-tag-rf="射频" data-tag-is="网络" data-label-grid="网格" data-label-digi="经" data-label-at="参与" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
+    <ul class="st-list" id="oaRoster" data-roster="roster.json" data-label-grid="网格" data-label-path="路径" data-label-at="时间" data-path-rf="射频" data-path-is="网络" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
       <li>
-        <div class="link-row is-static">
-          <span class="lr-main">
-            <b>名单还空着</b>
-            <span>活动还没开始，还没有台站发来报文。</span>
-          </span>
-        </div>
+        <b class="st-call">名单还空着</b>
+        <span class="st-note">活动还没开始，还没有台站发来报文。</span>
       </li>
     </ul>
     <p class="oa-note">这一节只放最新一轮。前面几轮的名单与汇总数字在<a href="data.html">数据面板</a>。</p>
-    <p class="oa-note">一行写一台：呼号、网格、中继与参与时间。</p>
   </div>
 </section>
 
 <section class="section alt" id="oa-time">
   <div class="section-head">
     <h2>时间与地区</h2>
-    <p>按北京时间算，周六 00:00 到 23:59。换成各地区的钟点，就是下面这几行。</p>
+    <p>活动时间按北京时间算，下面是各地区的对应钟点。</p>
   </div>
   <div class="section-body">
     <ul class="fact-list">
@@ -181,50 +183,49 @@
       <li><b>UTC+5:30（印度）</b><span>周五 21:30 到周六 21:29</span></li>
       <li><b>UTC-5（美东）</b><span>周五 11:00 到周六 10:59</span></li>
     </ul>
-    <p class="oa-note">这几行只按固定的时区偏移算。有夏令时的地区，按当周的实际偏移自己折算。</p>
+    <p class="oa-note">这些换算按固定时区偏移算，有夏令时的地方要自己折算。</p>
   </div>
 </section>
 
 <section class="section" id="oa-rf">
   <div class="section-head">
     <h2>通过射频加入</h2>
-    <p>网络、射频两条路都收得到。鼓励走射频。</p>
+    <p>网络与射频都收得到，走射频更好。</p>
   </div>
   <div class="section-body">
-    <p class="prose">APRS-IS 是网络侧。手机或电脑连上服务器，报文在服务器之间走。射频是空中侧。用手台或车台把报文发出去，附近的台站先听到，再由网关送进网络。</p>
+    <p class="prose">网络侧走 APRS-IS，手机或电脑连上服务器就能发。空中侧走射频，用手台或车台发出去，附近的台站先听到，再由网关送进网络。</p>
     <ul class="fact-list">
       <li><b>网络侧（APRS-IS）</b><span>连上服务器就能发，手边没有电台也行</span></li>
       <li><b>空中侧（射频）</b><span>用手台或车台发，经本地中继与网关进网络</span></li>
     </ul>
-    <p class="prose">射频的意义在本地。报文被附近听到，附近的台站才有可能开台。</p>
-    <p class="oa-note">射频发射要用自己的呼号与执照，频率与路径按当地规定来。本地网关怎么接，见 <a href="../igate.html">iGate 细则</a>。</p>
+    <p class="oa-note">发射要用自己的呼号与执照，频率与路径按当地规定。网关怎么接见 <a href="../igate.html">iGate 细则</a>。</p>
   </div>
 </section>
 
 <section class="section alt" id="oa-join">
   <div class="section-head">
     <h2>参与方式</h2>
-    <p>两步：先发 CQ，收到 ACK 再发一条 U。</p>
+    <p>先发 CQ，收到 ACK 再发一条 U。</p>
   </div>
   <div class="section-body">
     <ul class="fact-list">
       <li><b>轮值呼号</b><span data-oa-duty>还没排出来</span></li>
       <li><b>对象名</b><span>当周的轮值呼号</span></li>
       <li><b>报文前缀</b><span>CNNET</span></li>
-      <li><b>状态</b><span>筹备中，当周轮值呼号还没排出来</span></li>
+      <li><b>状态</b><span>还没开始</span></li>
     </ul>
     <ol class="steps">
       <li>
         <b>第一步：发出 CQ</b>
-        向当周的轮值呼号发送 <code>CQ CNNET 你的信息</code>。把「你的信息」换成自己的呼号与网格，示例是 <code>CQ CNNET BG7XXX from OL62</code>。CQ 是呼叫，CNNET 是报文前缀。
+        发给当周的轮值呼号。把「你的信息」换成自己的呼号与网格，例如 <code>CQ CNNET BG7XXX from OL62</code>。
       </li>
       <li>
         <b>第二步：收到 ACK 再回一条</b>
-        轮值台回一条 ACK，表示这条报文已经收到。收到 ACK 之后再向它发送 <code>U CNNET</code>。
+        轮值台回一条 ACK。收到之后发 <code>U CNNET</code>。
       </li>
       <li>
         <b>可选：不发 CQ</b>
-        不想发 CQ 的话，直接向轮值呼号发送 <code>CNNET 你的信息</code>。收到 ACK 一样算。
+        也可以不发 CQ，直接发 <code>CNNET 你的信息</code>。收到 ACK 一样算。
       </li>
     </ol>
     <div class="oa-actions">
@@ -236,14 +237,14 @@
 <section class="section" id="oa-format">
   <div class="section-head">
     <h2>报文格式与示例</h2>
-    <p>三行报文，照着填自己的呼号就行。</p>
+    <p>三条报文，照着填自己的呼号。</p>
   </div>
   <div class="section-body">
     <ul class="pkt-list">
       <li>
         <b>发出 CQ</b>
         <code>CQ CNNET 你的信息</code>
-        <span>示例 <strong>CQ CNNET BG7XXX from OL62</strong>：CQ 是呼叫，CNNET 是报文前缀，后面接自己的呼号与网格。</span>
+        <span>把「你的信息」换成自己的呼号与网格，例如 <strong>CQ CNNET BG7XXX from OL62</strong>。CNNET 是前缀。</span>
       </li>
       <li>
         <b>收到 ACK 后回一条</b>
@@ -256,15 +257,14 @@
         <span>不发 CQ 的写法。收到 ACK 同样算。</span>
       </li>
     </ul>
-    <p class="prose">写法三条：每条报文都带前缀 CNNET；呼号写执照上的那个；收到 ACK 再发下一条。</p>
-    <p class="oa-note">报文前缀是 CNNET，对象名是当周的轮值呼号。</p>
+    <p class="prose">呼号写执照上的那个。</p>
   </div>
 </section>
 
 <section class="section alt" id="oa-first">
   <div class="section-head">
     <h2>第一次发 APRS 报文</h2>
-    <p>没发过 APRS 报文的话，先把站里这几页看一眼。跟本页规则无关，只是底子。</p>
+    <p>没发过 APRS 报文的，先看这几页。跟本页规则无关。</p>
   </div>
   <div class="section-body">
     <ul class="link-list">
@@ -274,7 +274,7 @@
       <li><a class="link-row" href="../tocall.html"><span class="lr-main"><b>官方 TOCALL 查询</b><span>呼号后面那段是什么设备，粘一整行报文也能查</span></span><span class="lr-go">→</span></a></li>
       <li><a class="link-row" href="../aprsis.html"><span class="lr-main"><b>APRS-IS 文档（中文）</b><span>怎么连上网络，登录行与端口怎么写</span></span><span class="lr-go">→</span></a></li>
     </ul>
-    <p class="oa-note">呼号与执照的事情这里不代办。所有发射都要用合法呼号，按当地规定来。</p>
+    <p class="oa-note">执照与呼号这里不代办。发射要用合法呼号，按当地规定。</p>
   </div>
 </section>
 
@@ -285,10 +285,10 @@
   </div>
   <div class="section-body">
     <ul class="fact-list">
-      <li><b>一天发几次</b><span>还没定，以开放公告为准。</span></li>
-      <li><b>没回 ACK</b><span>等一会儿再发一次。排查办法以开放公告为准。</span></li>
-      <li><b>设备</b><span>能发 APRS 报文就行。手机加声卡线、手台加 TNC、带 APRS 的电台都可以，见 <a href="../guide.html">上手与设备</a>。</span></li>
-      <li><b>本地没有网关</b><span>射频报文要经网关才进 APRS-IS。没有网关可以先用网络发，网关见 <a href="../igate.html">iGate 细则</a>。</span></li>
+      <li><b>一天发几次</b><span>还没定。</span></li>
+      <li><b>没回 ACK</b><span>等一会儿再发一次。排查办法见开放公告。</span></li>
+      <li><b>设备</b><span>能发 APRS 报文就行，见 <a href="../guide.html">上手与设备</a>。</span></li>
+      <li><b>本地没有网关</b><span>射频报文要经网关才进 APRS-IS。没有网关先用网络发，见 <a href="../igate.html">iGate 细则</a>。</span></li>
       <li><b>条件</b><span>合法业余无线电台呼号与有效执照，一台能发 APRS 的设备。</span></li>
     </ul>
   </div>
@@ -297,15 +297,14 @@
 <section class="section alt" id="oa-info">
   <div class="section-head">
     <h2>活动信息</h2>
-    <p>名称、时间、收报方，还有一句说明。</p>
+    <p>活动的基本信息。</p>
   </div>
   <div class="section-body">
     <ul class="fact-list oa-status">
       <li><b>活动名称</b><span>APRSNETCN OA</span></li>
       <li><b>活动时间</b><span>北京时间的周六，00:00 到 23:59</span></li>
       <li><b>轮值呼号</b><span data-oa-duty>还没排出来</span></li>
-      <li><b>参与方式</b><span>向当周的轮值呼号发送 CNNET 报文，射频或网络都行</span></li>
-      <li><b>说明</b><span>本活动由 APRSNET.CN 独立发起，与 APRS Thursday、APRS OTA 均无隶属关系。</span></li>
+      <li><b>参与方式</b><span>向当周的轮值呼号发送 CNNET 报文</span></li>
     </ul>
   </div>
 </section>
@@ -318,12 +317,12 @@
   <div class="section-body">
     <ul class="oa-lines">
       <li>本页面由 APRSNET.CN 独立制作。</li>
-      <li>本活动由 APRSNET.CN 独立发起，与 APRS Thursday 官方无隶属关系，与 APRS OTA 官方无隶属关系。</li>
-      <li>本页面不收集呼号、不统计积分、不发放徽章、不提供排行榜。</li>
+      <li>本活动由 APRSNET.CN 独立发起。与 APRS Thursday、APRS OTA 官方都无隶属关系。</li>
+      <li>本页不收集呼号，不统计积分。没有徽章，也没有排行榜。</li>
       <li>所有发射须使用合法业余无线电台呼号与有效执照。</li>
       <li>不得用于商业利益，不得发射广播性质信号。</li>
     </ul>
-    <p class="oa-note">开放时间与当周的轮值呼号以本页后续公告为准。</p>
+    <p class="oa-note">开放时间与当周轮值呼号见本页公告。</p>
   </div>
 </section>
 
@@ -365,7 +364,7 @@
         </ul>
       </div>
     </nav>
-    <p class="footer-note">本页是 APRSNETCN OA 的活动页，活动尚未开始，本页不收集数据。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
+    <p class="footer-note">本页是 APRSNETCN OA 的活动页。活动尚未开始，本页不收集数据。发射请遵守当地法规，只用在获得许可的频率上。</p>
     <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/oa/index.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>。</p>
     <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
   </div>
@@ -377,7 +376,7 @@
 </a>
 
 <script src="clock.js?v=1"></script>
-<script src="roster.js?v=5"></script>
+<script src="roster.js?v=6"></script>
 <script src="../main.js?v=13"></script>
 </body>
 </html>

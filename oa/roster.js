@@ -12,13 +12,15 @@
 
    date 是这一轮的日期，也是切换格里的那一行文字。updated 是这一轮名单最后写入的日期，
    有才显示。call 是这一轮的轮值呼号，写进页面上 [data-oa-duty] 的位子，取最新的一轮；
-   没写 call 就留着 HTML 里那句占位文案。via 只有两种：rf = 射频送进来的，is = 网络送进来的，两种都在行末带一个标签。
-   grid 是网格，digi 是报文经过的中继（按经过顺序写，空数组就是没经过中继），at 是参与时间。
-   这三个按原样写进那一行的灰字里，字段前缀与标签文字、空状态、「最后更新」的前缀都从页面的 data-* 上取，
-   中英两页共用这份脚本。
+   没写 call 就留着 HTML 里那句占位文案。grid 是网格，digi 是报文经过的中继（按经过顺序写，
+   空数组就是没经过中继），at 是参与时间。
+
+   一台站画成一块：呼号一行，下面跟着带字段名的几项（网格 / 路径 / 时间）。路径那一项把 via 与 digi
+   合成一句话——走射频又过了中继是「射频 · A → B」，只走射频是「射频」，走网络是「网络」。
+   字段名、路径的两种写法、空状态、「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
 
    页面上的 [data-oa-stat] 是数据面板上那几个数字：rounds = 轮次，latest = 最新一轮台站，
-   stations = 各轮台站合计，rf = 走射频的，digi = 走中继的，digis = 用过的中继（去重），
+   stations = 各轮台站合计，rf = 走射频的，digis = 用过的中继（去重），
    updated = 名单最后更新的日期。
    活动页没有这些位子，什么也不做。
 
@@ -32,81 +34,80 @@
   var url = list.getAttribute("data-roster");
   if (!url) return;
 
-  var tagText = list.getAttribute("data-tag-rf") || "RF";
-  var tagIsText = list.getAttribute("data-tag-is") || "Net";
   var gridLabel = list.getAttribute("data-label-grid") || "";
-  var digiLabel = list.getAttribute("data-label-digi") || "";
+  var pathLabel = list.getAttribute("data-label-path") || "";
   var atLabel = list.getAttribute("data-label-at") || "";
+  var pathRf = list.getAttribute("data-path-rf") || "RF";
+  var pathIs = list.getAttribute("data-path-is") || "Network";
   var updatedLabel = list.getAttribute("data-updated-label") || "";
   var emptyTitle = list.getAttribute("data-empty-title") || "";
   var emptyNote = list.getAttribute("data-empty-note") || "";
   var box = document.getElementById("oaSwitch");
   var picker = document.getElementById("oaRound");
 
-  /* 「前缀 值」：前缀为空就只写值，值为空就什么都不写 */
-  var pair = function (label, value) {
+  /* 一个字段：值空着就不写，字段名空着就只写值 */
+  var addField = function (dl, label, value) {
     var v = String(value == null ? "" : value).trim();
-    if (!v) return "";
-    return label ? label + " " + v : v;
+    if (!v) return;
+    var wrap = document.createElement("div");
+    if (label) {
+      var dt = document.createElement("dt");
+      dt.textContent = label;
+      wrap.appendChild(dt);
+    }
+    var dd = document.createElement("dd");
+    dd.textContent = v;
+    wrap.appendChild(dd);
+    dl.appendChild(wrap);
   };
 
-  /* 一行：呼号（粗体）+ 网格 / 中继 / 参与时间 + 路径标签 */
+  /* 一台站：呼号一行，下面跟着网格 / 路径 / 参与时间 */
   var makeRow = function (st) {
     var call = String(st && st.call != null ? st.call : "").trim();
     if (!call) return null;
 
-    var bits = [];
     var chain = [];
     var digis = Array.isArray(st.digi) ? st.digi : [];
     digis.forEach(function (d) {
       var name = String(d == null ? "" : d).trim();
       if (name) chain.push(name);
     });
-    if (st.grid) bits.push(pair(gridLabel, st.grid));
-    if (chain.length) bits.push(pair(digiLabel, chain.join(" \u2192 ")));
-    if (st.at) bits.push(pair(atLabel, st.at));
+    /* 走射频就是路上过了中继：两半并成一项写 */
+    var via = st.via === "rf" ? pathRf : (st.via === "is" ? pathIs : "");
+    var path = [via, chain.join(" \u2192 ")].filter(function (s) {
+      return s;
+    }).join(" \u00b7 ");
 
     var li = document.createElement("li");
-    var row = document.createElement("div");
-    row.className = "link-row is-static";
-
-    var main = document.createElement("span");
-    main.className = "lr-main";
+    li.className = "st";
     var b = document.createElement("b");
+    b.className = "st-call";
     b.textContent = call;
-    var meta = document.createElement("span");
-    meta.textContent = bits.join(" \u00b7 ");
-    main.appendChild(b);
-    main.appendChild(meta);
-    row.appendChild(main);
+    li.appendChild(b);
 
-    var path = st.via === "rf" ? tagText : (st.via === "is" ? tagIsText : "");
-    if (path) {
-      var tag = document.createElement("span");
-      tag.className = "lr-tag";
-      tag.textContent = path;
-      row.appendChild(tag);
-    }
-
-    li.appendChild(row);
+    var dl = document.createElement("dl");
+    dl.className = "st-fields";
+    addField(dl, gridLabel, st.grid);
+    addField(dl, pathLabel, path);
+    addField(dl, atLabel, st.at);
+    li.appendChild(dl);
     return li;
   };
 
-  /* 这一轮没有台站时的占位行，文字从页面的 data-empty-* 来 */
+  /* 这一轮没有台站时的占位块，文字从页面的 data-empty-* 来 */
   var makeEmpty = function () {
     var li = document.createElement("li");
-    var row = document.createElement("div");
-    row.className = "link-row is-static";
-    var main = document.createElement("span");
-    main.className = "lr-main";
+    li.className = "st";
     var b = document.createElement("b");
+    b.className = "st-call";
     b.textContent = emptyTitle;
-    var meta = document.createElement("span");
-    meta.textContent = emptyNote;
-    main.appendChild(b);
-    main.appendChild(meta);
-    row.appendChild(main);
-    li.appendChild(row);
+    li.appendChild(b);
+    if (emptyNote) {
+      var note = document.createElement("span");
+      note.className = "st-note";
+      note.textContent = emptyNote;
+      li.appendChild(note);
+    }
     return li;
   };
 
@@ -134,18 +135,14 @@
   var fillStats = function (rounds) {
     var slots = document.querySelectorAll("[data-oa-stat]");
     if (!slots.length) return;
-    var total = 0, rf = 0, digiRows = 0, updated = "";
+    var total = 0, rf = 0, updated = "";
     var digiSet = [];
     var countDigis = function (s) {
       var chain = (s && Array.isArray(s.digi)) ? s.digi : [];
-      var n = 0;
       chain.forEach(function (d) {
         var name = String(d == null ? "" : d).trim();
-        if (!name) return;
-        n += 1;
-        if (digiSet.indexOf(name) < 0) digiSet.push(name);
+        if (name && digiSet.indexOf(name) < 0) digiSet.push(name);
       });
-      if (n) digiRows += 1;
     };
     rounds.forEach(function (r) {
       var st = (r && Array.isArray(r.stations)) ? r.stations : [];
@@ -158,8 +155,8 @@
       if (!updated && r && r.date) updated = String(r.date);
     });
     var latest = (rounds[0] && Array.isArray(rounds[0].stations)) ? rounds[0].stations.length : 0;
-    var keys = ["rounds", "latest", "stations", "rf", "digi", "digis", "updated"];
-    var vals = [rounds.length, latest, total, rf, digiRows, digiSet.length, updated];
+    var keys = ["rounds", "latest", "stations", "rf", "digis", "updated"];
+    var vals = [rounds.length, latest, total, rf, digiSet.length, updated];
     Array.prototype.forEach.call(slots, function (el) {
       var i = keys.indexOf(el.getAttribute("data-oa-stat"));
       if (i < 0) return;

@@ -72,6 +72,15 @@
 .oa-switch label { color: var(--text-faint); font-size: 14.5px; }
 .oa-switch select { font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 6px 10px; }
 .oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
+/* 参与台那一块：一台一段，字段名与值并排，窄屏自己换行。 */
+.st-list { list-style: none; margin: 30px 0; border-top: 1px solid var(--line-strong); }
+.st-list > li { padding: 15px 0; border-bottom: 1px solid var(--line); }
+.st-call { display: block; font-size: 17px; }
+.st-fields { display: flex; flex-wrap: wrap; column-gap: 26px; row-gap: 5px; margin: 7px 0 0; }
+.st-fields > div { display: flex; gap: 8px; align-items: baseline; }
+.st-fields dt { color: var(--text-faint); font-size: 14px; }
+.st-fields dd { margin: 0; color: var(--text-dim); font-size: 15px; }
+.st-note { display: block; margin-top: 8px; color: var(--text-faint); font-size: 15px; }
 </style>
 </head>
 
@@ -114,7 +123,7 @@
     <p class="oa-lang"><a href="../" hreflang="zh-CN" lang="zh-CN">中文</a><strong>English</strong></p>
     <p class="oa-kicker">An APRSNET.CN independent net · in preparation</p>
     <h1 class="oa-title">APRSNETCN OA</h1>
-    <p class="oa-state">In preparation, not open yet</p>
+    <p class="oa-state">The net has not started</p>
     <ul class="oa-clock" data-oa-clock data-clock-day="d" data-clock-days="Sun,Mon,Tue,Wed,Thu,Fri,Sat"
         data-clock-label-start="Starts in" data-clock-label-end="Ends in">
       <li><b data-clock="label">Starts in</b><span data-clock="value">—</span></li>
@@ -122,10 +131,9 @@
     <p class="oa-clock-note">Beijing time <span data-clock="bj">—</span> · UTC <span data-clock="utc">—</span></p>
     <ul class="oa-lines">
       <li>The callsign on duty for the week is not arranged yet. Please do not send any message.</li>
-      <li>Two steps: send <code>CQ CNNET your info</code> first, then send <code>U CNNET</code> once the ACK arrives.</li>
-      <li>Both paths reach the duty station. The RF path is encouraged.</li>
+      <li>Send <code>CQ CNNET your info</code> first, then <code>U CNNET</code> once the ACK arrives.</li>
       <li>This page collects nothing.</li>
-      <li>The opening time will be announced on this page.</li>
+      <li>The opening time is announced here.</li>
     </ul>
     <div class="oa-actions">
       <button class="btn btn-ghost oa-btn" type="button" disabled>Not open yet</button>
@@ -139,10 +147,9 @@
     <p>On the Saturday in Beijing time, send your callsign and grid to the callsign on duty. An ACK counts as taking part.</p>
   </div>
   <div class="section-body">
-    <p class="prose">The net is run by APRSNET.CN, with no other organiser. OA stands for On Air. The duty station answers each message with an ACK.</p>
+    <p class="prose">The net is run by APRSNET.CN, with no other organiser. OA stands for On Air.</p>
     <p class="prose">There is no sign-up. When the time comes, send the message to the callsign on duty.</p>
-    <p class="prose">The net runs on Beijing time, Saturday 00:00 to 23:59. Any moment in those 24 hours counts.</p>
-    <p class="prose">Both paths count as taking part. A tag at the end of a row says which path it came in on.</p>
+    <p class="prose">The net runs on Beijing time, Saturday 00:00 to 23:59. Any moment in it counts.</p>
     <p class="oa-note">The callsign on duty is not arranged yet. A message sent today reaches nobody.</p>
   </div>
 </section>
@@ -150,28 +157,23 @@
 <section class="section" id="oa-roster">
   <div class="section-head">
     <h2>Stations taking part</h2>
-    <p>Once the net is open, one line appears per station. A tag at the end of the row says whether it came over RF or over the network.</p>
+    <p>Once the net is open, one line per station, with its grid, path and time.</p>
   </div>
   <div class="section-body">
-    <ul class="link-list" id="oaRoster" data-roster="../roster.json" data-tag-rf="RF" data-tag-is="Net" data-label-grid="Grid" data-label-digi="via" data-label-at="Time" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
+    <ul class="st-list" id="oaRoster" data-roster="../roster.json" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
-        <div class="link-row is-static">
-          <span class="lr-main">
-            <b>The list is still empty</b>
-            <span>The net has not opened yet, so no station has sent a message.</span>
-          </span>
-        </div>
+        <b class="st-call">The list is still empty</b>
+        <span class="st-note">The net has not opened yet, so no station has sent a message.</span>
       </li>
     </ul>
     <p class="oa-note">This section keeps the newest round only. The earlier rounds and the totals are on the <a href="data.html">data panel</a>.</p>
-    <p class="oa-note">One line per station: the callsign, the grid, the repeaters and the time, taken from the messages the duty station receives.</p>
   </div>
 </section>
 
 <section class="section alt" id="oa-time">
   <div class="section-head">
     <h2>Time and regions</h2>
-    <p>The Saturday is counted in Beijing time, 00:00 to 23:59. In other clocks that is one of these rows.</p>
+    <p>The net is counted in Beijing time, Saturday 00:00 to 23:59. Other clocks are below.</p>
   </div>
   <div class="section-body">
     <ul class="fact-list">
@@ -181,50 +183,49 @@
       <li><b>UTC+5:30 (India)</b><span>Friday 21:30 to Saturday 21:29</span></li>
       <li><b>UTC-5 (US Eastern)</b><span>Friday 11:00 to Saturday 10:59</span></li>
     </ul>
-    <p class="oa-note">These rows only apply a fixed UTC offset. Where daylight saving is in force, work it out from the offset in that week.</p>
+    <p class="oa-note">These rows use fixed offsets. Where daylight saving applies, work it out from that week.</p>
   </div>
 </section>
 
 <section class="section" id="oa-rf">
   <div class="section-head">
     <h2>Joining over RF</h2>
-    <p>Both paths reach the duty station. The RF path is encouraged.</p>
+    <p>Both paths reach the duty station. RF is better.</p>
   </div>
   <div class="section-body">
-    <p class="prose">APRS-IS is the network side: a phone or a computer connects to a server and the message travels between servers. RF is the air side: a handheld or a mobile sends the message out, nearby stations hear it, and a local gateway passes it into the network.</p>
+    <p class="prose">The network side is APRS-IS: a phone or a computer connects to a server and sends. The air side is RF: a handheld or a mobile sends the message, nearby stations hear it, and a gateway passes it into the network.</p>
     <ul class="fact-list">
       <li><b>Over the network (APRS-IS)</b><span>Connect to a server and send. No radio needed.</span></li>
       <li><b>Over the air (RF)</b><span>Send from a handheld or a mobile, then a local digipeater and gateway carry it into the network.</span></li>
     </ul>
-    <p class="prose">The RF path is what counts locally: a message heard nearby makes nearby stations more likely to switch on.</p>
-    <p class="oa-note">RF transmissions need your own callsign and licence, on the frequencies and paths your local rules allow. To put a local gateway together, see <a href="../../igate.html">iGate 细则</a> (in Chinese).</p>
+    <p class="oa-note">Transmissions need your own callsign and licence, on the frequencies and paths your local rules allow. To set up a gateway, see <a href="../../igate.html">iGate 细则</a> (in Chinese).</p>
   </div>
 </section>
 
 <section class="section alt" id="oa-join">
   <div class="section-head">
     <h2>How to take part</h2>
-    <p>Two steps: send a CQ, then send one U once the ACK arrives.</p>
+    <p>Send a CQ, then one U once the ACK arrives.</p>
   </div>
   <div class="section-body">
     <ul class="fact-list">
       <li><b>Callsign on duty</b><span data-oa-duty>not arranged yet</span></li>
       <li><b>Object name</b><span>the callsign on duty that week</span></li>
       <li><b>Message prefix</b><span>CNNET</span></li>
-      <li><b>Status</b><span>In preparation, the callsign on duty is not arranged yet</span></li>
+      <li><b>Status</b><span>Not started yet</span></li>
     </ul>
     <ol class="steps">
       <li>
         <b>Step one: send the check-in</b>
-        Send <code>CQ CNNET your info</code> to the callsign on duty. Put your own callsign and grid in place of that, as in <code>CQ CNNET BG7XXX from OL62</code>. CQ is the call and CNNET is the message prefix.
+        Send <code>CQ CNNET your info</code> to the callsign on duty. Put your own callsign and grid in place of that, as in <code>CQ CNNET BG7XXX from OL62</code>.
       </li>
       <li>
         <b>Step two: answer after the ACK</b>
-        The duty station answers with an ACK, which means the message arrived. Send <code>U CNNET</code> to it after the ACK.
+        The duty station answers with an ACK. Send <code>U CNNET</code> after it.
       </li>
       <li>
         <b>Optional: silent check-in</b>
-        If you would rather not send a CQ, send <code>CNNET your info</code> straight to the duty station. The ACK counts just the same.
+        You can also skip the CQ and send <code>CNNET your info</code> straight to the duty station. The ACK counts the same.
       </li>
     </ol>
     <div class="oa-actions">
@@ -243,7 +244,7 @@
       <li>
         <b>Check-in: the call</b>
         <code>CQ CNNET your info</code>
-        <span>Example <strong>CQ CNNET BG7XXX from OL62</strong>. CQ is the call, CNNET is the message prefix, and the rest is your own callsign and grid.</span>
+        <span>Put your callsign and grid in place of <strong>CQ CNNET BG7XXX from OL62</strong>. CNNET is the prefix.</span>
       </li>
       <li>
         <b>Check-in: the answer</b>
@@ -256,15 +257,14 @@
         <span>The same check-in without a CQ. The ACK still counts.</span>
       </li>
     </ul>
-    <p class="prose">Three rules: carry the prefix CNNET in every message, write the callsign on your licence, and wait for the ACK before the next line.</p>
-    <p class="oa-note">The message prefix is CNNET, and the object name is the callsign on duty that week.</p>
+    <p class="prose">Write the callsign on your licence.</p>
   </div>
 </section>
 
 <section class="section alt" id="oa-first">
   <div class="section-head">
     <h2>New to APRS messages?</h2>
-    <p>If you have never sent an APRS message, start with these pages on the site. They are background only, not net rules.</p>
+    <p>If you have never sent an APRS message, start with these pages. They are background only, not net rules.</p>
   </div>
   <div class="section-body">
     <ul class="link-list">
@@ -274,7 +274,7 @@
       <li><a class="link-row" href="../../tocall.html"><span class="lr-main"><b>官方 TOCALL 查询</b><span>Look up the device behind a callsign, or paste a whole packet line</span></span><span class="lr-go">→</span></a></li>
       <li><a class="link-row" href="../../aprsis.html"><span class="lr-main"><b>APRS-IS 文档（中文）</b><span>How to connect, and how the login line and ports work</span></span><span class="lr-go">→</span></a></li>
     </ul>
-    <p class="oa-note">Licences are not arranged here. Every transmission needs a valid callsign, and your local rules come first.</p>
+    <p class="oa-note">Licences are not arranged here. Transmissions need a valid callsign, and your local rules come first.</p>
   </div>
 </section>
 
@@ -286,8 +286,8 @@
   <div class="section-body">
     <ul class="fact-list">
       <li><b>Times per Saturday</b><span>Not settled yet. The announcement will say.</span></li>
-      <li><b>No ACK</b><span>Wait a little, then send the line again. The checks will be in the announcement.</span></li>
-      <li><b>Equipment</b><span>Anything that can send an APRS message. A phone with a sound card cable, a handheld with a TNC, or a radio with APRS built in. See <a href="../../guide.html">上手与设备</a>.</span></li>
+      <li><b>No ACK</b><span>Wait a little, then send the line again. The checks are in the announcement.</span></li>
+      <li><b>Equipment</b><span>Anything that can send an APRS message. See <a href="../../guide.html">上手与设备</a>.</span></li>
       <li><b>No gateway nearby</b><span>A message sent over RF reaches APRS-IS through a gateway. Without one, send over the network for now. See <a href="../../igate.html">iGate 细则</a>.</span></li>
       <li><b>What you need</b><span>A valid amateur radio callsign and licence, plus a station that can send APRS.</span></li>
     </ul>
@@ -297,15 +297,14 @@
 <section class="section alt" id="oa-info">
   <div class="section-head">
     <h2>Net details</h2>
-    <p>The name, the time, the callsign on duty and one note.</p>
+    <p>The basics of the net.</p>
   </div>
   <div class="section-body">
     <ul class="fact-list oa-status">
       <li><b>Net name</b><span>APRSNETCN OA</span></li>
       <li><b>Net time</b><span>Saturday in Beijing time (UTC+8), 00:00 to 23:59</span></li>
       <li><b>Callsign on duty</b><span data-oa-duty>not arranged yet</span></li>
-      <li><b>How to take part</b><span>Send the CNNET message to the callsign on duty, over RF or over the network</span></li>
-      <li><b>Note</b><span>This net is run independently by APRSNET.CN. It is not affiliated with APRS Thursday or APRS OTA.</span></li>
+      <li><b>How to take part</b><span>Send the CNNET message to the callsign on duty</span></li>
     </ul>
   </div>
 </section>
@@ -318,12 +317,12 @@
   <div class="section-body">
     <ul class="oa-lines">
       <li>This page is made independently by APRSNET.CN.</li>
-      <li>The net is run independently by APRSNET.CN. It is not affiliated with the official APRS Thursday, and it is not affiliated with the official APRS OTA.</li>
-      <li>This page does not collect callsigns, does not keep any scores, does not issue badges, and does not provide a leaderboard.</li>
+      <li>The net is run independently by APRSNET.CN. It is not affiliated with the official APRS Thursday or APRS OTA.</li>
+      <li>This page collects no callsigns and keeps no scores. There are no badges and no leaderboard.</li>
       <li>Every transmission must use a valid amateur radio callsign and a valid licence.</li>
       <li>The net must not be used for commercial gain, and it must not transmit broadcast-type signals.</li>
     </ul>
-    <p class="oa-note">The opening time and each week’s callsign will be announced on this page.</p>
+    <p class="oa-note">The opening time and each week’s callsign are announced on this page.</p>
   </div>
 </section>
 
@@ -365,7 +364,7 @@
         </ul>
       </div>
     </nav>
-    <p class="footer-note">This page is the APRSNETCN OA activity page. The net has not opened yet, and the page collects nothing. Follow your local radio regulations and transmit only on frequencies you are allowed to use.</p>
+    <p class="footer-note">This page is the APRSNETCN OA activity page. The net has not opened yet, and the page collects nothing. Transmit only on frequencies you are allowed to use, and follow your local regulations.</p>
     <p class="footer-edit">Spotted a mistake?<a href="https://github.com/dariondong/APRSNET.CN/edit/main/oa/en/index.html" target="_blank" rel="noopener">Edit this page on GitHub</a>.</p>
     <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
   </div>
@@ -377,7 +376,7 @@
 </a>
 
 <script src="../clock.js?v=1"></script>
-<script src="../roster.js?v=5"></script>
+<script src="../roster.js?v=6"></script>
 <script src="../../main.js?v=13"></script>
 </body>
 </html>
