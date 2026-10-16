@@ -48,6 +48,8 @@ DEFAULTS = {
     "OA_ACK_TEXT": "ACK",
     "OA_ACK_MAX_PER_MINUTE": "12",
     "OA_ROUND_DUTY": "",
+    "OA_AUTO_ROUND": "1",
+    "OA_ARCHIVE_DIR": "",
     "OA_PUBLISH_ROSTER": "",
     "OA_KEEP_OTHER": "2000",
 }
@@ -109,6 +111,8 @@ class Runtime(object):
         self.site_root = os.path.realpath(root)
         self.link = None
         self.publish_path = conf["OA_PUBLISH_ROSTER"] or ""
+        self.auto_round_on = (conf.get("OA_AUTO_ROUND") or "").strip() not in ("", "0", "no", "false")
+        self.archive_dir = conf["OA_ARCHIVE_DIR"] or os.path.join(conf["OA_DATA_DIR"] or ".", "archive")
         self.auto_ack = (conf.get("OA_AUTO_ACK") or "").strip() not in ("", "0", "no", "false")
         try:
             self.ack_per_minute = int(conf.get("OA_ACK_MAX_PER_MINUTE") or 12)
@@ -196,6 +200,34 @@ class Runtime(object):
                 self.store.mark_sent(job["id"], str(exc)[:200])
                 sys.stderr.write("发不出去：%s\n" % exc)
 
+    # ---- 自动开轮收轮 ----
+
+    def auto_round(self):
+        """按北京时间自己看着：周六开这一轮，周六过完就收轮归档。"""
+        if not self.auto_round_on:
+            return
+        today = oa_store.bj_now_date()
+        active = self.store.active_round()
+        if oa_store.bj_weekday() == 5:                   # 周六：当天的轮在收
+            if not active or active["date"] != today:
+                self.store.open_round(today, self.conf["OA_ROUND_DUTY"])
+                sys.stderr.write("自动开轮：%s\n" % today)
+        elif active:                                     # 周六过完了，收轮
+            self.close_and_archive(active["date"])
+
+    def close_and_archive(self, date):
+        """收一轮并把这一轮写成档案，已经收过又已经归档过就不重复。"""
+        row = self.store.round_by_date(date)
+        if not row:
+            return []
+        mark = os.path.join(self.archive_dir, "round-%s.json" % date)
+        if row["closed"] and os.path.exists(mark):
+            return []
+        self.store.close_round(date)
+        written = self.store.archive_round(date, self.archive_dir)
+        sys.stderr.write("收轮归档：%s\n" % ", ".join(written))
+        return written
+
     def duty_call(self):
         active = self.store.active_round()
         if active and active["duty"]:
@@ -232,6 +264,10 @@ class Runtime(object):
             tick = 0
             while not self._stop.is_set():
                 tick = tick + 1
+                try:
+                    self.auto_round()
+                except Exception as exc:
+                    sys.stderr.write("自动开轮出错：%s\n" % exc)
                 if tick % 4 == 1:                # 大约每分钟清一次，报文淌得快也不用每 15 秒动库
                     try:
                         dropped = self.store.prune(keep)
@@ -267,6 +303,8 @@ class Runtime(object):
             "tx": self.can_send(),
             "auto_ack": self.auto_ack and self.can_send(),
             "ack_per_minute": self.ack_per_minute,
+            "auto_round": self.auto_round_on,
+            "archive_dir": self.archive_dir,
             "packets": data["packets"],
             "kinds": data["kinds"],
             "last_packet": data["last_packet"],
@@ -382,6 +420,7 @@ class Handler(BaseHTTPRequestHandler):
                 "health": self.rt.health(),
                 "round": self.rt.store.round_by_date(date),
                 "rounds": self.rt.store.rounds(),
+                "stats": self.rt.store.round_stats(date),
                 "stations": self.rt.store.stations(date),
                 "packets": self.rt.store.packets(limit=200),
                 "outbox": self.rt.store.outbox(limit=20),
@@ -390,9 +429,26 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/admin/export":
             if not self._need_token():
                 return
+            date = (query.get("date") or [""])[0] or oa_store.bj_now_date()
+            fmt = (query.get("format") or ["json"])[0].lower()
+            what = (query.get("what") or ["roster"])[0].lower()
+            if fmt == "csv":
+                if what == "packets":
+                    rows = self.rt.store.round_packets(date)
+                    body = oa_store.csv_text(oa_store.PACKET_HEAD,
+                                             [oa_store.packet_row(p) for p in rows])
+                    name = "round-%s-packets.csv" % date
+                else:
+                    rows = self.rt.store.stations(date)
+                    body = oa_store.csv_text(oa_store.STATION_HEAD,
+                                             [oa_store.station_row(s) for s in rows])
+                    name = "round-%s-stations.csv" % date
+                self._send(200, ("\ufeff" + body).encode("utf-8"), "text/csv; charset=utf-8",
+                           {"Content-Disposition": 'attachment; filename="%s"' % name})
+                return
             body = json.dumps(self.rt.store.roster(), ensure_ascii=False, indent=2) + "\n"
             self._send(200, body, "application/json; charset=utf-8",
-                       {"Content-Disposition": 'attachment; filename="roster.json"'})
+                       {"Content-Disposition": 'attachment; filename="roster-%s.json"' % date})
             return
         self._static(path)
 
@@ -427,8 +483,8 @@ class Handler(BaseHTTPRequestHandler):
             if not self._need_token():
                 return
             date = str(body.get("date") or "").strip()
-            self.rt.store.close_round(date)
-            self._json({"ok": True})
+            written = self.rt.close_and_archive(date)
+            self._json({"ok": True, "archived": written})
             return
         if path == "/api/admin/duty":
             if not self._need_token():
@@ -482,6 +538,13 @@ class Handler(BaseHTTPRequestHandler):
             if not self.rt.can_send():
                 self.rt.store.set_station(date, call, status="acked", create=False)
             self._json({"ok": True, "queued": self.rt.can_send(), "line": line, "id": oid})
+            return
+        if path == "/api/admin/archive":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip() or oa_store.bj_now_date()
+            written = self.rt.store.archive_round(date, self.rt.archive_dir)
+            self._json({"ok": bool(written), "files": written, "dir": self.rt.archive_dir})
             return
         self._fail(404, "没有这个接口")
 

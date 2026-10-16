@@ -7,6 +7,8 @@
 
 时间一律按 UTC 存，写进名单才换成北京时间。只用标准库。
 """
+import csv
+import io
 import json
 import os
 import sqlite3
@@ -58,6 +60,8 @@ CREATE TABLE IF NOT EXISTS stations (
   first_ts TEXT NOT NULL DEFAULT '',
   last_ts  TEXT NOT NULL DEFAULT '',
   note     TEXT NOT NULL DEFAULT '',
+  acked_ts TEXT NOT NULL DEFAULT '',
+  confirmed_ts TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (round_id, call)
 );
 
@@ -73,6 +77,34 @@ CREATE TABLE IF NOT EXISTS outbox (
 """
 
 STATUS_ORDER = {"called": 1, "acked": 2, "confirmed": 3}
+
+STATION_HEAD = ["呼号", "网格", "路径", "中继", "参与时间", "状态", "首次报文", "最后报文",
+                "回ACK时间", "确认时间"]
+PACKET_HEAD = ["时间", "呼号", "类型", "收件人", "网格", "路径", "中继", "文字", "原报文"]
+STATUS_TEXT = {"called": "只喊到", "acked": "已回ACK", "confirmed": "已确认"}
+
+
+def csv_text(head, rows):
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(head)
+    for row in rows:
+        writer.writerow(row)
+    return buf.getvalue()
+
+
+def station_row(s):
+    return [s.get("call", ""), s.get("grid", ""),
+            "射频" if s.get("via") == "rf" else ("网络" if s.get("via") == "is" else ""),
+            s.get("digi", ""), s.get("at", ""), STATUS_TEXT.get(s.get("status"), s.get("status", "")),
+            s.get("first_ts", ""), s.get("last_ts", ""), s.get("acked_ts", ""),
+            s.get("confirmed_ts", "")]
+
+
+def packet_row(p):
+    return [p.get("ts", ""), p.get("src", ""), p.get("kind", ""), p.get("msgto", ""), p.get("grid", ""),
+            "射频" if p.get("via") == "rf" else ("网络" if p.get("via") == "is" else ""),
+            p.get("digi", ""), p.get("text", ""), p.get("raw", "")]
 
 
 def now_iso():
@@ -105,6 +137,12 @@ def bj_now_date():
     return bj(datetime.now(UTC)).strftime("%Y-%m-%d")
 
 
+def bj_weekday(text=None):
+    """北京时间的星期几，0 是周一。"""
+    dt = datetime.now(UTC) if text is None else (parse_iso(text) or datetime.now(UTC))
+    return bj(dt).weekday()
+
+
 def round_date_of(text):
     """这一行报文算哪一轮：按北京时间归到最近的那个周六。"""
     dt = parse_iso(text) or datetime.now(UTC)
@@ -125,7 +163,15 @@ class Store(object):
         self.db.row_factory = sqlite3.Row
         with self.lock:
             self.db.executescript(SCHEMA)
+            self._migrate()
             self.db.commit()
+
+    def _migrate(self):
+        """老库补列：建库早于新字段时补上，已有的不动。"""
+        cols = set(row["name"] for row in self.db.execute("PRAGMA table_info(stations)"))
+        for name in ("acked_ts", "confirmed_ts"):
+            if name not in cols:
+                self.db.execute("ALTER TABLE stations ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
 
     def close(self):
         with self.lock:
@@ -229,9 +275,11 @@ class Store(object):
         row = self.db.execute("SELECT * FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
         if row is None:
             self.db.execute(
-                "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts)"
-                " VALUES (?,?,?,?,?,?,?,1,?,?)",
-                (rid, call, grid, via, digi, bj_at(ts), status, ts, ts))
+                "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts,"
+                " acked_ts,confirmed_ts) VALUES (?,?,?,?,?,?,?,1,?,?,?,?)",
+                (rid, call, grid, via, digi, bj_at(ts), status, ts, ts,
+                 ts if status in ("acked", "confirmed") else "",
+                 ts if status == "confirmed" else ""))
             return
         old = STATUS_ORDER.get(row["status"], 0)
         new_status = status if STATUS_ORDER.get(status, 0) > old else row["status"]
@@ -240,10 +288,13 @@ class Store(object):
         if row["via"] == "rf" and via == "is":
             new_via = "rf"                     # 喊到那一下走的是射频，后面回消息走网络也不改
             new_digi = row["digi"] or digi
+        acked_ts = row["acked_ts"] or (ts if new_status in ("acked", "confirmed") else "")
+        confirmed_ts = row["confirmed_ts"] or (ts if new_status == "confirmed" else "")
         self.db.execute(
-            "UPDATE stations SET grid=?, via=?, digi=?, status=?, packets=packets+1, last_ts=?"
-            " WHERE round_id=? AND call=?",
-            (grid or row["grid"], new_via, new_digi, new_status, ts, rid, call))
+            "UPDATE stations SET grid=?, via=?, digi=?, status=?, packets=packets+1, last_ts=?,"
+            " acked_ts=?, confirmed_ts=? WHERE round_id=? AND call=?",
+            (grid or row["grid"], new_via, new_digi, new_status, ts, acked_ts, confirmed_ts,
+             rid, call))
 
     def packets(self, limit=200, kind=None):
         sql = "SELECT * FROM packets"
@@ -292,21 +343,26 @@ class Store(object):
                 return None
             if row is None:
                 self.db.execute(
-                    "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts,note)"
-                    " VALUES (?,?,?,?,?,?,?,0,?,?,?)",
+                    "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts,note,"
+                    " acked_ts,confirmed_ts) VALUES (?,?,?,?,?,?,?,0,?,?,?,?,?)",
                     (rid, call, grid or "", via or "", chain, at or bj_at(ts),
-                     status or "called", ts, ts, note or ""))
+                     status or "called", ts, ts, note or "",
+                     ts if status in ("acked", "confirmed") else "",
+                     ts if status == "confirmed" else ""))
             else:
+                new_status = status or row["status"]
+                acked_ts = row["acked_ts"] or (ts if new_status in ("acked", "confirmed") else "")
+                confirmed_ts = row["confirmed_ts"] or (ts if new_status == "confirmed" else "")
                 self.db.execute(
-                    "UPDATE stations SET grid=?, via=?, digi=?, at=?, status=?, note=?, last_ts=?"
-                    " WHERE round_id=? AND call=?",
+                    "UPDATE stations SET grid=?, via=?, digi=?, at=?, status=?, note=?, last_ts=?,"
+                    " acked_ts=?, confirmed_ts=? WHERE round_id=? AND call=?",
                     (grid if grid is not None else row["grid"],
                      via if via is not None else row["via"],
                      chain if digi is not None else row["digi"],
                      at if at is not None else row["at"],
-                     status or row["status"],
+                     new_status,
                      note if note is not None else row["note"],
-                     ts, rid, call))
+                     ts, acked_ts, confirmed_ts, rid, call))
             self.db.commit()
         return rid
 
@@ -380,6 +436,75 @@ class Store(object):
             cur = self.db.execute("DELETE FROM packets WHERE kind='other' AND id <= ?", (cut,))
             self.db.commit()
             return cur.rowcount
+
+    # ---- 汇总与归档 ----
+
+    def round_stats(self, date):
+        """本轮那几个数字，主控台与归档都用它。"""
+        row = self.round_by_date(date)
+        out = {"date": date, "stations": 0, "called": 0, "acked": 0, "confirmed": 0,
+               "rf": 0, "is": 0, "digis": 0, "packets": 0, "last": ""}
+        if not row:
+            return out
+        with self.lock:
+            rows = self.db.execute("SELECT * FROM stations WHERE round_id=?", (row["id"],)).fetchall()
+            out["packets"] = self.db.execute("SELECT COUNT(*) AS n FROM packets WHERE round_id=?",
+                                             (row["id"],)).fetchone()["n"]
+        digis = []
+        out["stations"] = len(rows)
+        for r in rows:
+            out[r["status"]] = out.get(r["status"], 0) + 1
+            if r["via"] == "rf":
+                out["rf"] = out["rf"] + 1
+            elif r["via"] == "is":
+                out["is"] = out["is"] + 1
+            for d in (r["digi"] or "").split(","):
+                if d and d not in digis:
+                    digis.append(d)
+            if r["last_ts"] > out["last"]:
+                out["last"] = r["last_ts"]
+        out["digis"] = len(digis)
+        return out
+
+    def round_packets(self, date, limit=5000):
+        row = self.round_by_date(date)
+        if not row:
+            return []
+        with self.lock:
+            return [dict(r) for r in self.db.execute(
+                "SELECT * FROM packets WHERE round_id=? ORDER BY id ASC LIMIT ?",
+                (row["id"], int(limit))).fetchall()]
+
+    def archive_round(self, date, out_dir):
+        """一轮收档：一份 json（名单加流水）与两份 csv（名单、流水）。返回写出的路径。"""
+        row = self.round_by_date(date)
+        if not row:
+            return []
+        if out_dir and not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+        stations = self.stations(date)
+        packets = self.round_packets(date)
+        data = {
+            "date": date,
+            "duty": row["duty"],
+            "opened": row["opened"],
+            "closed": row["closed"] or now_iso(),
+            "stats": self.round_stats(date),
+            "stations": stations,
+            "packets": packets,
+        }
+        base = os.path.join(out_dir, "round-%s" % date)
+        written = []
+        with open(base + ".json", "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+        written.append(base + ".json")
+        with open(base + "-stations.csv", "w", encoding="utf-8-sig", newline="") as fh:
+            fh.write(csv_text(STATION_HEAD, [station_row(s) for s in stations]))
+        written.append(base + "-stations.csv")
+        with open(base + "-packets.csv", "w", encoding="utf-8-sig", newline="") as fh:
+            fh.write(csv_text(PACKET_HEAD, [packet_row(p) for p in packets]))
+        written.append(base + "-packets.csv")
+        return written
 
     # ---- 发件箱（回 ACK 用） ----
 

@@ -8,6 +8,7 @@
 import json
 import os
 import shutil
+import sqlite3
 import sys
 import tempfile
 
@@ -123,9 +124,59 @@ def main():
                                                       create=False), None)
         check("那台没被建出来", len(store.stations(rnd["date"])), 3)
 
+        stats = store.round_stats(rnd["date"])
+        check("数字：三台", stats["stations"], 3)
+        check("数字：已确认一台", stats["confirmed"], 1)
+        check("数字：只喊到两台", stats["called"], 2)
+        check("数字：射频两台", stats["rf"], 2)
+        check("数字：网络一台", stats["is"], 1)
+        check("数字：一个中继", stats["digis"], 1)
+        check("数字：只数喊到与确认那几句", stats["packets"], 5)
+        check("数字：最后一条有时间", bool(stats["last"]), True)
+        check("没开过的轮数字全是零", store.round_stats("1999-01-02")["stations"], 0)
+
+        arch_dir = os.path.join(work, "archive")
+        files = store.archive_round(rnd["date"], arch_dir)
+        check("归档写出三份", sorted(os.path.basename(f) for f in files),
+              ["round-%s-packets.csv" % rnd["date"], "round-%s-stations.csv" % rnd["date"],
+               "round-%s.json" % rnd["date"]])
+        with open(os.path.join(arch_dir, "round-%s.json" % rnd["date"]), "r", encoding="utf-8") as fh:
+            arch = json.load(fh)
+        check("归档里有名单与流水", (len(arch["stations"]), len(arch["packets"])), (3, 5))
+        check("归档里的数字", arch["stats"]["confirmed"], 1)
+        check("归档写了收轮时间", bool(arch["closed"]), True)
+        with open(os.path.join(arch_dir, "round-%s-stations.csv" % rnd["date"]), "rb") as fh:
+            check("CSV 带 BOM", fh.read(3), b"\xef\xbb\xbf")
+        check("没这一轮就归档不出东西", store.archive_round("1999-01-02", arch_dir), [])
+
         store.close()
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+    # 老库补列：建库时还没有 acked_ts / confirmed_ts，打开时应自己补上
+    old = tempfile.mkdtemp(prefix="oa-selftest-old-")
+    try:
+        conn = sqlite3.connect(os.path.join(old, "oa.db"))
+        conn.executescript(
+            "CREATE TABLE stations (id INTEGER PRIMARY KEY, round_id INTEGER, call TEXT,"
+            " grid TEXT, via TEXT, digi TEXT, at TEXT, status TEXT, packets INTEGER,"
+            " first_ts TEXT, last_ts TEXT);")
+        conn.execute("INSERT INTO stations (round_id,call,status) VALUES (1,'BG1OLD','called')")
+        conn.commit()
+        conn.close()
+        legacy = oa_store.Store(old, default_duty="BG7LZQ-2")
+        cols = set(r["name"] for r in legacy.db.execute("PRAGMA table_info(stations)"))
+        check("老库补上 acked_ts", "acked_ts" in cols, True)
+        check("老库补上 confirmed_ts", "confirmed_ts" in cols, True)
+        check("老库那一行还在",
+              legacy.db.execute("SELECT COUNT(*) AS n FROM stations").fetchone()["n"], 1)
+        legacy.close()
+        again = oa_store.Store(old, default_duty="BG7LZQ-2")
+        check("补列再来一次不多不少",
+              sorted(r["name"] for r in again.db.execute("PRAGMA table_info(stations)")), sorted(cols))
+        again.close()
+    finally:
+        shutil.rmtree(old, ignore_errors=True)
 
     print("\n%d 项，过了 %d 项" % (len(CHECKS), sum(1 for c in CHECKS if c)))
     return 0 if all(CHECKS) else 1
