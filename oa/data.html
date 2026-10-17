@@ -108,16 +108,18 @@
 .oa-export-btn { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 1px solid var(--line-strong); padding: 5px 12px; cursor: pointer; }
 .oa-export-btn:hover { color: var(--text); border-color: var(--text); }
 .oa-export-btn[aria-pressed="true"] { color: var(--bg-1); background: var(--text); border-color: var(--text); }
-/* 核验编号：填奖状上那 8 位，名单里自己找 */
-.oa-verify { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 26px 0 0; }
+/* 核验编号：一个小块，标题、一句说明、一行输入，拆开的结果就当一行台站写 */
+.oa-verify { margin: 30px 0 0; }
+.oa-verify-title { margin: 0 0 6px; font-size: 15px; color: var(--text); }
+.oa-verify-hint { margin: 0 0 12px; font-size: 14.5px; line-height: 1.7; color: var(--text-faint); }
+.oa-verify-form { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
 .oa-verify-label { font-size: 14.5px; color: var(--text-faint); }
-.oa-verify-in { font: inherit; font-size: 15px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 7px 12px; width: 176px; min-width: 0; letter-spacing: .06em; }
+.oa-verify-in { font: inherit; font-size: 15px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 8px 12px; flex: 1 1 260px; min-width: 0; letter-spacing: .06em; }
 .oa-verify-in:focus { outline: 2px solid var(--text); outline-offset: 1px; }
-.oa-verify-go { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 1px solid var(--line-strong); padding: 6px 14px; cursor: pointer; }
+.oa-verify-go { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 1px solid var(--line-strong); padding: 7px 14px; cursor: pointer; }
 .oa-verify-go:hover { color: var(--text); border-color: var(--text); }
-.oa-verify-out { flex: 1 1 100%; margin: 0; font-size: 14.5px; line-height: 1.7; color: var(--text-dim); }
-.oa-verify-out b { font-weight: 700; color: var(--text); }
-.oa-verify-out a { color: var(--text); border-bottom: 1px solid var(--line-strong); }
+.oa-verify-out { margin: 16px 0 0; }
+.oa-verify-out:empty { display: none; }
 @media (max-width: 640px) {
   .oa-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .oa-stats li { border-top: 1px solid var(--line); padding: 16px 14px; }
@@ -210,11 +212,15 @@
         <span class="st-note">本轮还没有台站。</span>
       </li>
     </ul>
-    <div class="oa-verify" data-verify-hint="奖状右上角那 20 位就是算出来的编号，拆开是呼号、场次、时间、网格。" data-verify-miss="这不像是编号，一个奖状上的编号是 20 位 0-9A-Z。">
-      <label class="oa-verify-label" for="oaVerifyIn">拆编号</label>
-      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="0MM91RP22DH024SQT001">
-      <button class="oa-verify-go" id="oaVerifyGo" type="button">拆开看</button>
-      <p class="oa-verify-out" id="oaVerifyOut" role="status"></p>
+    <div class="oa-verify" data-verify-miss="看不出来。奖状的编号是 20 位，0-9 与 A-Z。" data-verify-absent="名单里没有这一台。">
+      <h3 class="oa-verify-title">核验编号</h3>
+      <p class="oa-verify-hint">拿奖状右上角那一串填进去，拆开对着看。</p>
+      <div class="oa-verify-form">
+        <label class="oa-verify-label" for="oaVerifyIn">编号</label>
+        <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="0MM91RP22DH024SQF001">
+        <button class="oa-verify-go" id="oaVerifyGo" type="button">拆开看</button>
+      </div>
+      <ul class="st-list oa-verify-out" id="oaVerifyOut" aria-live="polite"></ul>
     </div>
     <p class="oa-note">字段按轮值台收到的报文写。</p>
   </div>
@@ -282,7 +288,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="roster.js?v=26"></script>
+<script src="roster.js?v=27"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>

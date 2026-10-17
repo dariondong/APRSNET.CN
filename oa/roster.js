@@ -775,58 +775,90 @@
     return null;
   };
 
-  var runVerify = function () {
+  /* 拆不出来就只留一句说明，不铺空行 */
+  var verifyNote = function (text) {
+    verifyOut.textContent = "";
+    var v = String(text == null ? "" : text).trim();
+    if (!v) return;
+    var li = document.createElement("li");
+    li.className = "st";
+    var note = document.createElement("span");
+    note.className = "st-note";
+    note.textContent = v;
+    li.appendChild(note);
+    verifyOut.appendChild(li);
+  };
+
+  /* 拆开的几样照台站那块写：呼号一行（带地区），下面网格 / 场次 / 时间；
+     名单里有这一台就把奖状链接放在右端，没有就补一句说明。边打边拆，凑够 20 位就出结果。 */
+  var runVerify = function (quiet) {
     if (!verifyOut || !verifyIn) return;
     var typed = String(verifyIn.value || "").trim();
-    var hint = verifyBox ? (verifyBox.getAttribute("data-verify-hint") || "") : "";
-    var miss = verifyBox ? (verifyBox.getAttribute("data-verify-miss") || "") : "";
-    verifyOut.textContent = "";
     if (!typed) {
-      verifyOut.textContent = hint;
+      verifyOut.textContent = "";
       return;
     }
     var code = readCode(typed);
     if (!code) {
-      verifyOut.textContent = miss;
+      if (quiet) verifyOut.textContent = "";
+      else verifyNote(verifyBox ? (verifyBox.getAttribute("data-verify-miss") || "") : "");
       return;
     }
-    var call = document.createElement("b");
-    call.textContent = code.call;
-    verifyOut.appendChild(call);
-    var label = function (key) { return list.getAttribute(key) || ""; };
-    var bits = [];
-    [["data-label-round", code.date], ["data-label-at", code.at],
-     ["data-label-grid", code.grid]].forEach(function (pair) {
-      if (!pair[1]) return;
-      var name = label(pair[0]);
-      bits.push(name ? name + " " + pair[1] : String(pair[1]));
-    });
-    if (bits.length) {
-      var info = document.createElement("span");
-      info.textContent = " " + bits.join(" · ");
-      verifyOut.appendChild(info);
-    }
+    verifyOut.textContent = "";
     var hit = findRecord(code);
-    var certLabel = list.getAttribute("data-cert-label") || "";
+    var li = document.createElement("li");
+    li.className = "st";
+    var head = document.createElement("div");
+    head.className = "st-head";
+    var call = document.createElement("b");
+    call.className = "st-call";
+    call.textContent = code.call;
+    head.appendChild(call);
+    var region = regionOf(code.call);
+    if (region) {
+      var where = document.createElement("span");
+      where.className = "st-region";
+      where.textContent = (chinese ? region[1] : region[2]) + " " + region[3];
+      head.appendChild(where);
+    }
     if (hit && certLabel && imgBase) {
       var query = imgQuery(hit.round);
       var link = document.createElement("a");
+      link.className = "st-cert";
+      link.setAttribute("data-oa-cert", String(hit.station.call || ""));
+      link.setAttribute("download", "");
       link.href = imgBase + "cert.png?call=" + encodeURIComponent(String(hit.station.call || "")) +
         (query ? "&" + query : "");
       link.textContent = certLabel;
-      verifyOut.appendChild(document.createTextNode(" "));
-      verifyOut.appendChild(link);
+      head.appendChild(link);
     }
+    li.appendChild(head);
+    var dl = document.createElement("dl");
+    dl.className = "st-fields";
+    addField(dl, gridLabel, code.grid, "\u2014");
+    addField(dl, list.getAttribute("data-label-round") || "", code.date);
+    addField(dl, atLabel, code.at ? code.at + " UTC+8" : "");
+    li.appendChild(dl);
+    var absent = verifyBox ? (verifyBox.getAttribute("data-verify-absent") || "") : "";
+    if (!hit && absent) {
+      var note = document.createElement("span");
+      note.className = "st-note";
+      note.textContent = absent;
+      li.appendChild(note);
+    }
+    verifyOut.appendChild(li);
   };
 
   if (verifyIn && verifyGo) {
-    verifyGo.addEventListener("click", runVerify);
+    verifyGo.addEventListener("click", function () { runVerify(false); });
     verifyIn.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
         e.preventDefault();
-        runVerify();
+        runVerify(false);
       }
     });
+    /* 边打边拆：不够长就静静清空，不提前报错 */
+    verifyIn.addEventListener("input", function () { runVerify(true); });
   }
 
   /* 名单会自己变：服务端把 data-roster 指到 /api/roster（绝对路径），隔一会儿再读一次；
