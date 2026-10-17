@@ -15,7 +15,7 @@ fonts-wqy-zenhei 之类的中文字体。
 import io
 import os
 import re
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, date, timezone, timedelta
 
 import oa_region
 
@@ -28,6 +28,14 @@ HOT = (179, 20, 31)
 BJ = timezone(timedelta(hours=8))
 PAD = 72
 WIDTH = 1080
+
+# 编号用的两套字母：B36 拼呼号与网格，B32（Crockford，去掉 I L O U）写最终那串
+B36 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+# 编号是几段定长 32 进制拼起来的：呼号 7、SSID 1、天数 3、分钟 3、四位网格 3、后两位 2、长度 1
+SERIAL_SPAN = (7, 1, 3, 3, 3, 2, 1)
+SERIAL_LEN = sum(SERIAL_SPAN)
+SERIAL_EPOCH = date(2020, 1, 1)
 
 FONT_PATHS = (
     "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
@@ -215,19 +223,125 @@ def _head(draw, title, subtitle, note):
     return 218
 
 
-def serial_of(call, date, at="", grid=""):
-    """编号就是这台站的四样东西，直接用点隔开拼一串：呼号.场次.时间.网格。
+def serial_of(call, date=None, at="", grid=""):
+    """编号：把呼号、场次、时间、网格算成几段定长的 32 进制，直接拼成 20 位。
 
-    例：BG7LZQ-2.261017.0108.OL62。看的人拆开就懂，不用查文件、不用算。
-    哪一段缺了就用短横占位，四段的位置始终不变。
+    每段的位置与进制都是固定的（见 SERIAL_SPAN），拆回去只要读数字，
+    不用名单、不用问服务器、不用任何文件。
     """
-    head = str(call or "").strip().upper() or "----"
-    digits = re.sub(r"\D", "", str(date or ""))
-    day = digits[2:8] if len(digits) >= 8 else "------"     # 2026-10-17 -> 261017
+    head, ssid = _split_call(call)
+    call_val = 0
+    for ch in head[:6]:                                # 呼号按 36 进制当数看，不补齐
+        call_val = call_val * 36 + B36.index(ch)
     clock = re.search(r"(\d{1,2}):(\d{1,2})", str(at or ""))
-    hhmm = ("%02d%02d" % (int(clock.group(1)), int(clock.group(2)))) if clock else "----"
-    cell = str(grid or "").strip().upper()[:6] or "----"
-    return ".".join([head, day, hhmm, cell])
+    minutes = (int(clock.group(1)) * 60 + int(clock.group(2))) if clock else 0
+    g4, g6, glen = _grid_code(grid)
+    return "".join([
+        _b32(call_val, SERIAL_SPAN[0]),
+        _b32(ssid, SERIAL_SPAN[1]),
+        _b32(_days_of(date), SERIAL_SPAN[2]),
+        _b32(minutes, SERIAL_SPAN[3]),
+        _b32(g4, SERIAL_SPAN[4]),
+        _b32(g6, SERIAL_SPAN[5]),
+        _b32(glen, SERIAL_SPAN[6]),
+    ])
+
+
+def read_serial(code):
+    """把编号拆回去：呼号、场次、时间、网格。只用算术，任何文件都不需要。"""
+    text = "".join(ch for ch in str(code or "").upper() if ch in B32 or ch in "OIL")
+    if len(text) != SERIAL_LEN:
+        return None
+    vals = []
+    pos = 0
+    for width in SERIAL_SPAN:
+        val = 0
+        for ch in text[pos:pos + width]:
+            v = B32.find(ch)
+            if v < 0:
+                v = {"O": 0, "I": 1, "L": 1}.get(ch, -1)
+            if v < 0:
+                return None
+            val = val * 32 + v
+        vals.append(val)
+        pos += width
+    call_val, ssid, days, minutes, g4, g6, glen = vals
+    letters = ""
+    for i in range(6):
+        letters = B36[call_val % 36] + letters
+        call_val //= 36
+    call = letters.lstrip("0") or "0"
+    if ssid:
+        call = "%s-%d" % (call, ssid)
+    grid = ""
+    if glen == 1:
+        grid = _grid_text(g4, None)
+    elif glen == 2:
+        grid = _grid_text(g4, g6)
+    return {"call": call, "date": _date_of(days),
+            "at": "%02d:%02d" % (minutes // 60, minutes % 60), "grid": grid}
+
+
+def _split_call(call):
+    """呼号拆成「字母部分」和 SSID；没有 SSID 就是 0。"""
+    text = str(call or "").strip().upper()
+    head, _, tail = text.partition("-")
+    head = "".join(ch for ch in head if ch in B36)
+    ssid = int(tail) if tail.isdigit() and 0 <= int(tail) <= 15 else 0
+    return head, ssid
+
+
+def _days_of(day, epoch=SERIAL_EPOCH):
+    """场次离 2020-01-01 多少天，收到 0..4095 里。"""
+    text = str(day or "").strip()
+    try:
+        y, m, d = (int(part) for part in text.split("-"))
+        return min(4095, max(0, (date(y, m, d) - epoch).days))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _date_of(days, epoch=SERIAL_EPOCH):
+    try:
+        day = epoch + timedelta(days=int(days))
+    except (ValueError, OverflowError):
+        return ""
+    return day.isoformat()
+
+
+def _grid_code(grid):
+    """网格写成两个整数：四位那一格、后面两位，以及长度标记。"""
+    text = "".join(ch for ch in str(grid or "").strip().upper() if ch in B36)
+    if len(text) >= 4 and re.match(r"^[A-R]{2}[0-9]{2}$", text[:4]):
+        a, b, d1, d2 = text[0], text[1], text[2], text[3]
+        g4 = (((ord(a) - 65) * 18 + (ord(b) - 65)) * 10 + int(d1)) * 10 + int(d2)
+        if len(text) >= 6 and "A" <= text[4] <= "X" and "A" <= text[5] <= "X":
+            return g4, (ord(text[4]) - 65) * 24 + (ord(text[5]) - 65), 2
+        return g4, 0, 1
+    return 0, 0, 0
+
+
+def _grid_text(g4, g6):
+    d2 = g4 % 10
+    g4 //= 10
+    d1 = g4 % 10
+    g4 //= 10
+    b = g4 % 18
+    a = g4 // 18
+    text = "%s%s%d%d" % (chr(65 + a), chr(65 + b), d1, d2)
+    if g6 is not None:
+        text += "%s%s" % (chr(65 + g6 // 24), chr(65 + g6 % 24))
+    return text
+
+
+def _b32(value, width):
+    """一段定长的 32 进制：不够宽的左边补 0。"""
+    value = max(0, int(value))
+    out = ""
+    while value:
+        out = B32[value % 32] + out
+        value //= 32
+    return out.rjust(width, "0")[-width:]
 
 
 def _png(image):

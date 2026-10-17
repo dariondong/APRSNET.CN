@@ -210,9 +210,9 @@
         <span class="st-note">This round has no station yet.</span>
       </li>
     </ul>
-    <div class="oa-verify" data-verify-hint="The serial sits at the top right of a certificate. It splits into four parts: callsign, round, time, grid." data-verify-miss="That does not look like a serial. Four parts, separated by dots: callsign.round.time.grid.">
-      <label class="oa-verify-label" for="oaVerifyIn">Read a serial</label>
-      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="BG7LZQ-2.261017.0108.OL62">
+    <div class="oa-verify" data-verify-hint="The 20 characters at the top right of a certificate are a computed serial. They split into callsign, round, time and grid." data-verify-miss="That does not look like a serial. A certificate carries 20 characters of 0-9 and A-Z.">
+      <label class="oa-verify-label" for="oaVerifyIn">Split a serial</label>
+      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="0MM91RP22DH024SQT001">
       <button class="oa-verify-go" id="oaVerifyGo" type="button">Split it</button>
       <p class="oa-verify-out" id="oaVerifyOut" role="status"></p>
     </div>
@@ -282,7 +282,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=25"></script>
+<script src="../roster.js?v=26"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>

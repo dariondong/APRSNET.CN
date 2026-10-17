@@ -700,24 +700,64 @@
     });
   }
 
-  /* 编号：奖状右上角那串就是这台站的四样东西，用点隔开。
-     呼号.场次.时间.网格，拆开就懂，不靠服务器、不靠名单。 */
+  /* 编号：奖状右上角那 20 位是算出来的，几段定长 32 进制拼在一起。
+     位置固定，拆开就是呼号、场次、时间、网格，不靠服务器、不靠名单。 */
+  var B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";   /* Crockford，去掉 I L O U */
+  var B36 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  var SPAN = [7, 1, 3, 3, 3, 2, 1];                 /* 呼号 SSID 天数 分钟 四位网格 后两位 长度 */
   var verifyBox = document.querySelector(".oa-verify");
   var verifyIn = document.getElementById("oaVerifyIn");
   var verifyGo = document.getElementById("oaVerifyGo");
   var verifyOut = document.getElementById("oaVerifyOut");
 
   var readCode = function (raw) {
-    var parts = String(raw || "").trim().replace(/\s+/g, "").split(".");
-    if (parts.length !== 4) return null;
-    var call = parts[0];
-    if (!/^[0-9A-Z\/-]{3,12}$/i.test(call)) return null;
-    var day = /^\d{6}$/.test(parts[1]) ? "20" + parts[1].slice(0, 2) + "-" + parts[1].slice(2, 4) +
-      "-" + parts[1].slice(4, 6) : "";
-    var clock = /^\d{4}$/.test(parts[2]) ? parts[2].slice(0, 2) + ":" + parts[2].slice(2, 4) : "";
-    var grid = /^[0-9A-Z]{2,6}$/i.test(parts[3]) ? parts[3].toUpperCase() : "";
-    if (!day && !clock && !grid) return null;
-    return { call: call.toUpperCase(), date: day, at: clock, grid: grid };
+    var text = String(raw || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
+    var total = 0;
+    SPAN.forEach(function (w) { total += w; });
+    if (text.length !== total) return null;
+    var vals = [];
+    var pos = 0;
+    for (var k = 0; k < SPAN.length; k++) {
+      var val = 0;
+      for (var j = 0; j < SPAN[k]; j++) {
+        var ch = text.charAt(pos + j);
+        var v = B32.indexOf(ch);
+        if (v < 0) v = ch === "O" ? 0 : (ch === "I" || ch === "L") ? 1 : -1;
+        if (v < 0) return null;
+        val = val * 32 + v;
+      }
+      vals.push(val);
+      pos += SPAN[k];
+    }
+    var callVal = vals[0];
+    var ssid = vals[1];
+    var days = vals[2];
+    var minutes = vals[3];
+    var g4 = vals[4];
+    var g6 = vals[5];
+    var glen = vals[6];
+    var letters = "";
+    for (var n = 0; n < 6; n++) {
+      letters = B36.charAt(callVal % 36) + letters;
+      callVal = Math.floor(callVal / 36);
+    }
+    var call = letters.replace(/^0+/, "") || "0";
+    if (ssid) call += "-" + ssid;
+    var day = new Date(Date.UTC(2020, 0, 1) + days * 86400000).toISOString().slice(0, 10);
+    var at = ("0" + Math.floor(minutes / 60)).slice(-2) + ":" + ("0" + (minutes % 60)).slice(-2);
+    var grid = "";
+    if (glen === 1 || glen === 2) {
+      var d2 = g4 % 10;
+      g4 = Math.floor(g4 / 10);
+      var d1 = g4 % 10;
+      g4 = Math.floor(g4 / 10);
+      grid = String.fromCharCode(65 + Math.floor(g4 / 18)) + String.fromCharCode(65 + (g4 % 18)) +
+        d1 + d2;
+      if (glen === 2) {
+        grid += String.fromCharCode(65 + Math.floor(g6 / 24)) + String.fromCharCode(65 + (g6 % 24));
+      }
+    }
+    return { call: call, date: day, at: at, grid: grid };
   };
 
   /* 名单在手上就顺手把那张奖状也找出来；没拉到名单也不影响拆编号 */

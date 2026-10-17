@@ -210,9 +210,9 @@
         <span class="st-note">本轮还没有台站。</span>
       </li>
     </ul>
-    <div class="oa-verify" data-verify-hint="奖状右上角那串编号，四段用点隔开，拆开就是呼号、场次、时间、网格。" data-verify-miss="这串不像编号，该是四段用点隔开：呼号.场次.时间.网格。">
-      <label class="oa-verify-label" for="oaVerifyIn">读编号</label>
-      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="BG7LZQ-2.261017.0108.OL62">
+    <div class="oa-verify" data-verify-hint="奖状右上角那 20 位就是算出来的编号，拆开是呼号、场次、时间、网格。" data-verify-miss="这不像是编号，一个奖状上的编号是 20 位 0-9A-Z。">
+      <label class="oa-verify-label" for="oaVerifyIn">拆编号</label>
+      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="0MM91RP22DH024SQT001">
       <button class="oa-verify-go" id="oaVerifyGo" type="button">拆开看</button>
       <p class="oa-verify-out" id="oaVerifyOut" role="status"></p>
     </div>
@@ -282,7 +282,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="roster.js?v=25"></script>
+<script src="roster.js?v=26"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>

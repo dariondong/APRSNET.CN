@@ -547,11 +547,22 @@ def main():
                                     {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
                                      "digi": [], "at": "10-17 01:08"})
         check("奖状画得出 PNG", cert[:8], b"\x89PNG\r\n\x1a\n")
-        check("编号就是呼号场次时间网格",
-              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62"),
-              "BG7LZQ-2.261017.0108.OL62")
-        check("缺了时间与网格的编号占位",
-              oa_image.serial_of("BG7LZQ-2", "2026-10-17"), "BG7LZQ-2.261017.----.----")
+        check("编号是 20 位",
+              len(oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62")), 20)
+        check("编号拆回去就是那四样",
+              oa_image.read_serial(oa_image.serial_of("BG7LZQ-2", "2026-10-17",
+                                                      "10-17 01:08", "OL62")),
+              {"call": "BG7LZQ-2", "date": "2026-10-17", "at": "01:08", "grid": "OL62"})
+        check("六位网格也拆得回",
+              oa_image.read_serial(oa_image.serial_of("BH4HGA-9", "2026-10-17",
+                                                      "10-17 09:26", "PM01RD")),
+              {"call": "BH4HGA-9", "date": "2026-10-17", "at": "09:26", "grid": "PM01RD"})
+        check("缺了时间与网格也拆得回",
+              oa_image.read_serial(oa_image.serial_of("N0CALL", "2026-10-17")),
+              {"call": "N0CALL", "date": "2026-10-17", "at": "00:00", "grid": ""})
+        check("手写的 O 当 0 认",
+              oa_image.read_serial("OMM91RP22DH024SQT001")["call"], "BG7LZQ-2")
+        check("不够长度不给拆", oa_image.read_serial("ABC"), None)
         check("奖状编号同台同场次同时间同网格不变",
               oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62AA"),
               oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62AA"))
