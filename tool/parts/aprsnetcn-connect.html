@@ -1,0 +1,25 @@
+  <section class="section" id="aprsnetcn-connect">
+    <div class="section-head">
+      <h2>连上这台服务器</h2>
+      <p>它开在 14580 端口上，客户端照 APRS-IS 的老办法连。服务器地址由运营方公布。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">APRSNETCN SERVER 是本站自己架的一台服务器，接入协议叫 APRSNET CN CONNECT，草案写在<a href="protocol.html">协议规范</a>那一页。对客户端来说，连接方式和 APRS-IS 没有区别，多出来的只有登录行里那一段账号口令。</p>
+      <ul class="fact-list">
+        <li>
+          <b>14580</b>
+          客户端接入端口，与 APRS-IS 的自定义过滤端口同一个号码，登录行也一样。
+        </li>
+        <li>
+          <b>8899</b>
+          HTTP 台站接口，不是 APRS 端口。台站列表、单台站轨迹和健康状态都在这上面。
+        </li>
+        <li>
+          <b>TLS</b>
+          另一个端口跑 TLS，服务器配了证书才监听，没配就不开。
+        </li>
+      </ul>
+      <p class="prose">只想先听，passcode 填 <code>-1</code> 就行。要在上面发报文，得填算出来的 passcode，还要过名单那一关。算法见<a href="passcode.html">passcode 计算器</a>。</p>
+      <p class="prose">APRSLocus 的副链路预置里地址是填好的，别的客户端向运营方问一句。</p>
+    </div>
+  </section>

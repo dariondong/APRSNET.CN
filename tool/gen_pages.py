@@ -209,16 +209,26 @@ PAGES = [
         blocks=["q-what", "q-server", "q-client", "q-rules", "q-examples", "q-refs"],
     ),
     dict(
+        file="aprsnetcn.html", nav="", nav_active="tools.html", h1="APRSNETCN SERVER",
+        lead="APRSNET.CN 自己架了一台 APRS-IS 服务器，接入协议由本站起草。客户端照老办法连，登录行里多一段账号口令。",
+        title="APRSNETCN SERVER — 本站的 APRS-IS 服务器怎么连",
+        desc="APRSNETCN SERVER 是 APRSNET.CN 自己架的 APRS-IS 服务器：接入端口 14580、登录行里的 auth 账号口令、过滤器认哪些前缀、qAC 标记与 24 小时台站接口，服务器地址由运营方公布。",
+        og="本站自己架的 APRS-IS 服务器：登录行里多一段账号口令，过滤器照老规矩。",
+        keywords="APRSNETCN SERVER,APRSNET CN CONNECT,APRS-IS 服务器,登录行,auth,过滤器,"
+                 "qAC,台站接口,APRS 服务器",
+        blocks=["aprsnetcn-connect", "aprsnetcn-login", "aprsnetcn-send"],
+    ),
+    dict(
         file="tools.html", nav="工具", h1="工具与链接",
         lead="软件、网站和自己动手用的东西都收在这一页：手机和电脑上的客户端，浏览器里的地图，还有自己搭台站用得上的一些工具。",
         title="APRS 工具与链接 — 客户端、在线地图与自建工具",
-        desc="中文 APRS 工具与链接集合：本站的 passcode 计算器与官方 TOCALL 查询、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站、服务器列表）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
+        desc="中文 APRS 工具与链接集合：本站的 passcode 计算器与官方 TOCALL 查询、客户端（APRSdroid、APRSLocus、YAAC、APRSIS32、PinPoint APRS）、在线地图与查询（APRS.TV、aprs.fi、findu、CWOP 气象台站）、互联网链接（APRS-IS 服务器列表、APRSNETCN SERVER）、自己动手（Direwolf、MicroModem、官方设备名单、TAPR），条目还在慢慢收，欢迎补一条。",
         og="APRS 的工具和网站收在一页：passcode 计算器、客户端、在线地图，和自己动手用的东西。",
         keywords="APRS 工具,passcode,APRS-IS passcode,passcode 计算器,APRS 客户端,"
                  "APRS 软件,APRS 地图,APRS 网站,APRSdroid,APRSLocus,YAAC,APRSIS32,"
-                 "PinPoint APRS,Direwolf,aprs.fi,APRS.TV,APRS 设备名单",
-        blocks=["tools-own", "tools-client", "tools-web", "tools-make",
-                "tools-submit"],
+                 "PinPoint APRS,Direwolf,aprs.fi,APRS.TV,APRS 设备名单,APRSNETCN SERVER",
+        blocks=["tools-own", "tools-client", "tools-web", "tools-net",
+                "tools-make", "tools-submit"],
     ),
     dict(
         file="passcode.html", nav="", nav_active="tools.html", h1="passcode 计算器",
@@ -281,8 +291,8 @@ for _p in PAGES:
 FOOT_MAP = (
     ("认识与上手", ("index.html", "guide.html", "tutorial.html",
                     "packet.html", "symbols.html", "tocall.html", "faq.html")),
-    ("文档", ("docs.html", "aprsis.html", "filter.html", "igate.html",
-              "qconstruct.html", "protocol.html")),
+    ("文档", ("docs.html", "aprsis.html", "aprsnetcn.html", "filter.html",
+              "igate.html", "qconstruct.html", "protocol.html")),
     ("本站", ("tools.html", "passcode.html", "links.html", "about.html")),
 )
 # 页脚里每页那一行的短名
@@ -292,6 +302,7 @@ PAGE_SHORT = {
     "symbols.html": "APRS 符号表",
     "tocall.html": "官方 TOCALL 查询", "faq.html": "常见问题",
     "docs.html": "规范与文档", "aprsis.html": "APRS-IS 文档（中文）",
+    "aprsnetcn.html": "APRSNETCN SERVER",
     "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
     "qconstruct.html": "q 构造", "protocol.html": "APRSNET CN CONNECT（草案）",
     "tools.html": "工具与链接", "passcode.html": "passcode 计算器",
