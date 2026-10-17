@@ -4,7 +4,7 @@
 APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当轮名单，主控在
 操作台上点名、回 ACK、删改，页面上立刻就是最新的那一份。
 
-只用 Python 3 标准库；签到表与签到点那两张 PNG 用 Pillow 画（没装时那两个接口回 503，别的照常）。
+只用 Python 3 标准库；签到表、网格表与每台的奖状那几张 PNG 用 Pillow 画（没装时那几个接口回 503，别的照常）。
 
 ## 一条报文怎么变成一行名单
 
@@ -33,7 +33,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /en/` | 英文活动页 |
 | `GET /api/roster` | 名单，与静态 `roster.json` 同格式 |
 | `GET /api/board.png` | 签到表那张 PNG，`?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文 |
-| `GET /api/points.png` | 签到点那张 PNG，参数同上 |
+| `GET /api/grid.png` | 网格表那张 PNG，参数同上；旧的 `/api/points.png` 302 到这里 |
 | `GET /api/cert.png` | 一台一份的参与证书 PNG，`?call=BG7LZQ-2` 必写，`?date=` 与 `?lang=` 同上 |
 | `GET /api/health` | 连接状态、收到多少行、当轮、报文数 |
 | `GET /admin` | 主控台（要口令） |
@@ -54,9 +54,9 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 
 ## 出图
 
-数据面板上那两个按钮（签到表 PNG / 签到点 PNG）点的是 `/api/board.png` 与 `/api/points.png`。
-签到表一台一行，列是呼号、网格、路径、状态、时间；签到点把每台的网格中心标在带刻度的方框里，
-认不出网格的不画点。两张图的名底都写着哪一轮、轮值呼号与落款时间，页面上的按钮自己带着
+数据面板上那两个按钮（签到表 PNG / 网格表 PNG）点的是 `/api/board.png` 与 `/api/grid.png`。
+签到表一台一行，列是呼号、网格、路径、状态、时间；网格表一个网格一行，列是网格、呼号、台数，
+一格里的呼号多了就折行。两张图的图底都写着哪一轮、轮值呼号与落款时间，页面上的按钮自己带着
 `?date=` 与 `?lang=en`，点了就是当前选中那一轮。
 
 名单里每一台还有自己那份参与证书：`/api/cert.png?call=BG7LZQ-2`。图上是呼号、哪一轮、

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""把当轮的签到表、签到点与每台的奖状画成 PNG。
+"""把当轮的签到表、网格表与每台的奖状画成 PNG。
 
-数据面板上那两个下载按钮点到的就是这里：`/api/board.png` 是签到表，
-`/api/points.png` 是签到点。名单里每一台自己那份奖状是 `/api/cert.png`，
-参数是 `?call=呼号`。三张都可以用 `?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文。
+数据面板上那两个下载按钮点到的就是这里：`/api/board.png` 是签到表，一台一行；
+`/api/grid.png` 是网格表，一个网格一行，后面跟着这一格里的呼号。
+名单里每一台自己那份奖状是 `/api/cert.png`，参数是 `?call=呼号`。
+三张都可以用 `?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文。
 
 画图用 Pillow（装了才画得动；没装时服务器回 503）。中文字体先找系统里常见的几款黑体，
 找不到就退回 Pillow 自带的位图字，那时候中文会变成方块 —— 正式机器上请装上
@@ -12,7 +13,6 @@ fonts-wqy-zenhei 之类的中文字体。
 配色照站点：纸白 #f2f0ea、墨 #15181c、灰 #6f7680、那一点红 #b3141f。
 """
 import io
-import re
 from datetime import datetime, timezone, timedelta
 
 PAPER = (242, 240, 234)
@@ -35,7 +35,8 @@ FONT_PATHS = (
 TEXT = {
     "zh": {
         "board": "APRSNETCN OA 签到表",
-        "points": "APRSNETCN OA 签到点",
+        "grid": "APRSNETCN OA 网格表",
+        "grid_cols": ("网格", "呼号", "台数"),
         "cert": "参与证书",
         "cert_line": "%s 在 %s 这一轮的 APRSNETCN OA 活动里签到。",
         "cert_cols": ("网格", "路径", "时间"),
@@ -46,17 +47,15 @@ TEXT = {
         "is": "网络",
         "status": {"called": "只喊到", "acked": "已回 ACK", "confirmed": "已确认"},
         "empty": "这一轮还没有台站",
-        "empty_points": "这一轮还没有可以画的签到点",
         "gridless": "（没有格子）",
-        "lon": "经度",
-        "lat": "纬度",
         "count": "共 %d 台",
         "foot": "数据取自轮值台收到的报文",
         "gen": "生成",
     },
     "en": {
         "board": "APRSNETCN OA check-in table",
-        "points": "APRSNETCN OA check-in points",
+        "grid": "APRSNETCN OA grid table",
+        "grid_cols": ("Grid", "Callsigns", "Stations"),
         "cert": "Certificate of participation",
         "cert_line": "%s checked in on %s during the APRSNETCN OA activity.",
         "cert_cols": ("Grid", "Path", "Time"),
@@ -67,17 +66,13 @@ TEXT = {
         "is": "Network",
         "status": {"called": "Called", "acked": "ACKed", "confirmed": "Confirmed"},
         "empty": "No station in this round yet",
-        "empty_points": "No check-in point to draw in this round",
         "gridless": "(no grid)",
-        "lon": "Longitude",
-        "lat": "Latitude",
         "count": "%d station(s)",
         "foot": "The figures come from the messages the duty station received",
         "gen": "Generated",
     },
 }
 
-_GRID_RE = re.compile(r"^([A-R]{2})([0-9]{2})([A-X]{2})?$")
 _fonts = {}
 
 
@@ -97,21 +92,6 @@ def font(size):
         picked = ImageFont.load_default()
     _fonts[size] = picked
     return picked
-
-
-def grid_center(grid):
-    """4 位或 6 位梅登黑德网格 → 格子中心的 (纬度, 经度)；认不出来给 None。"""
-    hit = _GRID_RE.match((grid or "").strip().upper())
-    if not hit:
-        return None
-    lon = -180.0 + 20.0 * (ord(hit.group(1)[0]) - ord("A")) + 2.0 * int(hit.group(2)[0])
-    lat = -90.0 + 10.0 * (ord(hit.group(1)[1]) - ord("A")) + 1.0 * int(hit.group(2)[1])
-    if hit.group(3):
-        lon = lon + (ord(hit.group(3)[0]) - ord("A")) / 6.0 + 1 / 12.0
-        lat = lat + (ord(hit.group(3)[1]) - ord("A")) / 12.0 + 1 / 24.0
-    else:
-        lon, lat = lon + 1.0, lat + 0.5
-    return (lat, lon)
 
 
 def _path_text(station, words):
@@ -139,6 +119,27 @@ def _clip(draw, text, face, width):
     while text and draw.textlength(text + "…", font=face) > width:
         text = text[:-1]
     return text + "…"
+
+
+def _wrap(draw, text, face, width, limit=2):
+    """一格里呼号多的时候折行：按空格断，最多 limit 行，放不下最后一行留个省略号。"""
+    lines = []
+    cur = ""
+    for word in str(text or "").split():
+        probe = (cur + " " + word).strip()
+        if cur and draw.textlength(probe, font=face) > width:
+            lines.append(cur)
+            cur = word
+        else:
+            cur = probe
+    if cur:
+        lines.append(cur)
+    while lines and lines[-1] in ("\u00b7", ""):
+        lines.pop()
+    if len(lines) > limit:
+        lines = lines[:limit]
+        lines[-1] = _clip(draw, lines[-1] + " ", face, width).rstrip() + "\u2026"
+    return [line.rstrip(" \u00b7") for line in lines]
 
 
 def _footer(draw, height, words, extra=""):
@@ -225,74 +226,55 @@ def render_board(row, note="", lang="zh"):
     return _png(image)
 
 
-def render_points(row, note="", lang="zh"):
-    """签到点：每个格子画一个点，按经纬度标在带刻度的方框里。"""
+def grid_groups(row):
+    """把这一轮的台站按网格归拢：[(网格, [呼号…]), …]，网格从 A 排到 Z，没网格的排最后。"""
+    groups = {}
+    for station in row.get("stations") or []:
+        call = (station.get("call") or "").strip()
+        if call:
+            key = (station.get("grid") or "").strip().upper() or "\u2014"
+            groups.setdefault(key, []).append(call)
+    return sorted(groups.items(), key=lambda item: (item[0] == "\u2014", item[0]))
+
+
+def render_grid(row, note="", lang="zh"):
+    """网格表：一个网格一行，列是网格 / 呼号 / 台数。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
+    groups = grid_groups(row)
     stations = row.get("stations") or []
-    height = 800
-    top, bottom = 218, height - 110
+    top = 218
+    row_h = 62
+    height = max(560, top + 76 + row_h * max(len(groups), 1) + 110)
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
-    _head(draw, words["points"], _subtitle(row, note, words), note)
+    _head(draw, words["grid"], _subtitle(row, note, words), note)
 
-    box = [PAD, top, WIDTH - PAD, bottom]
-    draw.rectangle(box, outline=LINE, width=2)
+    heads = font(23)
+    body = font(27)
+    small = font(24)
+    xs = (72, 260, 930)
+    clips = (150, 640, 78)
+    for x, name in zip(xs, words["grid_cols"]):
+        draw.text((x, top), name, font=heads, fill=GREY)
+    draw.line([PAD, top + 40, WIDTH - PAD, top + 40], fill=INK, width=2)
 
-    spots = []
-    for station in stations:
-        center = grid_center(station.get("grid"))
-        if center:
-            spots.append((station.get("call") or "", center[0], center[1]))
-    if not spots:
-        draw.text((PAD + 30, top + 60), words["empty_points"], font=font(27), fill=GREY)
-    else:
-        lats = [s[1] for s in spots]
-        lons = [s[2] for s in spots]
-        lat0, lat1 = min(lats), max(lats)
-        lon0, lon1 = min(lons), max(lons)
-        span = max(lat1 - lat0, lon1 - lon0, 2.0)       # 一台的时候也要有刻度，别糊成一格
-        mid_lat, mid_lon = (lat0 + lat1) / 2.0, (lon0 + lon1) / 2.0
-        half = span / 2.0 * 1.15                         # 留出边距，点别贴在框上
-        lat0, lat1 = mid_lat - half, mid_lat + half
-        lon0, lon1 = mid_lon - half, mid_lon + half
-        w, h = box[2] - box[0], box[3] - box[1]
-
-        def px(lon):
-            return box[0] + (lon - lon0) / (lon1 - lon0) * w
-
-        def py(lat):
-            return box[3] - (lat - lat0) / (lat1 - lat0) * h
-
-        step = 1.0 if span <= 12 else (2.0 if span <= 30 else 10.0)
-        tick = font(20)
-        g = (int(lon0 // step) + 1) * step
-        while g < lon1:
-            x = px(g)
-            draw.line([x, box[1], x, box[3]], fill=LINE, width=1)
-            draw.text((x - draw.textlength("%.0f" % g, font=tick) / 2, box[3] + 8),
-                      "%.0f" % g, font=tick, fill=GREY)
-            g = g + step
-        g = (int(lat0 // step) + 1) * step
-        while g < lat1:
-            y = py(g)
-            draw.line([box[0], y, box[2], y], fill=LINE, width=1)
-            draw.text((box[0] - 12 - draw.textlength("%.0f" % g, font=tick), y - 10),
-                      "%.0f" % g, font=tick, fill=GREY)
-            g = g + step
-        draw.text(((box[0] + box[2]) / 2 - 20, box[3] + 34), words["lon"], font=tick, fill=GREY)
-        draw.text((box[0], box[1] - 34), words["lat"], font=tick, fill=GREY)
-
-        name = font(22)
-        for call, lat, lon in spots:
-            x, y = px(lon), py(lat)
-            draw.ellipse([x - 7, y - 7, x + 7, y + 7], fill=HOT)
-            draw.ellipse([x - 7, y - 7, x + 7, y + 7], outline=PAPER, width=2)
-            label = call
-            lx = x + 12
-            if lx + draw.textlength(label, font=name) > box[2] - 6:
-                lx = x - 12 - draw.textlength(label, font=name)
-            draw.text((lx, y - 12), label, font=name, fill=INK)
+    if not groups:
+        draw.text((PAD, top + 78), words["empty"], font=body, fill=GREY)
+    rows = []
+    for grid, calls in groups:
+        lines = _wrap(draw, " \u00b7 ".join(calls), small, clips[1]) or [""]
+        rows.append((grid, lines, len(calls)))
+    y = top + 66
+    for i, (grid, lines, count) in enumerate(rows):
+        box_h = row_h + 34 * (len(lines) - 1)
+        if i % 2 == 1:                                  # 隔一行铺一层极淡的底，读起来不串行
+            draw.rectangle([PAD - 12, y - 12, WIDTH - PAD + 12, y + box_h - 20], fill=(238, 235, 228))
+        draw.text((xs[0], y), _clip(draw, grid, body, clips[0]), font=body, fill=INK)
+        for j, line in enumerate(lines):
+            draw.text((xs[1], y + j * 34), line, font=small, fill=INK)
+        draw.text((xs[2], y), str(count), font=small, fill=GREY)
+        y += box_h
     _footer(draw, height, words, words["count"] % len(stations))
     return _png(image)
 
@@ -330,18 +312,20 @@ def render_cert(row, station, note="", lang="zh"):
     return _png(image)
 
 
-if __name__ == "__main__":                              # 手边看一眼：python3 oa_image.py 存两张样图
+if __name__ == "__main__":                              # 手边看一眼：python3 oa_image.py 存几张样图
     import sys
     demo = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
-        {"call": "BG7LZQ-2", "grid": "OL62", "via": "is", "digi": [], "at": "10-17 01:08",
+        {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is", "digi": [], "at": "10-17 01:08",
          "status": "confirmed"},
         {"call": "BG6TA", "grid": "ON80", "via": "rf", "digi": ["WIDE1-1", "BG7LZQ-10"],
          "at": "10-17 07:01", "status": "acked"},
         {"call": "BH4HGA-9", "grid": "", "via": "is", "digi": [], "at": "10-17 09:26",
          "status": "called"},
     ]}
-    for name, fn in (("board", render_board), ("points", render_points)):
-        body = fn(demo, note="测试轮次")
+    shots = [("board", render_board(demo, note="测试轮次")),
+             ("grid", render_grid(demo, note="测试轮次")),
+             ("cert", render_cert(demo, demo["stations"][0], note="测试轮次"))]
+    for name, body in shots:
         with open("/root/.nanobot/workspace/.scratch/oa_%s.png" % name, "wb") as fh:
             fh.write(body)
         sys.stderr.write("%s %d 字节\n" % (name, len(body)))

@@ -409,10 +409,19 @@ def main():
         oa_image = None
         print("没装 Pillow，跳过网格换算那几项")
     if oa_image is not None:
-        check("4 位网格算出格子中心", oa_image.grid_center("OL62"), (22.5, 113.0))
-        six = oa_image.grid_center("ol62ab")
-        check("6 位网格算出格子中心", tuple(round(v, 3) for v in six), (22.125, 112.083))
-        check("认不出的网格给 None", oa_image.grid_center("XX"), None)
+        grouped = oa_image.grid_groups({"stations": [
+            {"call": "BG6TA", "grid": "ON80"},
+            {"call": "BG7LZQ-2", "grid": "ol62"},
+            {"call": "BA4IZZ", "grid": ""},
+            {"call": "BG7LZQ-3", "grid": "OL62"},
+            {"call": "BH4HGA-9"},
+        ]})
+        check("网格表按网格归拢，呼号按名单顺序", grouped, [
+            ("OL62", ["BG7LZQ-2", "BG7LZQ-3"]), ("ON80", ["BG6TA"]),
+            ("\u2014", ["BA4IZZ", "BH4HGA-9"])])
+        grid = oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
+            {"call": "BG7LZQ-2", "grid": "OL62"}, {"call": "BG6TA", "grid": "ON80"}]})
+        check("网格表画得出 PNG", grid[:8], b"\x89PNG\r\n\x1a\n")
         cert = oa_image.render_cert({"date": "2026-10-17", "call": "BG7LZQ-3"},
                                     {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
                                      "digi": [], "at": "10-17 01:08"})
@@ -451,7 +460,7 @@ def main():
         thread.start()
         base = "http://127.0.0.1:%d" % httpd.server_address[1]
         try:
-            for what in ("board", "points"):
+            for what in ("board", "grid"):
                 try:
                     res = urllib.request.urlopen("%s/api/%s.png" % (base, what), timeout=10)
                     body = res.read()

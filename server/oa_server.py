@@ -578,8 +578,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/roster":
             self._json(self.rt.store.roster(), 200, {"Access-Control-Allow-Origin": "*"})
             return
-        if path in ("/api/board.png", "/api/points.png"):
-            self._image("board" if path.startswith("/api/board") else "points", query)
+        if path in ("/api/board.png", "/api/grid.png"):
+            self._image("board" if path.startswith("/api/board") else "grid", query)
+            return
+        if path == "/api/points.png":              # 旧地址：签到点那张图已经换成网格表
+            qs = urlparse(self.path).query
+            self._send(302, b"", "text/plain; charset=utf-8",
+                       {"Location": "/api/grid.png" + (("?" + qs) if qs else "")})
             return
         if path == "/api/cert.png":
             self._cert(query)
@@ -776,7 +781,7 @@ class Handler(BaseHTTPRequestHandler):
         return oa_image
 
     def _image(self, what, query):
-        """签到表 / 签到点的 PNG。数据面板上那两个下载按钮点到这里。
+        """签到表 / 网格表的 PNG。数据面板上那两个下载按钮点到这里。
 
         ?date=2026-10-17 指定哪一轮，不给就是最新一轮；?lang=en 要英文。
         名单读不出来就画一张空表；没装 Pillow 回 503。
@@ -784,7 +789,7 @@ class Handler(BaseHTTPRequestHandler):
         oa_image = self._oa_image()
         if oa_image is None:
             return
-        steps = {"board": oa_image.render_board, "points": oa_image.render_points}
+        steps = {"board": oa_image.render_board, "grid": oa_image.render_grid}
         lang, date, row = self._round_of(query)
         if row is None:
             row = {"date": date, "call": "", "stations": []}
