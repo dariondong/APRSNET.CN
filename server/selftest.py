@@ -269,6 +269,8 @@ def main():
         cols = set(r["name"] for r in legacy.db.execute("PRAGMA table_info(stations)"))
         check("老库补上 acked_ts", "acked_ts" in cols, True)
         check("老库补上 confirmed_ts", "confirmed_ts" in cols, True)
+        pcols = set(r["name"] for r in legacy.db.execute("PRAGMA table_info(packets)"))
+        check("老库给报文表补上 msg_grid", "msg_grid" in pcols, True)
         check("老库那一行还在",
               legacy.db.execute("SELECT COUNT(*) AS n FROM stations").fetchone()["n"], 1)
         legacy.close()
@@ -406,6 +408,7 @@ def main():
         check("写了网格的进名单", bool(rt.store.get_station(today, "BG9YYY-2")), True)
         check("名单里的网格取自报文",
               rt.store.get_station(today, "BG9YYY-2")["grid"], "PM01")
+        check("报文表里也存下签到报的网格", rt.store.packets()[0]["msg_grid"], "PM01")
         check("写了网格的回的是 ACK",
               rt.store.outbox_for("BG9YYY-2")[0]["line"].endswith(":ACK"), True)
         rt.on_line(oa_aprs.parse_line(

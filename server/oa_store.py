@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS packets (
   lat      REAL,
   lon      REAL,
   grid     TEXT NOT NULL DEFAULT '',
+  msg_grid TEXT NOT NULL DEFAULT '',
   via      TEXT NOT NULL DEFAULT '',
   digi     TEXT NOT NULL DEFAULT '',
   round_id INTEGER,
@@ -109,7 +110,8 @@ def station_row(s):
 
 
 def packet_row(p):
-    return [p.get("ts", ""), p.get("src", ""), p.get("kind", ""), p.get("msgto", ""), p.get("grid", ""),
+    return [p.get("ts", ""), p.get("src", ""), p.get("kind", ""), p.get("msgto", ""),
+            p.get("msg_grid") or p.get("grid", ""),
             "射频" if p.get("via") == "rf" else ("网络" if p.get("via") == "is" else ""),
             p.get("digi", ""), p.get("text", ""), p.get("raw", "")]
 
@@ -224,6 +226,9 @@ class Store(object):
         for name in ("acked_ts", "confirmed_ts"):
             if name not in cols:
                 self.db.execute("ALTER TABLE stations ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
+        pcols = set(row["name"] for row in self.db.execute("PRAGMA table_info(packets)"))
+        if "msg_grid" not in pcols:
+            self.db.execute("ALTER TABLE packets ADD COLUMN msg_grid TEXT NOT NULL DEFAULT ''")
 
     def close(self):
         with self.lock:
@@ -300,12 +305,12 @@ class Store(object):
         items = (ts, record.get("src", ""), record.get("dst", ""), record.get("msgto", ""),
                  record.get("path", ""), record.get("kind", "other"), record.get("text", ""),
                  record.get("lat"), record.get("lon"), record.get("grid", ""),
-                 record.get("via", ""), digi, record.get("raw", ""))
+                 record.get("msg_grid", "") or "", record.get("via", ""), digi, record.get("raw", ""))
         incomplete = False
         with self.lock:
             cur = self.db.execute(
-                "INSERT INTO packets (ts,src,dst,msgto,path,kind,text,lat,lon,grid,via,digi,raw)"
-                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", items)
+                "INSERT INTO packets (ts,src,dst,msgto,path,kind,text,lat,lon,grid,msg_grid,via,digi,raw)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", items)
             pid = cur.lastrowid
             rid = None
             if record.get("kind") in ("cq", "u"):

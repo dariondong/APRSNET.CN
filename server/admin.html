@@ -358,7 +358,7 @@ a{color:inherit}
       cell(tr, p.src, "mono");
       var kind = cell(tr, p.kind === "cq" ? "喊到" : (p.kind === "u" ? "确认" : p.kind));
       kind.className = "k " + p.kind;
-      cell(tr, p.grid || "", "mono");
+      cell(tr, p.msg_grid || p.grid || "", "mono");
       cell(tr, (p.via === "rf" ? "射频" : "网络") + (p.digi && p.digi.length ? " " + p.digi.join(" → ") : ""));
       cell(tr, p.text || "", "mono");
       var ops = cell(tr);
@@ -368,7 +368,7 @@ a{color:inherit}
       add.textContent = "加入本轮";
       add.onclick = function () {
         api("/api/admin/station", "POST", {
-          date: state.date, call: p.src, grid: p.grid, via: p.via, digi: p.digi,
+          date: state.date, call: p.src, grid: p.msg_grid || p.grid, via: p.via, digi: p.digi,
           at: undefined, status: p.kind === "u" ? "confirmed" : "called"
         }).then(function (d) { showErr(d && d.error); refresh(); });
       };
