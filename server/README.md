@@ -80,7 +80,10 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 
 - `OA_AUTO_ACK=1`：有人喊到就自动回一条 ACK，一台一轮只回一次；
 - `OA_ACK_MAX_PER_MINUTE=12`：一分钟最多发这么多条，防着热闹起来往外刷；
-- `OA_ACK_TEXT=ACK`：回过去的那句话；
+- `OA_ACK_TEXT=ACK`：对方那条没写编号时回的那句话；
+- `OA_TNX_TEXT=73 TNX!`：一台走完 `U CNNET` 回的一句 73，一台一轮一份；
+- 对方那条末尾带编号（`…{12`）时，回的是 `ack12`，不是那句 ACK。我们发出去的每一条末尾
+  也带 `{编号`，对方客户端回 `ack<编号>`，主控台的发件箱就会多一句「对方已确认」；
 - `OA_BAD_TEXT=INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>`：签到那行没写出网格时回的那句话，
   同一台同一轮只回一条。名单里的网格就从这行报的那句话里读（读不到网格的不进名单）；
 - `OA_HELP_TEXT=APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET`：发给轮值呼号、又不是

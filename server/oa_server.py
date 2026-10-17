@@ -46,6 +46,7 @@ DEFAULTS = {
     "OA_TX_PASSCODE": "",
     "OA_AUTO_ACK": "1",
     "OA_ACK_TEXT": "ACK",
+    "OA_TNX_TEXT": "73 TNX!",
     "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>",
     "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET",
     "OA_ACK_MAX_PER_MINUTE": "12",
@@ -121,6 +122,16 @@ def as_int(value, default):
         return default
 
 
+def line_text(line):
+    """一行报文里那句话：去掉前面那段地址与收件人，也去掉末尾的消息编号。"""
+    head, sep, info = (line or "").partition(":")
+    if not sep:
+        return (line or "").strip()
+    if info[:1] == ":" and len(info) >= 11:
+        info = info[11:]
+    return info.split("{", 1)[0].strip()
+
+
 def pick_station(row, want):
     """名单里找那一台：先按整个呼号找，找不到再按去掉 SSID 的呼号找，只有一台时才认。"""
     want = (want or "").strip().upper()
@@ -157,6 +168,7 @@ class Runtime(object):
         self._sendq = queue.Queue()
         self._sent_at = []
         self._send_lock = threading.Lock()
+        self._msg_lock = threading.Lock()
         self._stop = threading.Event()
 
     # ---- 全自动 ----
@@ -238,7 +250,14 @@ class Runtime(object):
                     self.note_hint(record, self.conf["OA_BAD_TEXT"])   # 没写网格
                 elif kind == "cq":
                     self.maybe_auto_ack(record, result.get("round_id"))
-            elif kind != "ack" and self.to_duty(record):
+                else:
+                    self.maybe_auto_tnx(record, result.get("round_id"))
+            elif kind in ("ack", "rej"):
+                # 机器回的确认只记投递：哪一条送到了，标在发件箱里，不再回话
+                if record.get("ack_id"):
+                    self.store.mark_acked((record.get("src") or "").strip().upper(),
+                                          record["ack_id"])
+            elif self.to_duty(record):
                 self.note_hint(record, self.conf["OA_HELP_TEXT"])      # 不是签到那两步
         except Exception as exc:
             sys.stderr.write("回提示出错：%s\n" % exc)
@@ -258,9 +277,9 @@ class Runtime(object):
             self._sent_at.append(now)
             return True
 
-    def queue_send(self, src, dst, line, date=""):
+    def queue_send(self, src, dst, line, date="", msgid=""):
         """排队发一条。没配口令就只记进发件箱，主控自己发。"""
-        oid = self.store.queue_line(src, dst, line)
+        oid = self.store.queue_line(src, dst, line, msgid=msgid)
         if not self.can_send():
             self.store.mark_sent(oid, "只记不发：没配 OA_TX_PASSCODE")
             return oid
@@ -291,8 +310,8 @@ class Runtime(object):
                 oa_aprs.send_once(self.conf["OA_APRS_HOST"], self.conf["OA_APRS_PORT"],
                                   self.duty_call(), self.conf["OA_TX_PASSCODE"], job["line"])
                 self.store.mark_sent(job["id"], "")
-                if job["date"] and job["dst"]:
-                    self.store.set_station(job["date"], job["dst"], status="acked", create=False)
+                if job["date"] and job["dst"] and self.is_ack_line(job["line"]):
+                    self.store.mark_acked_station(job["date"], job["dst"])
                 sys.stderr.write("发出：%s\n" % job["line"][:110])
             except Exception as exc:
                 self.store.mark_sent(job["id"], str(exc)[:200])
@@ -332,14 +351,27 @@ class Runtime(object):
             return active["duty"].strip().upper()
         return (self.conf["OA_ROUND_DUTY"] or "").strip().upper()
 
-    def ack_line(self, call, duty=""):
-        """回给某台站的那行报文：呼号列补到 9 格。"""
-        text = self.conf["OA_ACK_TEXT"] or "ACK"
-        return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
+    def msg_line(self, call, text, duty="", msgid=""):
+        """发出去的一行：呼号列补到 9 格，末尾 `{编号`。"""
+        body = text if not msgid else "%s{%s" % (text, msgid)
+        return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), body)
 
-    def hint_line(self, call, text, duty=""):
-        """回给某个台站的那句提示：呼号列补到 9 格。"""
-        return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
+    def next_msgid(self):
+        """下一条报文的编号：两位数字轮着用，对方的 `ack<编号>` 引的就是它。"""
+        with self._msg_lock:
+            cur = as_int(self.store.get_setting("msg_seq", "0"), 0)
+            cur = (cur % 99) + 1
+            self.store.set_setting("msg_seq", cur)
+        return "%02d" % cur
+
+    def send_msg(self, call, text, date="", duty="", msgid=""):
+        """发一句给某台：带上本条的消息编号，记进发件箱。"""
+        duty = (duty or self.duty_call()).strip().upper()
+        call = (call or "").strip().upper()
+        msgid = msgid or self.next_msgid()
+        line = self.msg_line(call, text, duty, msgid)
+        oid = self.queue_send(duty, call, line, date=date, msgid=msgid)
+        return oid, line
 
     def to_duty(self, record):
         """这条是不是发给轮值呼号的（看报文里那个收件人）。"""
@@ -367,16 +399,28 @@ class Runtime(object):
         for row in self.store.outbox_for(src, active["opened"] or ""):
             if mark and mark in (row["line"] or ""):
                 return
-        self.queue_send(duty, src, self.hint_line(src, hint, duty), date=active["date"])
+        self.send_msg(src, hint, date=active["date"])
 
-    def ack_text(self):
+    def ack_text(self, ack_id=""):
+        """确认用哪句：对方那条带编号就回 `ack<编号>`，没有就回配的那句。"""
+        if ack_id:
+            return "ack%s" % ack_id
         return self.conf["OA_ACK_TEXT"] or "ACK"
+
+    def is_ack_line(self, line):
+        """这行是不是回给对方的确认：配的那句 ACK，或者机器那种 `ack<编号>`。"""
+        text = line_text(line).lower()
+        return text == self.ack_text().lower() or text.startswith("ack")
 
     def our_acks(self, call, since=""):
         """我们回给这一台的那些 ACK；提示（怎么做 / 重发）那几条不算。"""
-        tail = ":" + self.ack_text()
-        return [r for r in self.store.outbox_for(call, since)
-                if (r["line"] or "").endswith(tail)]
+        want = self.ack_text().lower()
+        out = []
+        for r in self.store.outbox_for(call, since):
+            text = line_text(r["line"]).lower()
+            if text == want or text.startswith("ack"):
+                out.append(r)
+        return out
 
     def ack_pending(self, active, call):
         """这一台还有一条没回成的 ACK 吗。
@@ -401,7 +445,7 @@ class Runtime(object):
         return bool(checkin) and checkin > last_ok
 
     def maybe_auto_ack(self, record, rid):
-        """有人喊到就回一条 ACK。"""
+        """有人喊到就回一条 ACK：他那条带编号就回 `ack<编号>`。"""
         if not self.auto_ack_on or not self.can_send():
             return
         active = self.store.active_round()
@@ -413,7 +457,28 @@ class Runtime(object):
             return
         if not self.ack_pending(active, src):
             return
-        self.queue_send(duty, src, self.ack_line(src, duty), date=active["date"])
+        self.send_msg(src, self.ack_text(record.get("msgid") or ""), date=active["date"])
+
+    def maybe_auto_tnx(self, record, rid):
+        """一台走完 U CNNET 回一句 73：一台一轮一份。"""
+        if not self.auto_ack_on or not self.can_send():
+            return
+        active = self.store.active_round()
+        if not active or (rid is not None and active["id"] != rid):
+            return
+        src = (record.get("src") or "").strip().upper()
+        duty = self.duty_call()
+        if not src or not duty or src == duty:
+            return
+        # U 那条带了编号的，先回一份 ack：那是对他最后一条的确认
+        if record.get("msgid"):
+            self.send_msg(src, self.ack_text(record["msgid"]), date=active["date"])
+        tnx = self.conf.get("OA_TNX_TEXT") or "73 TNX!"
+        mark = tnx[:8]
+        for row in self.store.outbox_for(src, active["opened"] or ""):
+            if mark and mark in (row["line"] or ""):
+                return                                      # 这一轮已经回过 73
+        self.send_msg(src, tnx, date=active["date"])
 
     def retry_pending_acks(self):
         """全自动时补漏：没回成的 ACK（当时被限速、或者发失败）过一分钟再试，
@@ -442,7 +507,8 @@ class Runtime(object):
                 gap = oa_store.seconds_since(acks[-1]["sent"] or acks[-1]["created"])
                 if gap is not None and gap < 60.0:
                     continue                                # 一分钟里只补一次
-            self.queue_send(duty, call, self.ack_line(call, duty), date=active["date"])
+            self.send_msg(call, self.ack_text(self.store.last_checkin_msgid(active["id"], call)),
+                          date=active["date"])
             done = done + 1
         if done:
             sys.stderr.write("补回 ACK %d 条\n" % done)
@@ -759,8 +825,7 @@ class Handler(BaseHTTPRequestHandler):
             if not call or not duty:
                 self._fail(400, "缺呼号：回谁、以谁的名义回")
                 return
-            line = "%s>APRS::%s:%s" % (duty, call.ljust(9), text)
-            oid = self.rt.queue_send(duty, call, line, date=date)
+            oid, line = self.rt.send_msg(call, text, date=date, duty=duty)
             if not self.rt.can_send():
                 self.rt.store.set_station(date, call, status="acked", create=False)
             self._json({"ok": True, "queued": self.rt.can_send(), "line": line, "id": oid})

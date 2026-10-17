@@ -474,7 +474,9 @@ a{color:inherit}
       cell(tr, bjTime(r.created), "mono");
       cell(tr, r.dst, "mono");
       cell(tr, r.line, "mono");
-      cell(tr, r.error ? r.error : (r.sent ? "已发 " + bjTime(r.sent) : "排队中"), r.error ? "bad" : "");
+      var res = r.error ? r.error : (r.sent ? "已发 " + bjTime(r.sent) : "排队中");
+      if (r.acked) res = res + " · 对方已确认";
+      cell(tr, res, r.error ? "bad" : "");
       table.appendChild(tr);
     });
     box.appendChild(table);

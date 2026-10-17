@@ -19,6 +19,10 @@ _LINE = re.compile(r"^([^>]{1,32})>([^,:]{1,32})(?:,([^:]*))?:(.*)$", re.S)
 # 喊到可以带 CQ，也可以直接发 CNNET；U CNNET 是确认
 _CNNET = re.compile(r"^\s*(?:(CQ|U)\s+)?CNNET\b", re.I)
 _ACK = re.compile(r"^ACK", re.I)
+# 消息编号确认：APRS 的 `ack12` / `rej12` —— 引的是对方那条报文的编号，
+# 不是一句「ACK」文字。编号本身最多 5 位字母数字。
+_ACK_ID = re.compile(r"^(ack|rej)\s*([A-Za-z0-9]{1,5})$", re.I)
+_MSG_ID = re.compile(r"^[A-Za-z0-9]{1,5}$")
 _LAT = re.compile(r"^[0-9]{4}\.[0-9]{2}[NS]$")
 _LON = re.compile(r"^[0-9]{5}\.[0-9]{2}[EW]$")
 _ALIAS = re.compile(r"^(WIDE|RELAY|TRACE|GATE|SGATE|RFONLY|NOGATE)\d*", re.I)
@@ -148,10 +152,15 @@ def path_parts(path, src=""):
 
 
 def parse_info(src, info):
-    """报文体 → (kind, 文字, 收件人, 经纬度)。"""
+    """报文体 → (kind, 文字, 收件人, 经纬度, 消息编号)。
+
+    消息编号是文字末尾的 `{12` 那一段：1 到 5 位字母数字。对方的 ACK 引的
+    就是这个编号（`ack12`），客户端收到它才算「送到了」。
+    """
     kind = "other"
     text = info
     msgto = ""
+    msgid = ""
     lat = lon = None
     if info[:1] in ("!", "=", "/", "@"):
         cut = 8 if info[0] in ("/", "@") else 1
@@ -161,15 +170,23 @@ def parse_info(src, info):
         text = tail
     elif info[:1] == ":" and len(info) >= 11:
         msgto = info[1:10].strip()
-        text = info[11:].split("{", 1)[0]
+        tail = info[11:]
+        body, sep, tail_id = tail.rpartition("{")
+        if sep and _MSG_ID.match(tail_id.strip()):
+            msgid = tail_id.strip()
+            tail = body
+        text = tail.split("{", 1)[0]
     text = text.strip()
     hit = _CNNET.search(text)
+    ack_hit = _ACK_ID.match(text)
     if hit:
         head = (hit.group(1) or "CQ").upper()
         kind = "cq" if head == "CQ" else "u"
+    elif ack_hit:
+        kind = "rej" if ack_hit.group(1).lower() == "rej" else "ack"
     elif _ACK.match(text):
         kind = "ack"
-    return kind, text, msgto, lat, lon
+    return kind, text, msgto, lat, lon, msgid
 
 
 def parse_line(line, ts=None):
@@ -181,7 +198,12 @@ def parse_line(line, ts=None):
     if not hit:
         return None
     src, dst, path, info = hit.group(1).strip(), hit.group(2).strip(), (hit.group(3) or ""), hit.group(4)
-    kind, text, msgto, lat, lon = parse_info(src, info)
+    kind, text, msgto, lat, lon, msgid = parse_info(src, info)
+    ack_id = ""
+    if kind in ("ack", "rej"):
+        ack_hit = _ACK_ID.match(text)
+        if ack_hit:
+            ack_id = ack_hit.group(2)
     via, digi = path_parts(path, src)
     return {
         "ts": ts or now_iso(),
@@ -191,6 +213,8 @@ def parse_line(line, ts=None):
         "path": path.strip(),
         "kind": kind,
         "text": text,
+        "msgid": msgid,
+        "ack_id": ack_id,
         "lat": lat,
         "lon": lon,
         "grid": grid_of(lat, lon),

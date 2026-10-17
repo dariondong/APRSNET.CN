@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS packets (
   path     TEXT NOT NULL DEFAULT '',
   kind     TEXT NOT NULL DEFAULT 'other',
   text     TEXT NOT NULL DEFAULT '',
+  msgid    TEXT NOT NULL DEFAULT '',
   lat      REAL,
   lon      REAL,
   grid     TEXT NOT NULL DEFAULT '',
@@ -73,7 +74,9 @@ CREATE TABLE IF NOT EXISTS outbox (
   src     TEXT NOT NULL DEFAULT '',
   dst     TEXT NOT NULL DEFAULT '',
   line    TEXT NOT NULL,
+  msgid   TEXT NOT NULL DEFAULT '',
   sent    TEXT NOT NULL DEFAULT '',
+  acked   TEXT NOT NULL DEFAULT '',
   error   TEXT NOT NULL DEFAULT ''
 );
 
@@ -227,8 +230,13 @@ class Store(object):
             if name not in cols:
                 self.db.execute("ALTER TABLE stations ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
         pcols = set(row["name"] for row in self.db.execute("PRAGMA table_info(packets)"))
-        if "msg_grid" not in pcols:
-            self.db.execute("ALTER TABLE packets ADD COLUMN msg_grid TEXT NOT NULL DEFAULT ''")
+        for name in ("msg_grid", "msgid"):
+            if name not in pcols:
+                self.db.execute("ALTER TABLE packets ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
+        ocols = set(row["name"] for row in self.db.execute("PRAGMA table_info(outbox)"))
+        for name in ("msgid", "acked"):
+            if name not in ocols:
+                self.db.execute("ALTER TABLE outbox ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
 
     def close(self):
         with self.lock:
@@ -304,13 +312,14 @@ class Store(object):
         digi = ",".join(record.get("digi") or [])
         items = (ts, record.get("src", ""), record.get("dst", ""), record.get("msgto", ""),
                  record.get("path", ""), record.get("kind", "other"), record.get("text", ""),
+                 record.get("msgid", "") or "",
                  record.get("lat"), record.get("lon"), record.get("grid", ""),
                  record.get("msg_grid", "") or "", record.get("via", ""), digi, record.get("raw", ""))
         incomplete = False
         with self.lock:
             cur = self.db.execute(
-                "INSERT INTO packets (ts,src,dst,msgto,path,kind,text,lat,lon,grid,msg_grid,via,digi,raw)"
-                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", items)
+                "INSERT INTO packets (ts,src,dst,msgto,path,kind,text,msgid,lat,lon,grid,msg_grid,via,digi,raw)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", items)
             pid = cur.lastrowid
             rid = None
             if record.get("kind") in ("cq", "u"):
@@ -402,6 +411,15 @@ class Store(object):
                 (rid, (call or "").strip().upper())).fetchone()
         return (row["t"] or "") if row is not None else ""
 
+    def last_checkin_msgid(self, rid, call):
+        """这一轮里这一台最近一次「喊到」那条报文的编号，没有就是空串。"""
+        with self.lock:
+            row = self.db.execute(
+                "SELECT msgid FROM packets WHERE round_id=? AND src=? AND kind='cq'"
+                " ORDER BY id DESC LIMIT 1",
+                (rid, (call or "").strip().upper())).fetchone()
+        return (row["msgid"] or "") if row is not None else ""
+
     def set_station(self, date, call, grid=None, via=None, digi=None, at=None,
                     status=None, note=None, create=True):
         """手动写一台站：编辑、补录、标状态都走这里。create=False 时只改已有的，不新建。"""
@@ -443,6 +461,16 @@ class Store(object):
                      ts, acked_ts, confirmed_ts, rid, call))
             self.db.commit()
         return rid
+
+    def mark_acked_station(self, date, call):
+        """ACK 发出去以后：名单里还只是「只喊到」的抬到「已回ACK」。
+
+        已经走到「已确认」的不往回掉：那一步是对方自己回了 U CNNET，比我们的 ACK 更靠后。
+        """
+        row = self.get_station(date, call)
+        if row and row["status"] == "called":
+            return self.set_station(date, call, status="acked", create=False)
+        return None
 
     def drop_station(self, date, call):
         row = self.round_by_date(date)
@@ -604,13 +632,34 @@ class Store(object):
 
     # ---- 发件箱（回 ACK 用） ----
 
-    def queue_line(self, src, dst, line):
+    def queue_line(self, src, dst, line, msgid=""):
         with self.lock:
             cur = self.db.execute(
-                "INSERT INTO outbox (created,src,dst,line) VALUES (?,?,?,?)",
-                (now_iso(), src, dst, line))
+                "INSERT INTO outbox (created,src,dst,line,msgid) VALUES (?,?,?,?,?)",
+                (now_iso(), src, dst, line, msgid or ""))
             self.db.commit()
             return cur.lastrowid
+
+    def mark_acked(self, dst, msgid):
+        """对方用 `ack<编号>` 收了我们的哪一条：按编号把发件箱那行标上。"""
+        if not msgid:
+            return 0
+        with self.lock:
+            cur = self.db.execute(
+                "UPDATE outbox SET acked=? WHERE dst=? AND msgid=? AND acked=''",
+                (now_iso(), dst, msgid))
+            self.db.commit()
+            return cur.rowcount
+
+    def unacked(self, dst, since=""):
+        """发出去、还没被对方 ack 的那些，早的在前。"""
+        sql = "SELECT * FROM outbox WHERE dst=? AND sent<>'' AND acked=''"
+        args = [dst]
+        if since:
+            sql = sql + " AND created>=?"
+            args.append(since)
+        with self.lock:
+            return [dict(r) for r in self.db.execute(sql + " ORDER BY id ASC", tuple(args)).fetchall()]
 
     def mark_sent(self, oid, error=""):
         with self.lock:

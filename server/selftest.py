@@ -81,6 +81,11 @@ def check(name, got, want):
         print("      想要：%s" % (want,))
 
 
+def said(line):
+    """一行报文里那句话：去掉呼号列与末尾的消息编号，只比文字。"""
+    return oa_server.line_text(line)
+
+
 def red_pixels(body, box):
     """一张 PNG 里某块区域上接近那一点红（#b3141f）的像素数。"""
     import io as _io
@@ -311,8 +316,8 @@ def main():
         again.set_auto_mode(True)
         check("打开了", again.auto_mode, True)
         check("只补没回上 ACK 的那台", again.retry_pending_acks(), 1)
-        check("补回那条的写法", again.store.outbox_for("BG1AAA")[0]["line"],
-              "BG7LZQ-2>APRS::BG1AAA   :ACK")
+        check("补回那条的写法", said(again.store.outbox_for("BG1AAA")[0]["line"]), "ACK")
+        check("回的那条带消息编号", again.store.outbox_for("BG1AAA")[0]["line"].endswith("{01"), True)
         check("排着队的不重复入队", again.retry_pending_acks(), 0)
 
         def fail_last():
@@ -353,7 +358,8 @@ def main():
         rt.on_line(oa_aprs.parse_line(first))
         rows = rt.store.outbox_for("BG5CCC-7")
         check("第一次喊到回一条", len(rows), 1)
-        check("第一次回的写法", rows[0]["line"], "BG7LZQ-3>APRS::BG5CCC-7 :ACK")
+        check("第一次回的写法", said(rows[0]["line"]), "ACK")
+        check("回的那条地址对", rows[0]["line"].startswith("BG7LZQ-3>APRS::BG5CCC-7 :ACK{"), True)
         rt.on_line(oa_aprs.parse_line(first))
         check("还排着队的不重复入队", len(rt.store.outbox_for("BG5CCC-7")), 1)
 
@@ -368,13 +374,17 @@ def main():
             "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG5CCC-7 from OL52"))
         check("回过之后再喊一次照样回", len(rt.store.outbox_for("BG5CCC-7")), 2)
         check("第二次回的也是 ACK",
-              rt.store.outbox_for("BG5CCC-7")[-1]["line"].endswith(":ACK"), True)
+              said(rt.store.outbox_for("BG5CCC-7")[-1]["line"]), "ACK")
         mark_sent_old()
         rt.on_line(oa_aprs.parse_line("BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET"))
-        check("回过 U CNNET 不再回 ACK", len(rt.store.outbox_for("BG5CCC-7")), 2)
+        check("回过 U CNNET 只回一句 73", len(rt.store.outbox_for("BG5CCC-7")), 3)
+        check("那句就是 73", said(rt.store.outbox_for("BG5CCC-7")[-1]["line"]), "73 TNX!")
+        rt.on_line(oa_aprs.parse_line(
+            "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET"))
+        check("再回一次 U 不重复回 73", len(rt.store.outbox_for("BG5CCC-7")), 3)
         rt.on_line(oa_aprs.parse_line(
             "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG5CCC-7 from OL53"))
-        check("第三回喊到又回一条", len(rt.store.outbox_for("BG5CCC-7")), 3)
+        check("第三回喊到又回一条", len(rt.store.outbox_for("BG5CCC-7")), 4)
         last = rt.store.outbox_for("BG5CCC-7")[-1]
         rt.store.mark_sent(last["id"], "发不出去")
         old = (datetime.now(UTC) - timedelta(seconds=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -384,6 +394,50 @@ def main():
         rt.store.close()
     finally:
         shutil.rmtree(again_dir, ignore_errors=True)
+
+    # 消息编号：对方那条带编号就回 ack<编号>；对方 ack 回来，发件箱那行记上投递
+    mid_dir = tempfile.mkdtemp(prefix="oa-selftest-mid-")
+    try:
+        rec = oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET OL62{12")
+        check("报文末尾的编号读出来", rec["msgid"], "12")
+        check("没写编号就是空串",
+              oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET OL62")["msgid"], "")
+        acked_rec = oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :ack9383")
+        check("对方回的确认认出编号", (acked_rec["kind"], acked_rec["ack_id"]), ("ack", "9383"))
+        check("不收那种也算一种确认",
+              oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :rej12")["kind"], "rej")
+
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = mid_dir
+        conf["OA_TX_PASSCODE"] = "23736"
+        rt = oa_server.Runtime(conf)
+        today = oa_store.round_date_of(oa_aprs.now_iso())
+        rt.store.open_round(today, "BG7LZQ-3")
+        rt.on_line(oa_aprs.parse_line(
+            "BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET OL62{12"))
+        rows = rt.store.outbox_for("BG5DDD-3")
+        check("回的确认引对方那条的编号", said(rows[0]["line"]), "ack12")
+        check("自己发的那条也有编号", rows[0]["msgid"], "01")
+        check("自己发的编号接着往下排", rt.store.get_setting("msg_seq"), "1")
+        check("报文表里也存下编号", rt.store.packets()[0]["msgid"], "12")
+        rt.on_line(oa_aprs.parse_line(
+            "BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :ack%s" % rows[0]["msgid"]))
+        check("对方 ack 回来记下投递", bool(rt.store.outbox_for("BG5DDD-3")[0]["acked"]), True)
+        check("确认那一句不再回话", len(rt.store.outbox_for("BG5DDD-3")), 1)
+        rt.on_line(oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :ack99"))
+        check("没那编号的 ack 不动别的", len(rt.store.outbox_for("BG5DDD-3")), 1)
+        # 名单状态：ACK 只把「只喊到」抬上来，已经确认的不往回掉
+        rt.store.set_station(today, "BG1OLD-1", status="called")
+        rt.store.mark_acked_station(today, "BG1OLD-1")
+        check("回 ACK 后名单抬到已回ACK",
+              rt.store.get_station(today, "BG1OLD-1")["status"], "acked")
+        rt.store.set_station(today, "BG1OLD-2", status="confirmed")
+        rt.store.mark_acked_station(today, "BG1OLD-2")
+        check("已确认的不往回掉",
+              rt.store.get_station(today, "BG1OLD-2")["status"], "confirmed")
+        rt.store.close()
+    finally:
+        shutil.rmtree(mid_dir, ignore_errors=True)
 
     # 网格从签到那行报的话里读；没写网格的回一条无效提示，不进名单
     bad_dir = tempfile.mkdtemp(prefix="oa-selftest-bad-")
@@ -397,8 +451,8 @@ def main():
         rt.on_line(oa_aprs.parse_line(
             "BG8ZZZ-1>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET 忘了写网格"))
         rows = rt.store.outbox_for("BG8ZZZ-1")
-        check("没写网格的回了无效提示", bool(rows) and rows[0]["line"].endswith(
-            ":INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>"), True)
+        check("没写网格的回了无效提示", bool(rows) and said(rows[0]["line"]) ==
+              "INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>", True)
         check("没写网格的不进名单", rt.store.get_station(today, "BG8ZZZ-1"), None)
         rt.on_line(oa_aprs.parse_line(
             "BG8ZZZ-1>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET 又忘了"))
@@ -410,7 +464,7 @@ def main():
               rt.store.get_station(today, "BG9YYY-2")["grid"], "PM01")
         check("报文表里也存下签到报的网格", rt.store.packets()[0]["msg_grid"], "PM01")
         check("写了网格的回的是 ACK",
-              rt.store.outbox_for("BG9YYY-2")[0]["line"].endswith(":ACK"), True)
+              said(rt.store.outbox_for("BG9YYY-2")[0]["line"]), "ACK")
         rt.on_line(oa_aprs.parse_line(
             "BG9YYY-2>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :U CNNET"))
         check("回过 U 就是已确认（没再写网格也算）",
@@ -421,8 +475,8 @@ def main():
         rows = rt.store.outbox_for("BG7AAA-9")
         check("发给本台但不对的回了怎么做",
               rows[0]["line"].startswith("BG7LZQ-2>APRS::BG7AAA-9 :"), True)
-        check("那句就是怎么做", bool(rows) and rows[0]["line"].endswith(
-            ":APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET"), True)
+        check("那句就是怎么做", bool(rows) and said(rows[0]["line"]) ==
+              "APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET", True)
         check("不对的报文不进名单", rt.store.get_station(today, "BG7AAA-9"), None)
         rt.on_line(oa_aprs.parse_line(
             "BG7AAA-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :还是我"))
@@ -430,7 +484,7 @@ def main():
         rt.on_line(oa_aprs.parse_line(
             "BG7AAA-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET OL62"))
         check("改成对的就回 ACK",
-              rt.store.outbox_for("BG7AAA-9")[-1]["line"].endswith(":ACK"), True)
+              said(rt.store.outbox_for("BG7AAA-9")[-1]["line"]), "ACK")
         rt.on_line(oa_aprs.parse_line(
             "BG6BBB-5>APRS,TCPIP*,qAC,T2X::BD9ZZZ   :你好"))
         check("发给别人的不回", rt.store.outbox_for("BG6BBB-5"), [])
@@ -591,7 +645,10 @@ def main():
                   "轮值呼号不是参与台，不往名单里写")
             check("轮值呼号没进名单", rt.store.get_station(rdate, "BG7LZQ-3"), None)
             acked = post("/api/admin/ack", {"date": rdate, "call": "BG3POST-9"})
-            check("回 ACK 用当轮主控呼号", acked["line"], "BG7LZQ-3>APRS::BG3POST-9:ACK")
+            check("回 ACK 用当轮主控呼号", acked["line"].startswith("BG7LZQ-3>APRS::BG3POST-9:ACK{"),
+                  True)
+            check("台上手发的那条也带编号", acked["line"].endswith("{01") or
+                  acked["line"].endswith("{02"), True)
         finally:
             httpd.shutdown()
             httpd.server_close()
