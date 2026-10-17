@@ -453,7 +453,7 @@ def main():
             "BG8ZZZ-1>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET 忘了写网格"))
         rows = rt.store.outbox_for("BG8ZZZ-1")
         check("没写网格的回了无效提示", bool(rows) and said(rows[0]["line"]) ==
-              "INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>", True)
+              "INVALID CHECKIN, RESEND: CQ CNNET <CALL> <GRID>", True)
         check("没写网格的不进名单", rt.store.get_station(today, "BG8ZZZ-1"), None)
         rt.on_line(oa_aprs.parse_line(
             "BG8ZZZ-1>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET 又忘了"))
@@ -477,7 +477,7 @@ def main():
         check("发给本台但不对的回了怎么做",
               rows[0]["line"].startswith("BG7LZQ-2>APRS::BG7AAA-9 :"), True)
         check("那句就是怎么做", bool(rows) and said(rows[0]["line"]) ==
-              "APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET", True)
+              "APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET", True)
         check("不对的报文不进名单", rt.store.get_station(today, "BG7AAA-9"), None)
         rt.on_line(oa_aprs.parse_line(
             "BG7AAA-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :还是我"))

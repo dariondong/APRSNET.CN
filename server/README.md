@@ -84,9 +84,9 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - `OA_TNX_TEXT=73 TNX!`：一台走完 `U CNNET` 回的一句 73，一台一轮一份；
 - 对方那条末尾带编号（`…{12`）时，回的是 `ack12`，不是那句 ACK。我们发出去的每一条末尾
   也带 `{编号`，对方客户端回 `ack<编号>`，主控台的发件箱就会多一句「对方已确认」；
-- `OA_BAD_TEXT=INVALID CHECKIN, RESEND: CQ CNNET <info> <GRID>`：签到那行没写出网格时回的那句话，
+- `OA_BAD_TEXT=INVALID CHECKIN, RESEND: CQ CNNET <CALL> <GRID>`：签到那行没写出网格时回的那句话，
   同一台同一轮只回一条。名单里的网格就从这行报的那句话里读（读不到网格的不进名单）；
-- `OA_HELP_TEXT=APRSNETCN OA: CQ CNNET <INFO> <GRID>, THEN U CNNET`：发给轮值呼号、又不是
+- `OA_HELP_TEXT=APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET`：发给轮值呼号、又不是
   签到那两步时回的那句话，同样一台一轮只回一条；
 - 发出去的每一条都记在 `outbox` 表，主控台的「发件箱」里看得到，发失败的带原因；
 - 没配口令时，点「回 ACK」只把报文记下来并复制，主控自己发。
