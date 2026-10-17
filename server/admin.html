@@ -68,6 +68,15 @@ a{color:inherit}
   </form>
   <div id="msg" class="msg"></div>
 
+  <h2>页面上那两行字</h2>
+  <p class="note">副标题写在标题下面，中英两页各取各的；主控昵称跟在轮值呼号后面。留空就不显示。</p>
+  <form class="row" id="metaForm">
+    <div><label>副标题（中文页）</label><input type="text" id="subZh" placeholder="周六空中签到"></div>
+    <div><label>Subtitle (English page)</label><input type="text" id="subEn" placeholder="Saturday check-in"></div>
+    <div><label>主控昵称</label><input type="text" id="opName" placeholder="达里安"></div>
+    <div><button type="submit">写到页面上</button></div>
+  </form>
+
   <h2>待办</h2>
   <p class="note" id="todoNote">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
   <div id="todo"></div>
@@ -192,6 +201,7 @@ a{color:inherit}
       lastSync = Date.now();
       paintBar(data.health, data.round);
       paintStats(data.stats, data.round);
+      paintMeta(data.meta);
       paintRounds(data.rounds, data.round);
       paintTodo(data.stations, data.round);
       paintPackets(data.packets);
@@ -311,6 +321,19 @@ a{color:inherit}
          (h.auto ? "没回成的过一分钟自己补，一台最多补 " + (h.ack_retry || 0) + " 次。" : "") +
          "一台一轮只回一次，一分钟最多 " + (h.ack_per_minute || 12) + " 条。")
       : "没有配 OA_TX_PASSCODE，回 ACK 只把报文记下来、复制给你自己发。";
+  };
+
+  var paintMeta = function (meta) {
+    // 正在输入的框不动：十秒一次的刷新不能把写到一半的字抹掉
+    var put = function (id, value) {
+      var el = $(id);
+      if (!el || el === document.activeElement) return;
+      el.value = value || "";
+    };
+    meta = meta || {};
+    put("subZh", meta.subtitleZh);
+    put("subEn", meta.subtitleEn);
+    put("opName", meta.opName);
   };
 
   var paintRounds = function (rounds, round) {
@@ -601,6 +624,26 @@ a{color:inherit}
       at: $("stAt").value,
       status: $("stStatus").value
     }).then(function (d) { showErr(d && d.error); $("stCall").value = ""; refresh(); });
+  });
+
+  // 页面上那两行字：副标题两语 + 主控昵称，一起写，空串就是抹掉
+  $("metaForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    api("/api/admin/settings", "POST", {
+      subtitle_zh: $("subZh").value,
+      subtitle_en: $("subEn").value,
+      op_name: $("opName").value
+    }).then(function (d) {
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "写不进去。";
+        showErr(why);
+        say(why, true);
+        return;
+      }
+      showErr("");
+      say("页面上的副标题与主控昵称已经换好，用户刷新就能看到。");
+      refresh();
+    });
   });
 
   refresh();

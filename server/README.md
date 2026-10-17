@@ -33,7 +33,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /` | 活动页（`oa/index.html`），页面上的名单自动指向 `/api/roster` |
 | `GET /oa/data.html` | 数据面板，同上 |
 | `GET /en/` | 英文活动页 |
-| `GET /api/roster` | 名单，与静态 `roster.json` 同格式 |
+| `GET /api/roster` | 名单，与静态 `roster.json` 同格式，顶层多一份 `meta`（页面抬头那两行字） |
 | `GET /api/board.png` | 签到表那张 PNG，`?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文 |
 | `GET /api/grid.png` | 网格表那张 PNG，参数同上；旧的 `/api/points.png` 302 到这里 |
 | `GET /api/cert.png` | 一台一份的参与证书 PNG，`?call=BG7LZQ-2` 必写，`?date=` 与 `?lang=` 同上 |
@@ -42,7 +42,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /api/admin/state` | 主控台读的一切：状态、轮次、本轮数字、名单、流水 |
 | `GET /api/admin/export` | 下载 roster.json；`?format=csv&what=stations` 或 `what=packets` 下载两份 CSV |
 | `POST /api/admin/round` | 开一轮：`{"date":"2026-10-17","duty":"BG7LZQ-2"}` |
-| `POST /api/admin/settings` | 切全自动：`{"auto":true}`，或 `{"auto":false}` 退回手动 |
+| `POST /api/admin/settings` | 切全自动：`{"auto":true}` / `{"auto":false}`；同一处写页面抬头那两行字：`{"subtitle_zh":"…","subtitle_en":"…","op_name":"…"}`，空串就是抹掉 |
 | `POST /api/admin/close` | 结束一轮，并把这一轮归档 |
 | `POST /api/admin/archive` | 单独归档一轮：`{"date":"2026-10-17"}` |
 | `POST /api/admin/duty` | 换轮值呼号 |
@@ -121,6 +121,14 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 
 主控台顶上那个「全自动」勾选框能当场开关，开关写在库里的 `settings` 表，重启也记得，不用改
 env 再重启。关掉以后退回手动：开轮、收轮、回 ACK 都得自己在台面上点。
+
+## 页面上那两行字
+
+副标题与主控昵称由主控在台面「页面上那两行字」那块填，写在库里的 `settings` 表，跟全自动开关
+同一处。副标题中英各一条（`subtitle_zh` / `subtitle_en`），页面按 `<html lang>` 取自己那一条；
+昵称一条（`op_name`），写成「 · 昵称」跟在轮值呼号后面。三件都跟名单一起从 `/api/roster` 的
+`meta` 发出去，主控填完用户刷新就换，不用重新发布页面。留空就是这块不显示。这两行字不随周换，
+换一轮也不用重填。
 
 ## 配置
 

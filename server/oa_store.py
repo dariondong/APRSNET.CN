@@ -528,7 +528,8 @@ class Store(object):
                 "call": rnd["duty"],
                 "stations": stations,
             })
-        return {"updated": (out[0]["updated"] or None) if out else None, "rounds": out}
+        return {"updated": (out[0]["updated"] or None) if out else None,
+                "meta": self.meta(), "rounds": out}
 
     def write_roster(self, path):
         """把名单写到磁盘上（给静态站或备份用），没有变化就不动文件。"""
@@ -704,6 +705,25 @@ class Store(object):
         with self.lock:
             rows = self.db.execute("SELECT key, value FROM settings").fetchall()
         return dict((r["key"], r["value"]) for r in rows)
+
+    # ---- 页面上那两行字（主控自己在操作台上填，跟着名单一起发出去） ----
+
+    # 副标题两语各一条、主控昵称一条。空串就是「没填」，页面见到空串不显示那一位。
+    META_KEYS = ("subtitle_zh", "subtitle_en", "op_name")
+
+    def meta(self):
+        """活动页上那两行字：副标题（中 / 英）与主控昵称。
+
+        为什么不塞进 `rounds` 里：它们不随周更换，换一轮也不用重填 —— 副标题是这场
+        活动叫什么副题，昵称是这个主控叫什么。放在 settings 表里，跟 auto 那几个
+        开关同一处，页面上当名单的 meta 一起发出去。
+        """
+        st = self.settings()
+        return {
+            "subtitleZh": (st.get("subtitle_zh") or "").strip(),
+            "subtitleEn": (st.get("subtitle_en") or "").strip(),
+            "opName": (st.get("op_name") or "").strip(),
+        }
 
     def stats(self):
         with self.lock:

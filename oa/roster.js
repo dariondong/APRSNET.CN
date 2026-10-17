@@ -30,6 +30,10 @@
    stations = 各轮台站合计，rf = 走射频的，updated = 名单最后更新的日期。
    活动页没有这些位子，什么也不做。
 
+   顶层还有一个 meta：{"subtitleZh": "…", "subtitleEn": "…", "opName": "…"}。这三项只在
+   后台填过才写，页面上的 [data-oa-subtitle] 收副标题（按 <html lang> 选中文还是英文），
+   [data-oa-op] 收主控昵称，写成「 · 昵称」跟在轮值呼号后面。空串就把这几处藏起来。
+
    取不到、不是合法 JSON、一轮都没有时页面一动不动，留着 HTML 里写好的那条空状态。
    一律用 textContent 写入，不拼 HTML 字符串。
 
@@ -405,6 +409,22 @@
     if (!call) return;
     var slots = document.querySelectorAll("[data-oa-duty]");
     Array.prototype.forEach.call(slots, function (el) { el.textContent = call; });
+  };
+
+  /* 抬头那两行字：副标题与主控昵称，后台没填就藏起来 */
+  var fillMeta = function (meta) {
+    if (!meta) return;
+    var en = /^en\b/i.test(document.documentElement.lang || "");
+    var sub = String((en ? meta.subtitleEn : meta.subtitleZh) || "").trim();
+    var op = String(meta.opName || "").trim();
+    Array.prototype.forEach.call(document.querySelectorAll("[data-oa-subtitle]"), function (el) {
+      el.textContent = sub;
+      el.hidden = !sub;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-oa-op]"), function (el) {
+      el.textContent = op ? " \u00b7 " + op : "";
+      el.hidden = !op;
+    });
   };
 
   /* 数据面板上那几个数字：一份 JSON 汇总出来，页面没有这些位子就跳过 */
@@ -895,6 +915,7 @@
     fetch(url, { credentials: "omit", cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
+        fillMeta(data && data.meta);
         var rounds = ((data && data.rounds) || []).filter(function (r) { return r && r.date; });
         if (!rounds.length) return;
         rounds.sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; });

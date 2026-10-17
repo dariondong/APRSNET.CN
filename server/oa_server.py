@@ -800,6 +800,7 @@ class Handler(BaseHTTPRequestHandler):
                 "health": self.rt.health(),
                 "round": self.rt.store.round_by_date(date),
                 "rounds": self.rt.store.rounds(),
+                "meta": self.rt.store.meta(),
                 "stats": self.rt.store.round_stats(date),
                 "stations": self.rt.store.stations(date),
                 "packets": self.rt.store.packets(limit=200),
@@ -932,7 +933,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if "auto" in body:
                 self.rt.set_auto_mode(bool(body.get("auto")))
-            self._json({"ok": True, "flags": self.rt.flags()})
+            # 页面上那两行字：副标题（中 / 英）与主控昵称，空串就是抹掉
+            for key in oa_store.Store.META_KEYS:
+                if key in body:
+                    self.rt.store.set_setting(key, str(body.get(key) or "").strip())
+            self._json({"ok": True, "flags": self.rt.flags(),
+                        "meta": self.rt.store.meta()})
             return
         if path == "/api/admin/archive":
             if not self._need_token():

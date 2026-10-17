@@ -158,6 +158,22 @@ def main():
 
         roster = store.roster()
         check("只有一轮", len(roster["rounds"]), 1)
+        check("没填那两行字时元数据都是空的", roster["meta"],
+              {"subtitleZh": "", "subtitleEn": "", "opName": ""})
+        store.set_setting("subtitle_zh", " 周六空中签到 ")
+        store.set_setting("subtitle_en", "Saturday check-in")
+        store.set_setting("op_name", "达里安")
+        meta = store.roster()["meta"]
+        check("副标题与主控昵称跟着名单发出去",
+              (meta["subtitleZh"], meta["subtitleEn"], meta["opName"]),
+              ("周六空中签到", "Saturday check-in", "达里安"))
+        store.set_setting("op_name", "")
+        check("抹掉就是不显示", store.meta()["opName"], "")
+        # 后面还要比「写出来的名单与内存里的是同一份」，先把三件改回空的
+        store.set_setting("subtitle_zh", "")
+        store.set_setting("subtitle_en", "")
+        check("三件都抹掉后元数据回到空", store.meta(),
+              {"subtitleZh": "", "subtitleEn": "", "opName": ""})
         rnd = roster["rounds"][0]
         check("轮次日期是周六", oa_store.round_date_of(records[0]["ts"]) == rnd["date"], True)
         check("轮值呼号写进名单", rnd["call"], "BG7LZQ-2")
