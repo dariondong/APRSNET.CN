@@ -751,7 +751,7 @@ class Handler(BaseHTTPRequestHandler):
             date = str(body.get("date") or "").strip() or oa_store.bj_now_date()
             call = str(body.get("call") or "").strip().upper()
             text = str(body.get("text") or "ACK").strip() or "ACK"
-            duty = str(body.get("duty") or self.rt.conf["OA_ROUND_DUTY"]).strip().upper()
+            duty = str(body.get("duty") or self.rt.duty_call()).strip().upper()
             if not call or not duty:
                 self._fail(400, "缺呼号：回谁、以谁的名义回")
                 return

@@ -581,6 +581,9 @@ def main():
             check("表单改得动状态", posted["status"], "acked")
             post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "pm01"})
             check("表单写了新网格就换", rt.store.get_station(rdate, "BG3POST-9")["grid"], "PM01")
+            rt.store.open_round(rdate, "BG7LZQ-3")
+            acked = post("/api/admin/ack", {"date": rdate, "call": "BG3POST-9"})
+            check("回 ACK 用当轮主控呼号", acked["line"], "BG7LZQ-3>APRS::BG3POST-9:ACK")
         finally:
             httpd.shutdown()
             httpd.server_close()
