@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNETCN OA 倒计时</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#1c2228">
+<meta name="theme-color" content="#0a0e12">
 <link rel="icon" type="image/png" href="https://aprsnet.cn/assets/favicon.png?v=5">
 <script>
-/* 一块读数，穿的是官网（aprslocus）那套衣服：面板灰底、铝白读数、冷蓝标记。
-   ?theme=light 换成白天那套配色；?theme=auto 跟系统的深浅色；
-   不写就是官网默认的深色。必须在首帧前执行，否则会闪一下。 */
+/* 一块能嵌在别处的读数，穿的是 APRSLocus 官网那套衣服：深空黑底、面板灰线、铝白字，
+   数据走冷蓝、正常状态走信号绿。?theme=light 换成白天那套，?theme=auto 跟系统；
+   不写就是深色。必须在首帧前写好，否则会闪一下。 */
 (function () {
   try {
     var m = /[?&]theme=(dark|light|auto)/.exec(location.search);
@@ -20,54 +20,131 @@
     }
     document.documentElement.setAttribute('data-theme', t);
     var mc = document.querySelector('meta[name="theme-color"]');
-    if (mc) mc.setAttribute('content', t === 'dark' ? '#1c2228' : '#ffffff');
+    if (mc) mc.setAttribute('content', t === 'dark' ? '#0a0e12' : '#f4f7fc');
   } catch (e) {}
 })();
 </script>
 <style>
-/* 本页自用样式：一块可以嵌在别处的读数，配色与字体照官网的 token 抄一份
-   （跨站读不到对方的 CSS 变量，只能把值写在这里；规则里仍然只用变量）。 */
+/* 跨站读不到官网的 CSS 变量，这里按 docs/css/style.css 的 token 抄一份值；
+   规则里仍然只写变量，深色与白天两套一起换。 */
 :root {
   color-scheme: dark;
-  --bg: #1c2228;
+  --bg-1: #0a0e12;
+  --bg-2: #090c10;
+  --panel: #1c2228;
   --text: #d8dde3;
-  --faint: #868f9a;
+  --text-dim: #98a2ac;
+  --text-faint: #868f9a;
   --cyan: #4da3ff;
+  --green: #3ddc97;
   --line: rgba(216, 221, 227, .14);
-  --font: Inter, "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --line-strong: rgba(216, 221, 227, .26);
+  --halo-cool: rgba(77, 163, 255, .10);
+  --font-sans: Inter, "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #ffffff;
+  --bg-1: #f4f7fc;
+  --bg-2: #e9eff9;
+  --panel: #ffffff;
   --text: #0f172a;
-  --faint: #5b6b85;
+  --text-dim: #4b5a75;
+  --text-faint: #5b6b85;
   --cyan: #1d6fd0;
+  --green: #1e8f63;
   --line: rgba(148, 160, 178, .34);
+  --line-strong: rgba(148, 160, 178, .52);
+  --halo-cool: rgba(45, 122, 200, .14);
 }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); -webkit-font-smoothing: antialiased; }
-.em { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 100%; padding: 10px 0; }
-.em-label { font-size: 11.5px; line-height: 1.2; letter-spacing: .22em; text-transform: uppercase; color: var(--faint); }
-.em-value { margin-top: 6px; font-size: clamp(32px, 8vw, 46px); font-weight: 800; line-height: .92; letter-spacing: -.04em; font-variant-numeric: tabular-nums; color: var(--text); }
-.em-facts { display: flex; flex-wrap: wrap; gap: 4px 26px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
-.em-cell { display: flex; align-items: baseline; gap: 7px; font-size: 11.5px; line-height: 1.2; letter-spacing: .16em; color: var(--faint); }
-.em-cell b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--cyan); }
+body {
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(720px 420px at 88% -12%, var(--halo-cool), transparent 64%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+.em { display: flex; flex-direction: column; justify-content: center; min-height: 100%; padding: 16px 18px; }
+
+/* 顶上那行：活动名、这一轮的日期、当下状态 */
+.em-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.em-kicker { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .26em; color: var(--cyan); }
+.em-round { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.em-state { margin-left: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--text-faint); }
+.em-state.is-live { color: var(--green); }
+
+/* 那只钟：标签在上，数字在下，一个数说清一件事 */
+.em-clock { margin-top: 12px; }
+.em-label { font-size: 12px; letter-spacing: .2em; color: var(--text-faint); }
+.em-value { display: block; margin-top: 5px; font-family: var(--font-mono); font-size: clamp(34px, 8.2vw, 60px); font-weight: 800; line-height: .98; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--text); }
+.em-window { margin-top: 9px; font-size: 12.5px; line-height: 1.55; color: var(--text-dim); }
+
+/* 细线下面三个数：台站、网格、走射频 */
+.em-rule { height: 1px; margin: 12px 0 10px; background: var(--line); }
+.em-cells { display: flex; flex-wrap: wrap; gap: 2px 22px; }
+.em-cell { display: flex; align-items: baseline; gap: 6px; font-size: 11.5px; letter-spacing: .14em; color: var(--text-faint); }
+.em-cell b { font-family: var(--font-mono); font-size: 19px; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; color: var(--cyan); }
+.em-meta { margin-top: 8px; font-size: 12.5px; line-height: 1.55; color: var(--text-dim); }
+.em-meta b { font-family: var(--font-mono); font-weight: 700; color: var(--text); }
+.em-how { margin-top: 10px; font-size: 12.5px; line-height: 1.7; color: var(--text-dim); }
+.em-how code { font-family: var(--font-mono); font-size: 11.5px; color: var(--cyan); background: var(--halo-cool); padding: 1px 5px; border-radius: 4px; }
+.em-go { margin-top: 10px; font-size: 12px; letter-spacing: .06em; }
+.em-go a { color: var(--text-faint); border-bottom: 1px solid var(--line-strong); padding-bottom: 1px; }
+.em-go a:hover, .em-go a:focus-visible { color: var(--cyan); border-color: currentColor; }
+
+/* 框子矮的时候先撤次要的几行：公告里那格是 16:9，APP 里只有 240 高 */
+@media (max-height: 330px) {
+  .em-window, .em-how { display: none; }
+  .em-clock { margin-top: 10px; }
+  .em-rule { margin: 10px 0 8px; }
+}
+@media (max-height: 250px) {
+  .em-meta, .em-go { display: none; }
+  .em { padding: 12px 16px; }
+}
+@media (max-width: 420px) {
+  .em-state { margin-left: 0; }
+  .em-cell { gap: 5px; }
+}
 </style>
 </head>
 
 <body>
 
 <main class="em" id="main" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六"
-      data-clock-label-start="APRSNETCN OA · 距开始" data-clock-label-end="APRSNETCN OA · 距结束">
-  <p class="em-label" data-clock="label">APRSNETCN OA · 距开始</p>
-  <p class="em-value" data-clock="value">—</p>
-  <p class="em-facts" data-em-roster="https://oa.aprsnet.cn/api/roster">
+      data-clock-label-start="距开始" data-clock-label-end="距结束">
+  <div class="em-top">
+    <span class="em-kicker">APRSNETCN OA</span>
+    <span class="em-round" data-em="round"></span>
+    <span class="em-state" data-em="state" data-em-before="未开始" data-em-live="进行中" data-em-over="结束了">—</span>
+  </div>
+
+  <div class="em-clock">
+    <p class="em-label" data-clock="label">距开始</p>
+    <p class="em-value" data-clock="value">—</p>
+  </div>
+
+  <p class="em-window">北京时间 周六 00:00 到 23:59 · UTC 周五 16:00 到周六 15:59</p>
+
+  <div class="em-rule"></div>
+
+  <p class="em-cells" data-em-roster="https://oa.aprsnet.cn/api/roster">
     <span class="em-cell"><b data-em="stations">—</b>台站</span>
     <span class="em-cell"><b data-em="grids">—</b>网格</span>
+    <span class="em-cell"><b data-em="rf">—</b>走射频</span>
   </p>
+
+  <p class="em-meta">轮值 <b data-em="duty">BG7LZQ-2</b> · 最近签到 <b data-em="latest">—</b></p>
+
+  <p class="em-how">先发 <code>CQ CNNET 呼号 网格</code>，收到 ACK 再发 <code>U CNNET</code>。</p>
+
+  <p class="em-go"><a href="https://aprsnet.cn/oa/">活动页 aprsnet.cn/oa</a></p>
 </main>
 
 <script src="clock.js?v=1"></script>
-<script src="embed.js?v=1"></script>
+<script src="embed.js?v=2"></script>
 </body>
 </html>
