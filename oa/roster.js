@@ -700,43 +700,36 @@
     });
   }
 
-  /* 核验编号：编号就是 呼号|场次|时间|网格 的 FNV-1a，页面自己也算得出来。
-     填进奖状右上角那 8 位，名单里找到哪一台，就把那台摊开给你看。 */
-  var serialOf = function (call, date, at, grid) {
-    var key = [call || "", date || "", at || "", grid || ""].join("|");
-    var bytes;
-    try {
-      bytes = new TextEncoder().encode(key);
-    } catch (e) {
-      var raw = unescape(encodeURIComponent(key));
-      bytes = [];
-      for (var i = 0; i < raw.length; i++) bytes.push(raw.charCodeAt(i));
-    }
-    var h = 0x811C9DC5;
-    for (var j = 0; j < bytes.length; j++) {
-      h = Math.imul(h ^ bytes[j], 0x01000193) >>> 0;
-    }
-    var out = h.toString(16).toUpperCase();
-    while (out.length < 8) out = "0" + out;
-    return out;
-  };
-
+  /* 编号：奖状右上角那串就是这台站的四样东西，用点隔开。
+     呼号.场次.时间.网格，拆开就懂，不靠服务器、不靠名单。 */
   var verifyBox = document.querySelector(".oa-verify");
   var verifyIn = document.getElementById("oaVerifyIn");
   var verifyGo = document.getElementById("oaVerifyGo");
   var verifyOut = document.getElementById("oaVerifyOut");
 
-  var findSerial = function (code) {
-    var want = String(code || "").toUpperCase().replace(/[^0-9A-F]/g, "");
-    if (want.length !== 8) return null;
+  var readCode = function (raw) {
+    var parts = String(raw || "").trim().replace(/\s+/g, "").split(".");
+    if (parts.length !== 4) return null;
+    var call = parts[0];
+    if (!/^[0-9A-Z\/-]{3,12}$/i.test(call)) return null;
+    var day = /^\d{6}$/.test(parts[1]) ? "20" + parts[1].slice(0, 2) + "-" + parts[1].slice(2, 4) +
+      "-" + parts[1].slice(4, 6) : "";
+    var clock = /^\d{4}$/.test(parts[2]) ? parts[2].slice(0, 2) + ":" + parts[2].slice(2, 4) : "";
+    var grid = /^[0-9A-Z]{2,6}$/i.test(parts[3]) ? parts[3].toUpperCase() : "";
+    if (!day && !clock && !grid) return null;
+    return { call: call.toUpperCase(), date: day, at: clock, grid: grid };
+  };
+
+  /* 名单在手上就顺手把那张奖状也找出来；没拉到名单也不影响拆编号 */
+  var findRecord = function (code) {
     for (var i = 0; i < last.length; i++) {
       var round = last[i] || {};
       var stations = round.stations || [];
       for (var j = 0; j < stations.length; j++) {
         var st = stations[j] || {};
-        if (serialOf(st.call, round.date, st.at, st.grid) === want) {
-          return { round: round, station: st };
-        }
+        if (String(st.call || "").toUpperCase() !== code.call) continue;
+        if (code.grid && String(st.grid || "").toUpperCase() !== code.grid) continue;
+        return { round: round, station: st };
       }
     }
     return null;
@@ -747,21 +740,23 @@
     var typed = String(verifyIn.value || "").trim();
     var hint = verifyBox ? (verifyBox.getAttribute("data-verify-hint") || "") : "";
     var miss = verifyBox ? (verifyBox.getAttribute("data-verify-miss") || "") : "";
-    var hit = findSerial(typed);
     verifyOut.textContent = "";
-    if (!hit) {
-      verifyOut.textContent = typed ? miss : hint;
+    if (!typed) {
+      verifyOut.textContent = hint;
       return;
     }
-    var st = hit.station;
-    var round = hit.round;
+    var code = readCode(typed);
+    if (!code) {
+      verifyOut.textContent = miss;
+      return;
+    }
     var call = document.createElement("b");
-    call.textContent = String(st.call || "");
+    call.textContent = code.call;
     verifyOut.appendChild(call);
-    var bits = [];
     var label = function (key) { return list.getAttribute(key) || ""; };
-    [["data-label-round", round.date], ["data-label-grid", st.grid],
-     ["data-label-at", st.at]].forEach(function (pair) {
+    var bits = [];
+    [["data-label-round", code.date], ["data-label-at", code.at],
+     ["data-label-grid", code.grid]].forEach(function (pair) {
       if (!pair[1]) return;
       var name = label(pair[0]);
       bits.push(name ? name + " " + pair[1] : String(pair[1]));
@@ -771,11 +766,12 @@
       info.textContent = " " + bits.join(" · ");
       verifyOut.appendChild(info);
     }
+    var hit = findRecord(code);
     var certLabel = list.getAttribute("data-cert-label") || "";
-    if (certLabel && imgBase) {
+    if (hit && certLabel && imgBase) {
       var query = imgQuery(hit.round);
       var link = document.createElement("a");
-      link.href = imgBase + "cert.png?call=" + encodeURIComponent(String(st.call || "")) +
+      link.href = imgBase + "cert.png?call=" + encodeURIComponent(String(hit.station.call || "")) +
         (query ? "&" + query : "");
       link.textContent = certLabel;
       verifyOut.appendChild(document.createTextNode(" "));

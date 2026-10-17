@@ -210,10 +210,10 @@
         <span class="st-note">This round has no station yet.</span>
       </li>
     </ul>
-    <div class="oa-verify" data-verify-hint="Type the 8 characters from the top right of a certificate. If the roster has that serial, the record is real." data-verify-miss="No station in the roster has that serial.">
-      <label class="oa-verify-label" for="oaVerifyIn">Check a serial</label>
-      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="12" placeholder="9190082E">
-      <button class="oa-verify-go" id="oaVerifyGo" type="button">Look up</button>
+    <div class="oa-verify" data-verify-hint="The serial sits at the top right of a certificate. It splits into four parts: callsign, round, time, grid." data-verify-miss="That does not look like a serial. Four parts, separated by dots: callsign.round.time.grid.">
+      <label class="oa-verify-label" for="oaVerifyIn">Read a serial</label>
+      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="BG7LZQ-2.261017.0108.OL62">
+      <button class="oa-verify-go" id="oaVerifyGo" type="button">Split it</button>
       <p class="oa-verify-out" id="oaVerifyOut" role="status"></p>
     </div>
     <p class="oa-note">The fields come from the messages the duty station receives.</p>
@@ -282,7 +282,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=24"></script>
+<script src="../roster.js?v=25"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>

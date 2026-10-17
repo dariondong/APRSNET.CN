@@ -216,15 +216,18 @@ def _head(draw, title, subtitle, note):
 
 
 def serial_of(call, date, at="", grid=""):
-    """呼号 + 场次 + 时间 + 网格 的 32 位 FNV-1a，写成 8 位十六进制，当奖状编号。
+    """编号就是这台站的四样东西，直接用点隔开拼一串：呼号.场次.时间.网格。
 
-    同一条记录永远算出同一个号；换一轮、改时间、改网格，号就跟着变。
+    例：BG7LZQ-2.261017.0108.OL62。看的人拆开就懂，不用查文件、不用算。
+    哪一段缺了就用短横占位，四段的位置始终不变。
     """
-    key = "%s|%s|%s|%s" % (call or "", date or "", at or "", grid or "")
-    h = 0x811C9DC5
-    for byte in key.encode("utf-8"):
-        h = ((h ^ byte) * 0x01000193) & 0xFFFFFFFF
-    return "%08X" % h
+    head = str(call or "").strip().upper() or "----"
+    digits = re.sub(r"\D", "", str(date or ""))
+    day = digits[2:8] if len(digits) >= 8 else "------"     # 2026-10-17 -> 261017
+    clock = re.search(r"(\d{1,2}):(\d{1,2})", str(at or ""))
+    hhmm = ("%02d%02d" % (int(clock.group(1)), int(clock.group(2)))) if clock else "----"
+    cell = str(grid or "").strip().upper()[:6] or "----"
+    return ".".join([head, day, hhmm, cell])
 
 
 def _png(image):
@@ -464,6 +467,9 @@ def render_cert(row, station, note="", lang="zh"):
     serial = "%s %s" % (words["serial"], serial_of(call, date, station.get("at"),
                                                   station.get("grid")))
     plate = font(21)
+    room = WIDTH - PAD - (PAD + draw.textlength(words["cert"], font=font(46)) + 32)
+    while plate.size > 13 and draw.textlength(serial, font=plate) > room:
+        plate = font(plate.size - 2)                  # 编号放不下就收小字，别压到标题
     plate_w = draw.textlength(serial, font=plate)
     draw.text((WIDTH - PAD - plate_w - 16, 68), serial, font=plate, fill=GREY)
 

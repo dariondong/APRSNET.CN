@@ -547,6 +547,11 @@ def main():
                                     {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
                                      "digi": [], "at": "10-17 01:08"})
         check("奖状画得出 PNG", cert[:8], b"\x89PNG\r\n\x1a\n")
+        check("编号就是呼号场次时间网格",
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62"),
+              "BG7LZQ-2.261017.0108.OL62")
+        check("缺了时间与网格的编号占位",
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17"), "BG7LZQ-2.261017.----.----")
         check("奖状编号同台同场次同时间同网格不变",
               oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62AA"),
               oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62AA"))
