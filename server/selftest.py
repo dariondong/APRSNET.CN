@@ -316,6 +316,33 @@ def main():
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
+    # 设备跟最近一次喊到走：换了软件再签一次就换新的，单独回一条 U 不改
+    dev_dir = tempfile.mkdtemp(prefix="oa-selftest-dev-")
+    try:
+        dev_store = oa_store.Store(dev_dir, default_duty="BG7LZQ-2")
+        dev_day = oa_store.round_date_of(oa_aprs.now_iso())
+        dev_store.open_round(dev_day, "BG7LZQ-2")
+        for line in ("BH7AAA>APDR16,TCPIP*,qAC,T2X:!2233.33N/11400.00E> CQ CNNET OL63",
+                     "BH7AAA>APALOC,TCPIP*,qAC,T2X::BG7LZQ-2 :U CNNET"):
+            dev_store.add_packet(oa_aprs.parse_line(line))
+        dev_rows = dict((r["call"], r) for r in dev_store.stations(dev_day))
+        check("设备取喊到那一条的目的呼号", dev_rows["BH7AAA"]["tocall"], "APDR16")
+        check("名单上带着设备", dev_store.roster()["rounds"][0]["stations"][0]["tocall"],
+              "APDR16")
+        dev_store.add_packet(oa_aprs.parse_line(
+            "BH7AAA>APDW17,TCPIP*,qAC,T2X:!2233.33N/11400.00E> CQ CNNET OL64"))
+        dev_rows = dict((r["call"], r) for r in dev_store.stations(dev_day))
+        check("再签一次换了软件就换成新的", dev_rows["BH7AAA"]["tocall"], "APDW17")
+        for _ in range(2):                     # 两条喊到都删掉，只剩回 U 那条
+            ids = [p["id"] for p in dev_store.packets(limit=50)
+                   if p["src"] == "BH7AAA" and p["kind"] == "cq"]
+            dev_store.delete_packet(ids[-1])
+        dev_rows = dict((r["call"], r) for r in dev_store.stations(dev_day))
+        check("只剩回 U 那条就按它的目的呼号算", dev_rows["BH7AAA"]["tocall"], "APALOC")
+        dev_store.close()
+    finally:
+        shutil.rmtree(dev_dir, ignore_errors=True)
+
     # 名单里的路径按喊到那一下算：那一台后面换了链路再发，不改这一行
     via_dir = tempfile.mkdtemp(prefix="oa-selftest-via-")
     try:
@@ -714,6 +741,19 @@ def main():
     finally:
         shutil.rmtree(filt_dir, ignore_errors=True)
 
+    # TOCALL 认设备：官方表里认得就写设备名，认不出就把这条呼号写上去
+    import oa_tocall
+    check("设备：官方表精确命中", oa_tocall.device_of("APSTKA"),
+          "APRS Connect (Android) AxelStack LLC")
+    check("设备：问号位按位比", oa_tocall.device_of("APDR16"), "APRSdroid Open Source")
+    check("设备：星号当开头比", oa_tocall.device_of("APU25N"),
+          "UI-View32 Roger Barker, G4IDE")
+    check("设备：小写的目的呼号也认", oa_tocall.device_of("apdw17"), "DireWolf WB2OSZ")
+    check("设备：表里写着未标明设备就写呼号", oa_tocall.device_of("APRS"), "APRS")
+    check("设备：表里没有就写呼号本身", oa_tocall.device_of("ZZ9ZZZ"), "ZZ9ZZZ")
+    check("设备：目的呼号空着给短横", oa_tocall.device_of(""), "\u2014")
+    check("设备：本站客户端那个呼号认得", oa_tocall.device_of("APALOC"), "APRSLocus")
+
     # 签到表 / 签到点那张图，以及数据面板上的两个下载按钮
     try:
         import oa_image
@@ -776,6 +816,13 @@ def main():
               (oa_image._country("JA1ABC", "zh"), oa_image._country("JA1ABC", "en")),
               ("日本", "Japan"))
         check("认不出的呼号给短横", oa_image._country("TR7AAA", "zh"), "\u2014")
+        board = oa_image.render_board({"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
+            {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is", "digi": [],
+             "at": "10-17 01:08", "status": "confirmed", "tocall": "APALOC"},
+            {"call": "BH4HGA-9", "grid": "", "via": "rf", "digi": ["WIDE1-1"],
+             "at": "10-17 09:26", "status": "called", "tocall": "ZZ9ZZZ"}]})
+        check("签到表带着设备列画得出 PNG", board[:8], b"\x89PNG\r\n\x1a\n")
+        check("签到表比网格表窄、比旧的那张宽", oa_image.BOARD_W, 1260)
 
     # 国家表与页面上那份一致：两边各改一边就会对不上（只比前缀与两个名字，国旗只在页面上用）
     js_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

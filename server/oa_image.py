@@ -18,6 +18,7 @@ import re
 from datetime import datetime, date, timezone, timedelta
 
 import oa_region
+import oa_tocall
 
 PAPER = (242, 240, 234)
 INK = (21, 24, 28)
@@ -28,6 +29,9 @@ HOT = (179, 20, 31)
 BJ = timezone(timedelta(hours=8))
 PAD = 72
 WIDTH = 1080
+# 签到表比别的图多一列设备，纸也宽一点；设备名太长的封在这个宽度里，格里折两行
+BOARD_W = 1260
+DEVICE_MAX = 260
 
 # 编号用的两套字母：B36 拼呼号与网格，B32（Crockford，去掉 I L O U）写最终那串
 B36 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -53,7 +57,7 @@ TEXT = {
         "cert_cols": ("国家", "网格", "路径", "时间"),
         "serial": "编号",
         "duty": "轮值呼号",
-        "cols": ("呼号", "国家", "网格", "路径", "状态", "时间"),
+        "cols": ("呼号", "设备", "国家", "网格", "路径", "状态", "时间"),
         "rf": "射频",
         "is": "网络",
         "status": {"called": "只喊到", "acked": "已回 ACK", "confirmed": "已确认"},
@@ -72,7 +76,7 @@ TEXT = {
         "cert_cols": ("Country", "Grid", "Path", "Time"),
         "serial": "Serial",
         "duty": "Duty callsign",
-        "cols": ("Call", "Country", "Grid", "Path", "Status", "Time"),
+        "cols": ("Call", "Device", "Country", "Grid", "Path", "Status", "Time"),
         "rf": "RF",
         "is": "Network",
         "status": {"called": "Called", "acked": "ACKed", "confirmed": "Confirmed"},
@@ -183,11 +187,12 @@ def _wrap(draw, text, face, width, limit=2):
     return [line.rstrip(" \u00b7") for line in lines]
 
 
-def _footer(draw, height, words, extra=""):
+def _footer(draw, height, words, extra="", width=None):
     """脚注：左边是出处与生成时间，右边是站名。
 
     一行装不下就折成两行，站名始终贴着最后一行的右端，两段文字都留着。
     """
+    width = width or WIDTH
     small = font(22)
     left = "%s · %s %s（北京时间）" % (words["foot"], words["gen"],
                                   datetime.now(BJ).strftime("%Y-%m-%d %H:%M"))
@@ -196,12 +201,12 @@ def _footer(draw, height, words, extra=""):
     mark = "aprsnet.cn/oa"
     mark_w = draw.textlength(mark, font=small)
     y = height - 62
-    room = WIDTH - PAD * 2 - mark_w - 28
+    room = width - PAD * 2 - mark_w - 28
     lines = _fit_lines(draw, left, small, room, 2)
     y0 = y - 34 * (len(lines) - 1)
     for i, line in enumerate(lines):
         draw.text((PAD, y0 + i * 34), line, font=small, fill=GREY)
-    draw.text((WIDTH - PAD - mark_w, y0 + 34 * (len(lines) - 1)), mark, font=small, fill=GREY)
+    draw.text((width - PAD - mark_w, y0 + 34 * (len(lines) - 1)), mark, font=small, fill=GREY)
 
 
 def _head(draw, title, subtitle, note):
@@ -351,14 +356,17 @@ def _png(image):
 
 
 def render_board(row, note="", lang="zh"):
-    """签到表：一台一行，列是呼号 / 国家 / 网格 / 路径 / 状态 / 时间。"""
+    """签到表：一台一行，列是呼号 / 设备 / 国家 / 网格 / 路径 / 状态 / 时间。
+
+    设备看这一台最近一次喊到的目的呼号：官方表里认得就写设备名，认不出就把呼号写上去。
+    """
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
     stations = row.get("stations") or []
     top = 218
     row_h = 62
     height = max(560, top + 76 + row_h * max(len(stations), 1) + 110)
-    image = Image.new("RGB", (WIDTH, height), PAPER)
+    image = Image.new("RGB", (BOARD_W, height), PAPER)
     draw = ImageDraw.Draw(image)
     _head(draw, words["board"], _subtitle(row, note, words), note)
 
@@ -366,11 +374,12 @@ def render_board(row, note="", lang="zh"):
     heads = font(23)
     body = font(27)
     small = font(24)
-    faces = (body, small, small, small, small, small)
+    faces = (body, small, small, small, small, small, small)
     cells = []
     for station in stations:
         cells.append((
             str(station.get("call") or ""),
+            oa_tocall.device_of(station.get("tocall")),
             _country(station.get("call"), lang),
             str(station.get("grid") or "\u2014"),
             _path_text(station, words),
@@ -378,20 +387,21 @@ def render_board(row, note="", lang="zh"):
             str(station.get("at") or ""),
         ))
     # 列宽按这份名单里最长的一条来排：宁可某一列宽一点，也不把字切成省略号
-    want = [0] * 6
+    want = [0] * len(cols)
     for line in cells:
         for i, cell in enumerate(line):
             want[i] = max(want[i], draw.textlength(cell, font=faces[i]))
     for i, name in enumerate(cols):
         want[i] = max(want[i], draw.textlength(name, font=heads))
-    gap = 26
-    room = WIDTH - PAD * 2 - gap * 5
+    want[1] = min(want[1], DEVICE_MAX)               # 设备名可以很长，这一列封顶
+    gap = 24
+    room = BOARD_W - PAD * 2 - gap * (len(cols) - 1)
     need = sum(want)
     if need <= room:                                 # 富余的都给路径那一列
-        want[3] += room - need
-    else:                                            # 真挤不下：先压路径，再压国家、状态、时间
+        want[4] += room - need
+    else:                                            # 真挤不下：先压设备（格里可以折行），再压路径、国家、状态、时间
         over = need - room
-        for i, floor in ((3, 260), (1, 90), (4, 100), (5, 140), (3, 120)):
+        for i, floor in ((1, 170), (4, 210), (2, 100), (5, 110), (6, 140), (4, 150), (3, 70)):
             take = min(over, max(0.0, want[i] - floor))
             want[i] -= take
             over -= take
@@ -405,23 +415,23 @@ def render_board(row, note="", lang="zh"):
     clips = list(want)
     for x, name in zip(xs, cols):
         draw.text((x, top), name, font=heads, fill=GREY)
-    draw.line([PAD, top + 40, WIDTH - PAD, top + 40], fill=INK, width=2)
+    draw.line([PAD, top + 40, BOARD_W - PAD, top + 40], fill=INK, width=2)
 
     if not stations:
         draw.text((PAD, top + 78), words["empty"], font=body, fill=GREY)
     for i, line in enumerate(cells):
         y = top + 66 + i * row_h
         if i % 2 == 1:                                  # 隔一行铺一层极淡的底，读起来不串行
-            draw.rectangle([PAD - 12, y - 12, WIDTH - PAD + 12, y + 46], fill=(238, 235, 228))
+            draw.rectangle([PAD - 12, y - 12, BOARD_W - PAD + 12, y + 46], fill=(238, 235, 228))
         for j, cell in enumerate(line):
             face = faces[j]
-            fill = INK if j in (0, 2, 3) else GREY
-            if j == 3:                                  # 路径最长：一行装不下就在本行里折成两行
+            fill = INK if j in (0, 3, 4) else GREY
+            if j in (1, 4):                             # 设备与路径最长：一行装不下就在本行里折成两行
                 for k, part in enumerate(_fit_lines(draw, cell, face, clips[j], 2)):
                     draw.text((xs[j], y + k * 29), part, font=face, fill=fill)
             else:
                 draw.text((xs[j], y), _clip(draw, cell, face, clips[j]), font=face, fill=fill)
-    _footer(draw, height, words, words["count"] % len(stations))
+    _footer(draw, height, words, words["count"] % len(stations), BOARD_W)
     return _png(image)
 
 
@@ -613,11 +623,13 @@ if __name__ == "__main__":                              # 手边看一眼：pyth
     import sys
     demo = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
         {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is", "digi": [], "at": "10-17 01:08",
-         "status": "confirmed"},
+         "status": "confirmed", "tocall": "APALOC"},
         {"call": "BG6TA", "grid": "ON80", "via": "rf", "digi": ["WIDE1-1", "BG7LZQ-10"],
-         "at": "10-17 07:01", "status": "acked"},
+         "at": "10-17 07:01", "status": "acked", "tocall": "APDR16"},
         {"call": "BH4HGA-9", "grid": "", "via": "is", "digi": [], "at": "10-17 09:26",
-         "status": "called"},
+         "status": "called", "tocall": "APSTKA"},
+        {"call": "BA7LUT-12", "grid": "OL63", "via": "is", "digi": [], "at": "10-17 11:40",
+         "status": "acked", "tocall": "ZZ9ZZZ"},
     ]}
     shots = [("board", render_board(demo, note="测试轮次")),
              ("grid", render_grid(demo, note="测试轮次")),
