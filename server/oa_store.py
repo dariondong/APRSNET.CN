@@ -509,12 +509,16 @@ class Store(object):
                 out["station"] = self.rebuild_station(rid, call)
         return out
 
-    def packets(self, limit=200, kind=None):
+    def packets(self, limit=200, kind=None, kinds=None):
+        """最近几百条报文。`kinds` 是只要这几种（签到那几步），闲聊不进流水。"""
         sql = "SELECT * FROM packets"
         args = []
         if kind:
             sql = sql + " WHERE kind=?"
             args.append(kind)
+        elif kinds:
+            sql = sql + " WHERE kind IN (%s)" % ",".join("?" * len(kinds))
+            args.extend(kinds)
         sql = sql + " ORDER BY id DESC LIMIT ?"
         args.append(int(limit))
         with self.lock:

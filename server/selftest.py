@@ -837,6 +837,15 @@ def main():
                 return json.loads(body.decode("utf-8"))
 
             rdate = rounds[0]["date"]
+            # 流水只列签到那几步：刚区里飘来一条位置报文，也不该把签到那行挤出去
+            rt.store.add_packet(oa_aprs.parse_line(
+                "BG0XYZ-9>APRS,TCPIP*,qAC,T2X:!3905.45N/07223.83WbMMDVM voice"))
+            state = json.loads(urllib.request.urlopen(
+                "%s/api/admin/state?token=%s" % (base, conf["OA_ADMIN_TOKEN"]),
+                timeout=10).read().decode("utf-8"))
+            flow = [p["kind"] for p in state["packets"]]
+            check("流水里没有闲聊报文", "other" in flow, False)
+            check("流水里有签到报文", ("cq" in flow or "u" in flow), True)
             post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "OL62",
                                         "digi": "BG7LZQ-1,BG7YAB-3"})
             post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "",
