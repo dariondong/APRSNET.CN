@@ -466,6 +466,15 @@
             (text.charCodeAt(1) - 65) * 10 + Number(text.charAt(3))];
   };
 
+  /* 世界底图：数据面板那个格子上写着 data-world，缺了就只画网格 */
+  var worldImage = null;
+  var worldURL = gridBox ? String(gridBox.getAttribute("data-world") || "") : "";
+  if (worldURL && typeof window.Image === "function") {
+    worldImage = new window.Image();
+    worldImage.onload = function () { paintMap(); };     /* 底图到了再重画一次 */
+    worldImage.src = worldURL;
+  }
+
   var drawMap = function (squares) {
     var canvas = document.createElement("canvas");
     canvas.className = "gc-canvas";
@@ -478,6 +487,9 @@
       var value = css ? String(css.getPropertyValue(name) || "").trim() : "";
       return value || fallback;
     };
+    if (worldImage && worldImage.complete && worldImage.naturalWidth) {
+      ctx.drawImage(worldImage, 0, 0, MAP_W, MAP_H);      /* 陆地压在网格线底下 */
+    }
     ctx.lineWidth = 1;
     ctx.strokeStyle = token("--line", "rgba(21,24,28,.2)");
     var i, gx, gy;
