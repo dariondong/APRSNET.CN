@@ -42,6 +42,9 @@ button{font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--text)
 button.hot{border-color:var(--hot);color:var(--hot)}
 button.on{background:var(--hot);border-color:var(--hot);color:#fff}
 button.mini{padding:1px 7px;font-size:12px}
+td .more{display:inline-flex;gap:4px;align-items:center;margin-left:4px}
+td .more[hidden]{display:none}
+button.mini[aria-expanded="true"]{border-color:var(--hot);color:var(--hot)}
 .empty{color:var(--grey);font-size:13px;padding:10px 2px}
 .err{background:#fdecec;border:1px solid var(--hot);color:var(--hot);padding:8px 10px;font-size:13px;margin:12px 0}
 .hint{color:var(--grey);font-size:12px}
@@ -437,6 +440,26 @@ a{color:inherit}
     input.focus();
   };
 
+  // 一行里最常用的按钮留在外面，其余收进「…」，一列不至于五个按钮挤成一排
+  var moreOps = function (ops, items, title) {
+    var more = document.createElement("span");
+    more.className = "more";
+    more.hidden = true;
+    var toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "mini";
+    toggle.textContent = "…";
+    toggle.title = title || "这一行的其余操作";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.onclick = function () {
+      more.hidden = !more.hidden;
+      toggle.setAttribute("aria-expanded", more.hidden ? "false" : "true");
+    };
+    items.forEach(function (b) { more.appendChild(b); });
+    ops.appendChild(toggle);
+    ops.appendChild(more);
+  };
+
   var paintPackets = function (packets) {
     var box = $("packets");
     box.textContent = "";
@@ -490,14 +513,12 @@ a{color:inherit}
       talk.className = "mini";
       talk.textContent = "对话";
       talk.onclick = function () { openThread(p.src); };
-      ops.appendChild(talk);
       var fix = document.createElement("button");
       fix.type = "button";
       fix.className = "mini";
       fix.textContent = "改";
       fix.title = "改这一条的报文原文，改完按新的一句重解析，名单跟着重算";
       fix.onclick = function () { editPacket(textCell, p); };
-      ops.appendChild(fix);
       var drop = document.createElement("button");
       drop.type = "button";
       drop.className = "mini hot";
@@ -513,7 +534,7 @@ a{color:inherit}
           refresh();
         });
       };
-      ops.appendChild(drop);
+      moreOps(ops, [talk, fix, drop], "改这一条的报文原文 / 删这一条 / 跟这台对话");
       table.appendChild(tr);
     });
     box.appendChild(table);
@@ -636,13 +657,11 @@ a{color:inherit}
         say("已填到「手动加一台」，改完按「写进名单」。");
         try { $("stGrid").focus({ preventScroll: true }); } catch (e) {}
       };
-      ops.appendChild(edit);
       var talk = document.createElement("button");
       talk.type = "button";
       talk.className = "mini";
       talk.textContent = "对话";
       talk.onclick = function () { openThread(s.call); };
-      ops.appendChild(talk);
       var del = document.createElement("button");
       del.type = "button";
       del.className = "mini hot";
@@ -662,7 +681,7 @@ a{color:inherit}
             refresh();
           });
       };
-      ops.appendChild(del);
+      moreOps(ops, [edit, talk, del], "改这一台 / 跟它对话 / 从本轮删掉");
       table.appendChild(tr);
     });
     box.appendChild(table);
