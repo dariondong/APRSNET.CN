@@ -547,11 +547,18 @@ def main():
                                     {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
                                      "digi": [], "at": "10-17 01:08"})
         check("奖状画得出 PNG", cert[:8], b"\x89PNG\r\n\x1a\n")
-        check("奖状编号同台同轮不变", oa_image.serial_of("BG7LZQ-2", "2026-10-17"),
-              oa_image.serial_of("BG7LZQ-2", "2026-10-17"))
-        check("奖状编号换了轮次就变",
+        check("奖状编号同台同场次同时间同网格不变",
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62AA"),
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62AA"))
+        check("奖状编号换了场次就变",
               oa_image.serial_of("BG7LZQ-2", "2026-10-18") !=
               oa_image.serial_of("BG7LZQ-2", "2026-10-17"), True)
+        check("奖状编号换了时间就变",
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08") !=
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 02:08"), True)
+        check("奖状编号换了网格就变",
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62AA") !=
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL63AA"), True)
         check("签到表里的国家", oa_image._country("BG7LZQ-2", "zh"), "中国")
         check("国家跟着页面语言走",
               (oa_image._country("JA1ABC", "zh"), oa_image._country("JA1ABC", "en")),

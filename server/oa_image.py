@@ -215,10 +215,14 @@ def _head(draw, title, subtitle, note):
     return 218
 
 
-def serial_of(call, date):
-    """呼号 + 轮次 的 32 位 FNV-1a，写成 8 位十六进制，当奖状编号。同名同轮永远一样。"""
+def serial_of(call, date, at="", grid=""):
+    """呼号 + 场次 + 时间 + 网格 的 32 位 FNV-1a，写成 8 位十六进制，当奖状编号。
+
+    同一条记录永远算出同一个号；换一轮、改时间、改网格，号就跟着变。
+    """
+    key = "%s|%s|%s|%s" % (call or "", date or "", at or "", grid or "")
     h = 0x811C9DC5
-    for byte in ("%s|%s" % (call, date)).encode("utf-8"):
+    for byte in key.encode("utf-8"):
         h = ((h ^ byte) * 0x01000193) & 0xFFFFFFFF
     return "%08X" % h
 
@@ -457,7 +461,8 @@ def render_cert(row, station, note="", lang="zh"):
     draw = ImageDraw.Draw(image)
     _head(draw, words["cert"], _subtitle(row, note, words), note)
 
-    serial = "%s %s" % (words["serial"], serial_of(call, date))
+    serial = "%s %s" % (words["serial"], serial_of(call, date, station.get("at"),
+                                                  station.get("grid")))
     plate = font(21)
     plate_w = draw.textlength(serial, font=plate)
     draw.text((WIDTH - PAD - plate_w - 16, 68), serial, font=plate, fill=GREY)
