@@ -369,8 +369,39 @@ class Runtime(object):
                 return
         self.queue_send(duty, src, self.hint_line(src, hint, duty), date=active["date"])
 
+    def ack_text(self):
+        return self.conf["OA_ACK_TEXT"] or "ACK"
+
+    def our_acks(self, call, since=""):
+        """我们回给这一台的那些 ACK；提示（怎么做 / 重发）那几条不算。"""
+        tail = ":" + self.ack_text()
+        return [r for r in self.store.outbox_for(call, since)
+                if (r["line"] or "").endswith(tail)]
+
+    def ack_pending(self, active, call):
+        """这一台还有一条没回成的 ACK 吗。
+
+        名单里还是「只喊到」，或者最近一次喊到在我们成功回过它之后，都要回。
+        同一台隔一会儿再喊一次是又一份喊到，照样回；它自己回 U CNNET 不算喊到。
+        """
+        call = (call or "").strip().upper()
+        station = self.store.get_station(active["date"], call)
+        if not station:
+            return False
+        acks = self.our_acks(call, active["opened"] or "")
+        if any((not r["sent"]) and (not r["error"]) for r in acks):
+            return False                                # 有一条 ACK 还排着队，等它发
+        if station["status"] == "called":
+            return True
+        last_ok = ""
+        for r in acks:
+            if r["sent"] and r["sent"] > last_ok:
+                last_ok = r["sent"]
+        checkin = self.store.last_checkin_ts(active["id"], call)
+        return bool(checkin) and checkin > last_ok
+
     def maybe_auto_ack(self, record, rid):
-        """有人喊到就回一条 ACK，一台一轮只回一次。"""
+        """有人喊到就回一条 ACK。"""
         if not self.auto_ack_on or not self.can_send():
             return
         active = self.store.active_round()
@@ -380,8 +411,7 @@ class Runtime(object):
         duty = self.duty_call()
         if not src or not duty or src == duty:
             return
-        station = self.store.get_station(active["date"], src)
-        if not station or station["status"] != "called":
+        if not self.ack_pending(active, src):
             return
         self.queue_send(duty, src, self.ack_line(src, duty), date=active["date"])
 
@@ -401,15 +431,15 @@ class Runtime(object):
         done = 0
         for station in self.store.stations(active["date"]):
             call = station["call"]
-            if station["status"] != "called" or call == duty:
+            if call == duty:
                 continue
-            rows = self.store.outbox_for(call, active["opened"] or "")
-            if any((not r["sent"]) and (not r["error"]) for r in rows):
-                continue                                    # 还排着队，等它发
-            if sum(1 for r in rows if r["error"]) >= self.ack_retry:
+            if not self.ack_pending(active, call):
+                continue
+            acks = self.our_acks(call, active["opened"] or "")
+            if sum(1 for r in acks if r["error"]) >= self.ack_retry:
                 continue                                    # 已经补够次数了
-            if rows:
-                gap = oa_store.seconds_since(rows[-1]["sent"] or rows[-1]["created"])
+            if acks:
+                gap = oa_store.seconds_since(acks[-1]["sent"] or acks[-1]["created"])
                 if gap is not None and gap < 60.0:
                     continue                                # 一分钟里只补一次
             self.queue_send(duty, call, self.ack_line(call, duty), date=active["date"])

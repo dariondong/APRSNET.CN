@@ -338,6 +338,51 @@ def main():
     finally:
         shutil.rmtree(auto_dir, ignore_errors=True)
 
+    # 同一台隔一会儿再喊一次：又回一条；同一条还没发出去时不重复入队
+    again_dir = tempfile.mkdtemp(prefix="oa-selftest-again-")
+    try:
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = again_dir
+        conf["OA_TX_PASSCODE"] = "23736"
+        rt = oa_server.Runtime(conf)
+        today = oa_store.round_date_of(oa_aprs.now_iso())
+        rt.store.open_round(today, "BG7LZQ-3")
+        first = "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG5CCC-7 from OL51"
+        rt.on_line(oa_aprs.parse_line(first))
+        rows = rt.store.outbox_for("BG5CCC-7")
+        check("第一次喊到回一条", len(rows), 1)
+        check("第一次回的写法", rows[0]["line"], "BG7LZQ-3>APRS::BG5CCC-7 :ACK")
+        rt.on_line(oa_aprs.parse_line(first))
+        check("还排着队的不重复入队", len(rt.store.outbox_for("BG5CCC-7")), 1)
+
+        def mark_sent_old():
+            old = (datetime.now(UTC) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            rt.store.db.execute("UPDATE outbox SET sent=? WHERE sent=''", (old,))
+            rt.store.db.commit()
+
+        mark_sent_old()
+        rt.store.set_station(today, "BG5CCC-7", status="acked", create=False)
+        rt.on_line(oa_aprs.parse_line(
+            "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG5CCC-7 from OL52"))
+        check("回过之后再喊一次照样回", len(rt.store.outbox_for("BG5CCC-7")), 2)
+        check("第二次回的也是 ACK",
+              rt.store.outbox_for("BG5CCC-7")[-1]["line"].endswith(":ACK"), True)
+        mark_sent_old()
+        rt.on_line(oa_aprs.parse_line("BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET"))
+        check("回过 U CNNET 不再回 ACK", len(rt.store.outbox_for("BG5CCC-7")), 2)
+        rt.on_line(oa_aprs.parse_line(
+            "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG5CCC-7 from OL53"))
+        check("第三回喊到又回一条", len(rt.store.outbox_for("BG5CCC-7")), 3)
+        last = rt.store.outbox_for("BG5CCC-7")[-1]
+        rt.store.mark_sent(last["id"], "发不出去")
+        old = (datetime.now(UTC) - timedelta(seconds=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        rt.store.db.execute("UPDATE outbox SET created=? WHERE id=?", (old, last["id"]))
+        rt.store.db.commit()
+        check("没回成的那条还在补漏里", rt.retry_pending_acks(), 1)
+        rt.store.close()
+    finally:
+        shutil.rmtree(again_dir, ignore_errors=True)
+
     # 网格从签到那行报的话里读；没写网格的回一条无效提示，不进名单
     bad_dir = tempfile.mkdtemp(prefix="oa-selftest-bad-")
     try:

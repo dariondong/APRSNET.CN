@@ -389,6 +389,14 @@ class Store(object):
                                   (row["id"], (call or "").strip().upper())).fetchone()
         return dict(hit) if hit else None
 
+    def last_checkin_ts(self, rid, call):
+        """这一轮里这一台最近一次「喊到」（CQ CNNET）的时间，没有就是空串。"""
+        with self.lock:
+            row = self.db.execute(
+                "SELECT MAX(ts) AS t FROM packets WHERE round_id=? AND src=? AND kind='cq'",
+                (rid, (call or "").strip().upper())).fetchone()
+        return (row["t"] or "") if row is not None else ""
+
     def set_station(self, date, call, grid=None, via=None, digi=None, at=None,
                     status=None, note=None, create=True):
         """手动写一台站：编辑、补录、标状态都走这里。create=False 时只改已有的，不新建。"""
