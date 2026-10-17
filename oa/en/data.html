@@ -108,6 +108,16 @@
 .oa-export-btn { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 1px solid var(--line-strong); padding: 5px 12px; cursor: pointer; }
 .oa-export-btn:hover { color: var(--text); border-color: var(--text); }
 .oa-export-btn[aria-pressed="true"] { color: var(--bg-1); background: var(--text); border-color: var(--text); }
+/* 核验编号：填奖状上那 8 位，名单里自己找 */
+.oa-verify { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 26px 0 0; }
+.oa-verify-label { font-size: 14.5px; color: var(--text-faint); }
+.oa-verify-in { font: inherit; font-size: 15px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 7px 12px; width: 176px; min-width: 0; letter-spacing: .06em; }
+.oa-verify-in:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+.oa-verify-go { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 1px solid var(--line-strong); padding: 6px 14px; cursor: pointer; }
+.oa-verify-go:hover { color: var(--text); border-color: var(--text); }
+.oa-verify-out { flex: 1 1 100%; margin: 0; font-size: 14.5px; line-height: 1.7; color: var(--text-dim); }
+.oa-verify-out b { font-weight: 700; color: var(--text); }
+.oa-verify-out a { color: var(--text); border-bottom: 1px solid var(--line-strong); }
 @media (max-width: 640px) {
   .oa-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .oa-stats li { border-top: 1px solid var(--line); padding: 16px 14px; }
@@ -194,12 +204,18 @@
         <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">Download grid table (PNG)</a>
       </div>
     </div>
-    <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-cert-label="Certificate" data-image-base="https://oa.aprsnet.cn/api/" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
+    <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-cert-label="Certificate" data-image-base="https://oa.aprsnet.cn/api/" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-round="Round" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
         <b class="st-call">The list is still empty</b>
         <span class="st-note">This round has no station yet.</span>
       </li>
     </ul>
+    <div class="oa-verify" data-verify-hint="Type the 8 characters from the top right of a certificate. If the roster has that serial, the record is real." data-verify-miss="No station in the roster has that serial.">
+      <label class="oa-verify-label" for="oaVerifyIn">Check a serial</label>
+      <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="12" placeholder="9190082E">
+      <button class="oa-verify-go" id="oaVerifyGo" type="button">Look up</button>
+      <p class="oa-verify-out" id="oaVerifyOut" role="status"></p>
+    </div>
     <p class="oa-note">The fields come from the messages the duty station receives.</p>
   </div>
 </section>
@@ -266,7 +282,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=23"></script>
+<script src="../roster.js?v=24"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>

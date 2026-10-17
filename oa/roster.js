@@ -700,6 +700,99 @@
     });
   }
 
+  /* 核验编号：编号就是 呼号|场次|时间|网格 的 FNV-1a，页面自己也算得出来。
+     填进奖状右上角那 8 位，名单里找到哪一台，就把那台摊开给你看。 */
+  var serialOf = function (call, date, at, grid) {
+    var key = [call || "", date || "", at || "", grid || ""].join("|");
+    var bytes;
+    try {
+      bytes = new TextEncoder().encode(key);
+    } catch (e) {
+      var raw = unescape(encodeURIComponent(key));
+      bytes = [];
+      for (var i = 0; i < raw.length; i++) bytes.push(raw.charCodeAt(i));
+    }
+    var h = 0x811C9DC5;
+    for (var j = 0; j < bytes.length; j++) {
+      h = Math.imul(h ^ bytes[j], 0x01000193) >>> 0;
+    }
+    var out = h.toString(16).toUpperCase();
+    while (out.length < 8) out = "0" + out;
+    return out;
+  };
+
+  var verifyBox = document.querySelector(".oa-verify");
+  var verifyIn = document.getElementById("oaVerifyIn");
+  var verifyGo = document.getElementById("oaVerifyGo");
+  var verifyOut = document.getElementById("oaVerifyOut");
+
+  var findSerial = function (code) {
+    var want = String(code || "").toUpperCase().replace(/[^0-9A-F]/g, "");
+    if (want.length !== 8) return null;
+    for (var i = 0; i < last.length; i++) {
+      var round = last[i] || {};
+      var stations = round.stations || [];
+      for (var j = 0; j < stations.length; j++) {
+        var st = stations[j] || {};
+        if (serialOf(st.call, round.date, st.at, st.grid) === want) {
+          return { round: round, station: st };
+        }
+      }
+    }
+    return null;
+  };
+
+  var runVerify = function () {
+    if (!verifyOut || !verifyIn) return;
+    var typed = String(verifyIn.value || "").trim();
+    var hint = verifyBox ? (verifyBox.getAttribute("data-verify-hint") || "") : "";
+    var miss = verifyBox ? (verifyBox.getAttribute("data-verify-miss") || "") : "";
+    var hit = findSerial(typed);
+    verifyOut.textContent = "";
+    if (!hit) {
+      verifyOut.textContent = typed ? miss : hint;
+      return;
+    }
+    var st = hit.station;
+    var round = hit.round;
+    var call = document.createElement("b");
+    call.textContent = String(st.call || "");
+    verifyOut.appendChild(call);
+    var bits = [];
+    var label = function (key) { return list.getAttribute(key) || ""; };
+    [["data-label-round", round.date], ["data-label-grid", st.grid],
+     ["data-label-at", st.at]].forEach(function (pair) {
+      if (!pair[1]) return;
+      var name = label(pair[0]);
+      bits.push(name ? name + " " + pair[1] : String(pair[1]));
+    });
+    if (bits.length) {
+      var info = document.createElement("span");
+      info.textContent = " " + bits.join(" · ");
+      verifyOut.appendChild(info);
+    }
+    var certLabel = list.getAttribute("data-cert-label") || "";
+    if (certLabel && imgBase) {
+      var query = imgQuery(hit.round);
+      var link = document.createElement("a");
+      link.href = imgBase + "cert.png?call=" + encodeURIComponent(String(st.call || "")) +
+        (query ? "&" + query : "");
+      link.textContent = certLabel;
+      verifyOut.appendChild(document.createTextNode(" "));
+      verifyOut.appendChild(link);
+    }
+  };
+
+  if (verifyIn && verifyGo) {
+    verifyGo.addEventListener("click", runVerify);
+    verifyIn.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        runVerify();
+      }
+    });
+  }
+
   /* 名单会自己变：服务端把 data-roster 指到 /api/roster（绝对路径），隔一会儿再读一次；
      静态站上它是相对路径，读一次就不动了。 */
   var live = url.charAt(0) === "/";
