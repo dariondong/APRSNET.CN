@@ -442,9 +442,13 @@
     });
   };
 
-  /* 数据面板上的网格图：一个 field 一张 10×10 的格网，100 个格子全画出来，
-     有签到的格子点亮，下面按格子列出呼号。页面上没有这个位子就跳过。 */
+  /* 数据面板上的网格图：一张世界网格地图，180×180 个 4 位格子全在，有签到的格子点亮，
+     下面按格子列出呼号。页面上没有这个位子就跳过。 */
   var gridBox = document.getElementById("oaGrid");
+  var MAP_W = 1440;                     /* 画布内部像素，一格 8×4，世界是 180×180 格 */
+  var MAP_H = 720;
+  var MAP_CW = MAP_W / 180;
+  var MAP_CH = MAP_H / 180;
 
   /* 网格按前 4 位算：OL62AA 与 OL62CQ 都是 OL62。认不出的原样留着。 */
   var gridCell = function (grid) {
@@ -454,31 +458,58 @@
     return hit ? hit[1] : text;
   };
 
-  var drawField = function (field, lit) {
-    var box = document.createElement("div");
-    box.className = "gc-field";
-    var name = document.createElement("b");
-    name.className = "gc-name";
-    name.textContent = field;
-    box.appendChild(name);
-    var cells = document.createElement("div");
-    cells.className = "gc-cells";
-    for (var lat = 9; lat >= 0; lat--) {            /* 纬度位从 9 排到 0，上北下南 */
-      for (var lon = 0; lon < 10; lon++) {          /* 经度位从 0 排到 9，向右为东 */
-        var code = field + lon + lat;
-        var cell = document.createElement("i");
-        cell.className = "gc-cell";
-        cell.textContent = code;
-        if (lit[code]) {
-          cell.className = "gc-cell is-lit";
-          cell.setAttribute("title", lit[code].join(" · "));
-        }
-        cells.appendChild(cell);
-      }
-    }
-    box.appendChild(cells);
-    return box;
+  /* 4 位网格在地图上的位置：[经度序号 0..179, 纬度序号 0..179] */
+  var gridSquare = function (code) {
+    var text = gridCell(code);                  /* 6 位的也认：先收成 4 位那一格 */
+    if (!/^[A-R]{2}[0-9]{2}$/.test(text)) return null;
+    return [(text.charCodeAt(0) - 65) * 10 + Number(text.charAt(2)),
+            (text.charCodeAt(1) - 65) * 10 + Number(text.charAt(3))];
   };
+
+  var drawMap = function (squares) {
+    var canvas = document.createElement("canvas");
+    canvas.className = "gc-canvas";
+    canvas.width = MAP_W;
+    canvas.height = MAP_H;
+    var ctx = canvas.getContext ? canvas.getContext("2d") : null;
+    if (!ctx) return canvas;
+    var css = window.getComputedStyle ? window.getComputedStyle(document.documentElement) : null;
+    var token = function (name, fallback) {
+      var value = css ? String(css.getPropertyValue(name) || "").trim() : "";
+      return value || fallback;
+    };
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = token("--line", "rgba(21,24,28,.2)");
+    var i, gx, gy;
+    for (i = 0; i <= 18; i++) {                     /* 每 10 格一条 field 的界 */
+      gx = Math.min(i * MAP_CW * 10, MAP_W - 1) + 0.5;
+      gy = Math.min(i * MAP_CH * 10, MAP_H - 1) + 0.5;
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, MAP_H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(MAP_W, gy); ctx.stroke();
+    }
+    ctx.fillStyle = token("--hot-bright", "#d61f26");
+    squares.forEach(function (sq) {                 /* 点亮画大一点，缩到手机上也看得见 */
+      var x = Math.max(0, (sq[0] - 1) * MAP_CW);
+      var y = Math.max(0, (179 - sq[1] - 1) * MAP_CH);
+      ctx.fillRect(x, y, Math.min(MAP_W, x + MAP_CW * 3) - x, Math.min(MAP_H, y + MAP_CH * 3) - y);
+    });
+    return canvas;
+  };
+
+  var mapCanvas = null;
+  var mapSquares = [];
+
+  var paintMap = function () {                      /* 换主题时按新的颜色重画一次 */
+    if (!mapCanvas || !mapCanvas.parentNode) return;
+    var canvas = drawMap(mapSquares);
+    mapCanvas.parentNode.replaceChild(canvas, mapCanvas);
+    mapCanvas = canvas;
+  };
+
+  if (typeof MutationObserver === "function") {
+    new MutationObserver(paintMap).observe(document.documentElement,
+      { attributes: true, attributeFilter: ["data-theme"] });
+  }
 
   var fillGrid = function (round) {
     if (!gridBox) return;
@@ -493,6 +524,7 @@
       groups[grid].push(call);
     });
     order.sort();
+    mapCanvas = null;
     var frag = document.createDocumentFragment();
     if (!order.length) {
       if (!emptyTitle && !emptyNote) return;      /* 没有可写的占位文案：宁可让页面保持原样 */
@@ -507,17 +539,18 @@
         frag.appendChild(extra);
       }
     } else {
-      var fields = [];
-      var byField = {};
+      mapSquares = [];
       order.forEach(function (grid) {
-        if (!/^[A-R]{2}[0-9]{2}$/.test(grid)) return;   /* 认不出的网格只进下面那份清单 */
-        var field = grid.slice(0, 2);
-        if (!byField[field]) { byField[field] = {}; fields.push(field); }
-        byField[field][grid] = groups[grid];
+        var square = gridSquare(grid);
+        if (square) mapSquares.push(square);         /* 认不出的网格只进下面那份清单 */
       });
-      fields.forEach(function (field) {
-        frag.appendChild(drawField(field, byField[field]));
-      });
+      if (mapSquares.length) {
+        var box = document.createElement("div");
+        box.className = "gc-map";
+        mapCanvas = drawMap(mapSquares);
+        box.appendChild(mapCanvas);
+        frag.appendChild(box);
+      }
       var legend = document.createElement("ul");
       legend.className = "fact-list";
       order.forEach(function (grid) {

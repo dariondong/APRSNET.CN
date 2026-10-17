@@ -90,17 +90,10 @@
 .st-cert { margin-left: auto; color: var(--hot); font-size: 14px; border-bottom: 1px dotted currentColor; }
 .st-cert:hover, .st-cert:focus-visible { color: var(--hot-deep); }
 \.oa-actions a.oa-btn { opacity: 1; }
-/* 网格图：一个 field 一张 10×10 的格网，100 个格子全画出来，有签到的点亮 */
+/* 网格图：一张世界网格地图，180×180 个 4 位格子，有签到的格子点亮 */
 .oa-grid { margin: 26px 0 4px; }
-.gc-field { margin: 0 0 24px; }
-.gc-name { display: block; margin-bottom: 8px; font-size: 15px; letter-spacing: .08em; color: var(--text); }
-.gc-cells { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px; max-width: 560px; }
-.gc-cell {
-  display: flex; align-items: center; justify-content: center;
-  aspect-ratio: 2 / 1; border: 1px solid var(--line);
-  font-family: var(--font-mono); font-size: 11px; line-height: 1; color: var(--text-faint);
-}
-.gc-cell.is-lit { border-color: var(--hot-bright); background: var(--hot-bright); color: var(--on-accent); }
+.gc-map { margin: 26px 0 24px; border: 1px solid var(--line-strong); }
+.gc-canvas { display: block; width: 100%; max-width: 720px; height: auto; }
 </style>
 </head>
 
@@ -184,7 +177,7 @@
 <section class="section alt" id="data-grid">
   <div class="section-head">
     <h2>Grids</h2>
-    <p>The grids the stations reported this round, taken to four characters. Squares with a check-in are lit.</p>
+    <p>The grids the stations reported this round sit on one world grid, taken to four characters. Squares with a check-in are lit.</p>
   </div>
   <div class="section-body">
     <div class="oa-grid" id="oaGrid">
@@ -243,7 +236,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=19"></script>
+<script src="../roster.js?v=20"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>
