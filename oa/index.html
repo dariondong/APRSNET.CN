@@ -140,7 +140,7 @@
     <p class="oa-clock-note">北京时间 <span data-clock="bj">—</span> · UTC <span data-clock="utc">—</span></p>
     <ul class="oa-lines">
       <li>轮值呼号 <button class="oa-copy" type="button" data-oa-duty title="复制呼号">BG7LZQ-2</button>。</li>
-      <li>先发 CQ CNNET 你的信息，收到 ACK 再发 U CNNET。</li>
+      <li>先发 CQ CNNET 呼号与网格，收到 ACK 再发 U CNNET。</li>
     </ul>
     <div class="oa-actions">
       <button class="btn btn-ghost oa-btn" type="button" disabled>正在测试</button>
@@ -189,17 +189,24 @@
     </ul>
     <ol class="steps">
       <li>
-        <b>第一步：发出 CQ</b>
-        发给当周的轮值呼号。把「你的信息」换成自己的呼号与网格，例如 <code>CQ CNNET BG7XXX from OL62</code>。
-        想捎一句话就写在后面，名单里那一台会多一行「消息」。
+        <b>第一步：发一条 CQ CNNET</b>
+        新建一条 APRS 报文，收件人填当周的轮值呼号。
+        正文写 <code>CQ CNNET 呼号 网格</code>，例如 <code>CQ CNNET BG7XXX OL62</code>。
+        网格写 4 位或 6 位，没读到网格会回一条补网格的提示。
       </li>
       <li>
-        <b>第二步：收到 ACK 再回一条</b>
-        轮值台回一条 ACK。收到之后发 <code>U CNNET</code>。
+        <b>第二步：收到 ACK 再发一条</b>
+        轮值台收到 CQ 会回一条 ACK。
+        收到之后另发一条报文给同一个呼号，正文写 <code>U CNNET</code>，呼号与网格不用再写。
+      </li>
+      <li>
+        <b>可选：捎一句话</b>
+        自己的话写在网格后面，例如 <code>CQ CNNET BG7XXX OL62 周末在山上</code>。
+        名单里这一台会多一行「消息」。
       </li>
       <li>
         <b>可选：不发 CQ</b>
-        也可以不发 CQ，直接发 <code>CNNET 你的信息</code>。收到 ACK 一样算。
+        直接发 <code>CNNET BG7XXX OL62</code> 也算签到。收到 ACK 一样算。
       </li>
     </ol>
     <div class="oa-actions">
@@ -249,26 +256,26 @@
     <ul class="pkt-list">
       <li>
         <b>发出 CQ</b>
-        <code>CQ CNNET 你的信息</code>
-        <span>把「你的信息」换成自己的呼号与网格，例如 <strong>CQ CNNET BG7XXX from OL62</strong>。CNNET 是前缀。</span>
+        <code>CQ CNNET 呼号 网格</code>
+        <span>例如 <strong>CQ CNNET BG7XXX OL62</strong>。CNNET 是前缀。</span>
       </li>
       <li>
         <b>收到 ACK 后回一条</b>
         <code>U CNNET</code>
-        <span>收到轮值台回的 ACK 之后发这一条。</span>
+        <span>收到轮值台回的 ACK 之后发这一条，正文就这两个词。</span>
       </li>
       <li>
         <b>不发 CQ（可选）</b>
-        <code>CNNET 你的信息</code>
-        <span>不发 CQ 的写法。收到 ACK 同样算。</span>
+        <code>CNNET 呼号 网格</code>
+        <span>省掉开头那句 CQ，一样写给轮值呼号。收到 ACK 同样算。</span>
       </li>
       <li>
         <b>捎一句话（可选）</b>
-        <code>CQ CNNET BG7XXX from OL62 周末在山上</code>
-        <span>自己那句话写在呼号与网格后面，名单里这一台会多一行「消息」。</span>
+        <code>CQ CNNET 呼号 网格 一句话</code>
+        <span>例如 <strong>CQ CNNET BG7XXX OL62 周末在山上</strong>。名单里这一台会多一行「消息」。</span>
       </li>
     </ul>
-    <p class="prose">呼号写执照上的那个。信息里要写出网格，读不到网格会回一条无效提示，补上网格重发。</p>
+    <p class="prose">呼号写执照上的那个。网格写 4 位或 6 位，没读到网格会回一条补网格的提示，照着重发一条。</p>
   </div>
 </section>
 

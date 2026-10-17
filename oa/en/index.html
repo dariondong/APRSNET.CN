@@ -140,7 +140,7 @@
     <p class="oa-clock-note">Beijing time <span data-clock="bj">—</span> · UTC <span data-clock="utc">—</span></p>
     <ul class="oa-lines">
       <li>The callsign on duty is <button class="oa-copy" type="button" data-oa-duty title="Copy the callsign">BG7LZQ-2</button>.</li>
-      <li>Send <code>CQ CNNET your info</code> first, then <code>U CNNET</code> once the ACK arrives.</li>
+      <li>Send <code>CQ CNNET callsign grid</code> first, then <code>U CNNET</code> once the ACK arrives.</li>
     </ul>
     <div class="oa-actions">
       <button class="btn btn-ghost oa-btn" type="button" disabled>Testing now</button>
@@ -189,17 +189,24 @@
     </ul>
     <ol class="steps">
       <li>
-        <b>Step one: send the check-in</b>
-        Send <code>CQ CNNET your info</code> to the callsign on duty. Put your own callsign and grid in place of that, as in <code>CQ CNNET BG7XXX from OL62</code>.
-        Add a line of your own after it if you like; it becomes that station's Message line.
+        <b>Step one: send a CQ CNNET</b>
+        Start a new APRS message and put the callsign on duty in the to field.
+        Write <code>CQ CNNET callsign grid</code> in the body, as in <code>CQ CNNET BG7XXX OL62</code>.
+        A grid is 4 or 6 characters. Without one the station answers asking for the grid.
       </li>
       <li>
-        <b>Step two: answer after the ACK</b>
-        The duty station answers with an ACK. Send <code>U CNNET</code> after it.
+        <b>Step two: send one more after the ACK</b>
+        The duty station answers a CQ with an ACK.
+        Send another message to the same callsign once it arrives, with <code>U CNNET</code> in the body. No callsign or grid this time.
       </li>
       <li>
-        <b>Optional: silent check-in</b>
-        You can also skip the CQ and send <code>CNNET your info</code> straight to the duty station. The ACK counts the same.
+        <b>Optional: a line of your own</b>
+        Write it after the grid, as in <code>CQ CNNET BG7XXX OL62 on the hill this weekend</code>.
+        That station gets one more Message line in the roster.
+      </li>
+      <li>
+        <b>Optional: no CQ</b>
+        Send <code>CNNET BG7XXX OL62</code> straight away. The ACK counts the same.
       </li>
     </ol>
     <div class="oa-actions">
@@ -249,26 +256,26 @@
     <ul class="pkt-list">
       <li>
         <b>Check-in: the call</b>
-        <code>CQ CNNET your info</code>
-        <span>Put your callsign and grid in place of <strong>CQ CNNET BG7XXX from OL62</strong>. CNNET is the prefix.</span>
+        <code>CQ CNNET callsign grid</code>
+        <span>As in <strong>CQ CNNET BG7XXX OL62</strong>. CNNET is the prefix.</span>
       </li>
       <li>
         <b>Check-in: the answer</b>
         <code>U CNNET</code>
-        <span>Send this line after the duty station has answered with an ACK.</span>
+        <span>Send this line after the duty station has answered with an ACK. Those two words are the whole body.</span>
       </li>
       <li>
         <b>Silent check-in (optional)</b>
-        <code>CNNET your info</code>
-        <span>The same check-in without a CQ. The ACK still counts.</span>
+        <code>CNNET callsign grid</code>
+        <span>The same check-in with the opening CQ left out. The ACK still counts.</span>
       </li>
       <li>
         <b>A line of your own (optional)</b>
-        <code>CQ CNNET BG7XXX from OL62 hello from the hills</code>
-        <span>Write it after the callsign and the grid; the station carries it as its Message line.</span>
+        <code>CQ CNNET callsign grid note</code>
+        <span>As in <strong>CQ CNNET BG7XXX OL62 on the hill this weekend</strong>. The station carries it as its Message line.</span>
       </li>
     </ul>
-    <p class="prose">Write the callsign on your licence. Write your grid in the info: a check-in without a grid gets an invalid reply, so send it again with the grid.</p>
+    <p class="prose">Write the callsign on your licence. A grid is 4 or 6 characters; a check-in without one comes back asking for the grid, so send it again.</p>
   </div>
 </section>
 
