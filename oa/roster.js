@@ -38,6 +38,8 @@
    名单 ul 上 data-copy-done 的那句话，过一会儿换回来）。
    数据面板上还有两个下载按钮，位子是 [data-oa-image]，地址前半截取自名单 ul 的
    data-image-base，后半截是 board.png / points.png，后面接上选中那一轮与页面语言。
+   数据面板上还有一份网格表，位子是 <ul id="oaGrid">：一个网格一行，后面跟着这一格里的呼号，
+   跟着选中那一轮重画；活动页没有这个位子，什么也不做。
    每台那一行的右端还有一个奖状链接（data-oa-cert=呼号，文字取 ul 上的 data-cert-label），
    地址是同一目录下的 cert.png。活动页没写 data-image-base，那半截就从名单地址上去掉
    「roster」那一截自己推。 */
@@ -440,6 +442,50 @@
     });
   };
 
+  /* 数据面板上的网格表：一个网格一行，后面跟着这一格里的呼号。页面上没有这个位子就跳过。 */
+  var gridBox = document.getElementById("oaGrid");
+
+  var fillGrid = function (round) {
+    if (!gridBox) return;
+    var stations = (round && Array.isArray(round.stations)) ? round.stations : [];
+    var order = [];
+    var groups = {};
+    stations.forEach(function (st) {
+      var call = String(st && st.call != null ? st.call : "").trim();
+      if (!call) return;
+      var grid = String(st && st.grid != null ? st.grid : "").trim().toUpperCase() || "\u2014";
+      if (!groups[grid]) { groups[grid] = []; order.push(grid); }
+      groups[grid].push(call);
+    });
+    order.sort();
+    var frag = document.createDocumentFragment();
+    if (!order.length) {
+      if (!emptyTitle && !emptyNote) return;      /* 没有可写的占位文案：宁可让页面保持原样 */
+      var alone = document.createElement("li");
+      var title = document.createElement("b");
+      title.textContent = emptyTitle || "\u2014";
+      alone.appendChild(title);
+      if (emptyNote) {
+        var note = document.createElement("span");
+        note.textContent = emptyNote;
+        alone.appendChild(note);
+      }
+      frag.appendChild(alone);
+    }
+    order.forEach(function (grid) {
+      var li = document.createElement("li");
+      var b = document.createElement("b");
+      b.textContent = grid;
+      var span = document.createElement("span");
+      span.textContent = groups[grid].join(" \u00b7 ");
+      li.appendChild(b);
+      li.appendChild(span);
+      frag.appendChild(li);
+    });
+    gridBox.textContent = "";
+    gridBox.appendChild(frag);
+  };
+
   var paint = function (round) {
     var stations = (round && Array.isArray(round.stations)) ? round.stations : [];
     var frag = document.createDocumentFragment();
@@ -455,6 +501,7 @@
     list.textContent = "";
     list.appendChild(frag);
     stamp(round);
+    fillGrid(round);
     fillImages(round);
   };
 
