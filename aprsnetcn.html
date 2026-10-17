@@ -194,8 +194,31 @@
           单台站与它的轨迹，出了 24 小时窗口就查不到。
         </li>
       </ul>
-      <p class="prose">服务器默认只留位置，不把报文整行落盘。存档是运营方的开关，打开之后整行进库，默认留 72 小时，过期的在后台删掉。</p>
-      <p class="prose">从上游 APRS-IS 拉进来的那一份只填本机的库，不推给客户端。一台站是走射频还是走网络，看它那一行里的 <code>via</code>。</p>
+      <p class="prose">服务器默认只留位置，不把报文整行落盘。</p>
+      <p class="prose">一台站是走射频还是走网络，看它那一行里的 <code>via</code>。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="aprsnetcn-diff">
+    <div class="section-head">
+      <h2>与草案的三处差异</h2>
+      <p>这台上线跑的版本有三处跟草案写得不一样。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>5.5 持久化</b>
+          草案要求尽量避免把报文落库。位置按功能要留 24 小时，报文正文不落盘。
+        </li>
+        <li>
+          <b>账号口令</b>
+          草案没说这两段写在哪里。实现放在登录行末尾的 <code>auth</code> 段，不写这一段的老客户端照旧能用。
+        </li>
+        <li>
+          <b>报文历史</b>
+          草案没要求留。实现给了一个存档开关，默认关；打开后整行报文进库，默认留 72 小时，过期的在后台删掉。
+        </li>
+      </ul>
     </div>
   </section>
 
