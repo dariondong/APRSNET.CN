@@ -440,7 +440,7 @@ def main():
         check("第一次回的写法", said(rows[0]["line"]), "ACK")
         check("回的那条地址对", rows[0]["line"] == "BG7LZQ-3>APRS::BG5CCC-7 :ACK", True)
         check("确认后面跟一句人话", said(rows[1]["line"]),
-              "Got OL51, you are #1 on the roster. aprsnet.cn/oa")
+              "Got OL51, you are #1 on the roster. https://aprsnet.cn/oa")
         # 那句里的 {url} 换成 OA_SITE_URL；没配就整段不占位，不留一个空尾巴
         rec = {"msg_grid": "OL51"}
         active = rt.store.active_round()
@@ -627,7 +627,7 @@ def main():
         said_back = said(rt.store.outbox_for("BG7AAA-9")[-1]["line"])
         check("ACK 后面跟一句人话",
               said_back.startswith("Got OL62, you are #") and
-              said_back.endswith(" on the roster. aprsnet.cn/oa"), True)
+              said_back.endswith(" on the roster. https://aprsnet.cn/oa"), True)
         rt.on_line(oa_aprs.parse_line(
             "BG6BBB-5>APRS,TCPIP*,qAC,T2X::BD9ZZZ   :你好"))
         check("发给别人的不回", rt.store.outbox_for("BG6BBB-5"), [])

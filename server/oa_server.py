@@ -38,7 +38,7 @@ DEFAULTS = {
     "OA_HOST": "127.0.0.1",
     "OA_PORT": "8090",
     "OA_SITE_ROOT": "",
-    "OA_SITE_URL": "aprsnet.cn/oa",
+    "OA_SITE_URL": "https://aprsnet.cn/oa",
     "OA_ADMIN_TOKEN": "",
     "OA_APRS_HOST": "rotate.aprs2.net",
     "OA_APRS_PORT": "14580",
