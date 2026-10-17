@@ -939,9 +939,13 @@ class Handler(BaseHTTPRequestHandler):
             if not self._need_token():
                 return
             date = str(body.get("date") or "").strip()
+            if not date:                       # 没选轮次就删当轮，不要静默什么都不做
+                active = self.rt.store.active_round()
+                date = active["date"] if active else oa_store.bj_now_date()
             call = str(body.get("call") or "").strip().upper()
             ok = self.rt.store.drop_station(date, call)
-            self._json({"ok": ok, "stations": self.rt.store.stations(date)})
+            self._json({"ok": ok, "date": date, "call": call,
+                        "stations": self.rt.store.stations(date)})
             return
         if path == "/api/admin/packet":
             if not self._need_token():

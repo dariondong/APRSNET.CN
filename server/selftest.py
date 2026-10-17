@@ -870,6 +870,13 @@ def main():
                   True)
             check("台上手发的那条也带编号", acked["line"].endswith("{01") or
                   acked["line"].endswith("{02"), True)
+            # 主控台没在「看哪一轮」里挑过时，删台那条不带日期：改删当轮，不能静默不动
+            deleted = post("/api/admin/station/delete", {"call": "BG3POST-9"})
+            check("没写轮次就删当轮那一台", deleted.get("ok"), True)
+            check("删的是当轮", deleted.get("date"), rdate)
+            check("删完名单里没有了", rt.store.get_station(rdate, "BG3POST-9"), None)
+            missing = post("/api/admin/station/delete", {"date": rdate, "call": "BG3POST-9"})
+            check("再删一台不在的回一句没成", missing.get("ok"), False)
         finally:
             httpd.shutdown()
             httpd.server_close()

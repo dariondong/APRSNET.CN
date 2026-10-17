@@ -22,6 +22,12 @@ table{width:100%;border-collapse:collapse;background:var(--card);border:1px soli
 .scroll.tall{max-height:62vh}
 .scroll table{border:0;background:none}
 .scroll th{position:sticky;top:0;background:var(--card);box-shadow:0 1px 0 var(--line)}
+details.fold{margin:24px 0 0;border-top:1px solid var(--line);padding-top:10px}
+details.fold>summary{cursor:pointer;font-size:15px;font-weight:600;letter-spacing:.04em;list-style:none;display:flex;justify-content:space-between;align-items:baseline;padding:2px 0}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::after{content:"展开";font-size:12px;font-weight:400;color:var(--grey)}
+details.fold[open]>summary{margin-bottom:8px}
+details.fold[open]>summary::after{content:"收起"}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-weight:600;color:var(--grey);font-size:12px}
 tr:last-child td{border-bottom:0}
@@ -58,8 +64,23 @@ a{color:inherit}
   <div class="bar" id="stats" style="margin-top:8px"><span>本轮还没有台站。</span></div>
 
   <div id="err"></div>
+  <div id="msg" class="msg"></div>
 
-  <h2>轮次</h2>
+  <h2>待办</h2>
+  <p class="note" id="todoNote">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
+  <div id="todo"></div>
+
+  <h2>本轮名单</h2>
+  <div id="stations" class="scroll tall"></div>
+
+  <details class="fold">
+    <summary>报到流水（最近 30 条）</summary>
+  <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。更多在「报文 CSV」里。</p>
+  <div id="packets" class="scroll"></div>
+
+  </details>
+  <details class="fold">
+    <summary>轮次</summary>
   <form class="row" id="roundForm">
     <div><label>本轮日期</label><input type="date" id="roundDate"></div>
     <div><label>轮值呼号</label><input type="text" id="dutyCall" placeholder="BG7LZQ-2"></div>
@@ -72,9 +93,10 @@ a{color:inherit}
     <div><a href="#" id="csvStBtn"><button type="button">名单 CSV</button></a></div>
     <div><a href="#" id="csvPktBtn"><button type="button">报文 CSV</button></a></div>
   </form>
-  <div id="msg" class="msg"></div>
 
-  <h2>页面上那两行字</h2>
+  </details>
+  <details class="fold">
+    <summary>页面上那两行字</summary>
   <p class="note">副标题就是标题底下那一行大字，中英两页各取各的，没填就留着「测试轮次」；主控昵称跟在轮值呼号后面。留空就是不显示。</p>
   <form class="row" id="metaForm">
     <div><label>副标题（中文页）</label><input type="text" id="subZh" placeholder="周六空中签到"></div>
@@ -83,15 +105,9 @@ a{color:inherit}
     <div><button type="submit">写到页面上</button></div>
   </form>
 
-  <h2>待办</h2>
-  <p class="note" id="todoNote">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
-  <div id="todo"></div>
-
-  <h2>报到流水（最近 30 条）</h2>
-  <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。更多在「报文 CSV」里。</p>
-  <div id="packets" class="scroll"></div>
-
-  <h2>对话历史</h2>
+  </details>
+  <details class="fold" id="foldThread">
+    <summary>对话历史</summary>
   <p class="note">某一台发来的、我们回给的，按时间排在一起。流水与名单那行右端的「对话」也到这里。</p>
   <form class="row" id="threadForm">
     <div><label>呼号</label><input type="text" id="threadCall" placeholder="BG7XXX-9"></div>
@@ -100,14 +116,15 @@ a{color:inherit}
   </form>
   <div id="thread"></div>
 
-  <h2>本轮名单</h2>
-  <div id="stations" class="scroll tall"></div>
-
-  <h2>发件箱</h2>
+  </details>
+  <details class="fold">
+    <summary>发件箱</summary>
   <p class="note">回出去的 ACK 都记在这里。发失败的那条会带一句原因。</p>
   <div id="outbox" class="scroll"></div>
 
-  <h2>手动加一台</h2>
+  </details>
+  <details class="fold" id="foldAdd">
+    <summary>手动加一台</summary>
   <form class="row" id="stForm">
     <div><label>呼号</label><input type="text" id="stCall" placeholder="BG7XXX-9"></div>
     <div><label>网格</label><input type="text" id="stGrid" placeholder="OL62"></div>
@@ -118,6 +135,7 @@ a{color:inherit}
     <div><button type="submit">写进名单</button></div>
   </form>
   <p class="hint" id="txHint"></p>
+  </details>
 </div>
 <script>
 (function () {
@@ -139,6 +157,8 @@ a{color:inherit}
   var state = { date: "", round: "", archive: "", auto: false, routes: [], thread: "" };
   var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
+  // 写名单、删台、回 ACK 都认「现在看的那一轮」：没在「看哪一轮」里挑过就是当轮
+  var curDate = function () { return state.date || state.round || ""; };
 
   var showErr = function (msg) {
     var box = $("err");
@@ -307,7 +327,7 @@ a{color:inherit}
         up.className = "mini";
         up.textContent = "标已确认";
         up.onclick = function () {
-          api("/api/admin/station", "POST", { date: state.date, call: s.call, status: "confirmed" })
+          api("/api/admin/station", "POST", { date: curDate(), call: s.call, status: "confirmed" })
             .then(function (d) { showErr(d && d.error); refresh(); });
         };
         ops.appendChild(up);
@@ -454,7 +474,7 @@ a{color:inherit}
       add.textContent = "加入本轮";
       add.onclick = function () {
         api("/api/admin/station", "POST", {
-          date: state.date, call: p.src, grid: p.msg_grid || p.grid, via: p.via, digi: p.digi,
+          date: curDate(), call: p.src, grid: p.msg_grid || p.grid, via: p.via, digi: p.digi,
           at: undefined, status: p.kind === "u" ? "confirmed" : "called"
         }).then(function (d) { showErr(d && d.error); refresh(); });
       };
@@ -550,6 +570,8 @@ a{color:inherit}
       return;
     }
     $("threadCall").value = call;
+    var fold = $("foldThread");
+    if (fold) fold.open = true;
     api("/api/admin/thread?call=" + encodeURIComponent(call)).then(function (d) {
       if (state.thread !== call) return;
       if (d && d.error) showErr(d.error);
@@ -607,6 +629,12 @@ a{color:inherit}
         $("stDigi").value = s.digi || "";
         $("stAt").value = s.at || "";
         $("stStatus").value = s.status || "called";
+        // 表单在本页最下面兼在折叠块里：先展开、再把人带过去，不然按了像没反应
+        var fold = $("foldAdd");
+        if (fold) fold.open = true;
+        $("stForm").scrollIntoView({ behavior: "smooth", block: "center" });
+        say("已填到「手动加一台」，改完按「写进名单」。");
+        try { $("stGrid").focus({ preventScroll: true }); } catch (e) {}
       };
       ops.appendChild(edit);
       var talk = document.createElement("button");
@@ -620,8 +648,19 @@ a{color:inherit}
       del.className = "mini hot";
       del.textContent = "删";
       del.onclick = function () {
-        api("/api/admin/station/delete", "POST", { date: state.date, call: s.call })
-          .then(function (d) { showErr(d && d.error); refresh(); });
+        if (!window.confirm("把 " + s.call + " 从本轮名单里删掉？")) return;
+        api("/api/admin/station/delete", "POST", { date: curDate(), call: s.call })
+          .then(function (d) {
+            if (!d || !d.ok) {
+              var why = (d && d.error) || "没删成：名单里没有这一台。";
+              showErr(why);
+              say(why, true);
+            } else {
+              showErr("");
+              say("删掉了 " + s.call + "。");
+            }
+            refresh();
+          });
       };
       ops.appendChild(del);
       table.appendChild(tr);
@@ -662,7 +701,7 @@ a{color:inherit}
   };
 
   var doAck = function (call, btn) {
-    api("/api/admin/ack", "POST", { date: state.round || state.date, call: call, text: "ACK" })
+    api("/api/admin/ack", "POST", { date: curDate(), call: call, text: "ACK" })
       .then(function (d) {
         if (!d || !d.ok) {
           var why = (d && d.error) || "没回成。";
@@ -696,7 +735,7 @@ a{color:inherit}
   });
 
   $("closeRound").addEventListener("click", function () {
-    var date = $("roundDate").value;
+    var date = $("roundDate").value || curDate();
     api("/api/admin/close", "POST", { date: date }).then(function (d) {
       if (!d || !d.ok) {
         var why = (d && d.error) || "收不起来。";
@@ -737,7 +776,7 @@ a{color:inherit}
 
   var exportUrl = function (what) {
     return "/api/admin/export?format=" + what.format + (what.what ? "&what=" + what.what : "") +
-      "&date=" + encodeURIComponent(state.round || state.date) + "&token=" + encodeURIComponent(token);
+      "&date=" + encodeURIComponent(curDate()) + "&token=" + encodeURIComponent(token);
   };
 
   $("exportBtn").addEventListener("click", function (e) {
@@ -756,7 +795,7 @@ a{color:inherit}
   });
 
   $("archBtn").addEventListener("click", function () {
-    api("/api/admin/archive", "POST", { date: state.round || state.date }).then(function (d) {
+    api("/api/admin/archive", "POST", { date: curDate() }).then(function (d) {
       if (!d || !d.ok) {
         var why = (d && d.error) || "归档没写成。";
         showErr(why);
@@ -772,7 +811,7 @@ a{color:inherit}
   $("stForm").addEventListener("submit", function (e) {
     e.preventDefault();
     api("/api/admin/station", "POST", {
-      date: state.date,
+      date: curDate(),
       call: $("stCall").value,
       grid: $("stGrid").value,
       via: $("stVia").value,
@@ -804,7 +843,7 @@ a{color:inherit}
 
   // 删掉一轮：连名单与报文一起拔，删错一轮靠这个
   $("delRound").addEventListener("click", function () {
-    var date = $("roundDate").value || state.date;
+    var date = $("roundDate").value || curDate();
     if (!date) return;
     if (!window.confirm("删掉 " + date + " 这一轮？名单与报文一起删，找不回来。")) return;
     api("/api/admin/round/delete", "POST", { date: date }).then(function (d) {
