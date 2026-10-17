@@ -13,6 +13,7 @@ fonts-wqy-zenhei 之类的中文字体。
 配色照站点：纸白 #f2f0ea、墨 #15181c、灰 #6f7680、那一点红 #b3141f。
 """
 import io
+import os
 import re
 from datetime import datetime, timezone, timedelta
 
@@ -281,6 +282,27 @@ def grid_groups(row):
     return sorted(groups.items(), key=lambda item: (item[0] == "—", item[0]))
 
 
+BASE_CACHE = []
+
+
+def _world_base():
+    """世界底图：仓库里 oa/world.png 那一张（与数据面板 canvas 用的是同一份）。
+
+    缺了就只画网格，不影响出图。"""
+    if BASE_CACHE:
+        return BASE_CACHE[0]
+    from PIL import Image
+    base = None
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "oa", "world.png")
+        raw = Image.open(path).convert("RGBA")
+        base = raw if raw.size == (MAP_W, MAP_H) else raw.resize((MAP_W, MAP_H))
+    except (IOError, OSError):
+        base = None
+    BASE_CACHE.append(base)
+    return base
+
+
 def _world_map(draw, x, y, lit):
     """世界网格地图：180×180 个 4 位格子全画出来，有签到的填红。返回地图底边。"""
     label = font(20)
@@ -330,6 +352,9 @@ def render_grid(row, note="", lang="zh"):
     image = Image.new("RGB", (WIDE, height), PAPER)
     draw = ImageDraw.Draw(image)
     _head(draw, words["grid"], _subtitle(row, note, words), note)
+    base = _world_base()
+    if base is not None:                         # 陆地压在网格线底下
+        image.paste(base, (PAD, map_top), base)
     _world_map(draw, PAD, map_top, lit)
 
     y = map_top + MAP_H + 46
