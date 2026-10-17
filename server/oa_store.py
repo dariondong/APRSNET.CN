@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS rounds (
   active INTEGER NOT NULL DEFAULT 0,
   opened TEXT NOT NULL DEFAULT '',
   closed TEXT NOT NULL DEFAULT '',
-  note   TEXT NOT NULL DEFAULT ''
+  note   TEXT NOT NULL DEFAULT '',
+  code   TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS stations (
@@ -297,6 +298,15 @@ class Store(object):
                 self._put_setting("activity_code", code)
                 self._put_setting("activity_name_zh", name_zh)
                 self._put_setting("activity_name_en", name_en or name_zh)
+        # 每一轮记下当时的活动编号：以后换了编号，老几轮还认得自己属于哪一场
+        rcols = set(row["name"] for row in self.db.execute("PRAGMA table_info(rounds)"))
+        if "code" not in rcols:
+            self.db.execute("ALTER TABLE rounds ADD COLUMN code TEXT NOT NULL DEFAULT ''")
+        now_code = self.db.execute(
+            "SELECT value FROM settings WHERE key='activity_code'").fetchone()
+        now_code = clean_code(now_code["value"]) if now_code else ""
+        if now_code:
+            self.db.execute("UPDATE rounds SET code=? WHERE code='' OR code IS NULL", (now_code,))
 
     def close(self):
         with self.lock:
@@ -325,8 +335,9 @@ class Store(object):
             if row:
                 return row["id"]
             cur = self.db.execute(
-                "INSERT INTO rounds (date, duty, opened) VALUES (?,?,?)",
-                (date, self.default_duty if duty is None else duty, now_iso()))
+                "INSERT INTO rounds (date, duty, opened, code) VALUES (?,?,?,?)",
+                (date, self.default_duty if duty is None else duty, now_iso(),
+                 clean_code(self.get_setting("activity_code"))))
             self.db.commit()
             return cur.lastrowid
 
@@ -736,6 +747,7 @@ class Store(object):
 
     def roster(self):
         """导出页面上读的那份 JSON。rounds 新的在前，与 pages 上的写法一致。"""
+        meta = self.meta()
         out = []
         for rnd in self.rounds():
             stations = []
@@ -778,9 +790,10 @@ class Store(object):
                 "date": rnd["date"],
                 "updated": bj_date(last) if last else "",
                 "call": rnd["duty"],
+                # 这一轮开的时候记下的编号；老库里还没记的就用当前这一场的
+                "code": (rnd.get("code") or "") or meta["code"],
                 "stations": stations,
             })
-        meta = self.meta()
         return {"updated": (out[0]["updated"] or None) if out else None,
                 # 顶上也放一份编号：拿到名单、拿到一张图，都先看这一串对不对得上这一场
                 "code": meta["code"],
@@ -866,8 +879,11 @@ class Store(object):
             os.makedirs(out_dir)
         stations = self.stations(date)
         packets = self.round_packets(date)
+        head = self.meta()
+        head["code"] = (row["code"] or "") or head["code"]   # 归档用这一轮当时的编号
         data = {
-            "activity": self.meta(),
+            "activity": head,
+            "code": head["code"],
             "date": date,
             "duty": row["duty"],
             "opened": row["opened"],

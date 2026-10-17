@@ -189,6 +189,16 @@ def main():
         check("老库拆完副标题照旧", reopened.meta()["subtitleZh"], "#261017 测试轮次")
         check("老库英文名称也拆下来了", reopened.meta()["nameEn"], "Test round")
         reopened.close()
+        # 每一轮记下开的时候的编号：换了编号，老那轮还认得自己属于哪一场
+        code_dir = os.path.join(tempfile.mkdtemp(), "codes")
+        coded = oa_store.Store(code_dir)
+        coded.set_setting("activity_code", "261017")
+        coded.ensure_round("2026-10-17", "BG0TST")
+        coded.set_setting("activity_code", "261024")
+        coded.ensure_round("2026-10-24", "BG0TST")
+        check("新开的一轮记下当时的编号", coded.round_by_date("2026-10-24")["code"], "261024")
+        check("换了编号也不改写老那轮", coded.round_by_date("2026-10-17")["code"], "261017")
+        coded.close()
         store.set_setting("op_name", "")
         check("抹掉就是不显示", store.meta()["opName"], "")
         # 改过的每一行都记一条，新的在前；抹成空、动开关都不记
