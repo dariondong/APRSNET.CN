@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import oa_aprs
+import oa_region
 import oa_server
 import oa_store
 
@@ -551,6 +552,28 @@ def main():
         check("奖状编号换了轮次就变",
               oa_image.serial_of("BG7LZQ-2", "2026-10-18") !=
               oa_image.serial_of("BG7LZQ-2", "2026-10-17"), True)
+        check("签到表里的国家", oa_image._country("BG7LZQ-2", "zh"), "中国")
+        check("国家跟着页面语言走",
+              (oa_image._country("JA1ABC", "zh"), oa_image._country("JA1ABC", "en")),
+              ("日本", "Japan"))
+        check("认不出的呼号给短横", oa_image._country("TR7AAA", "zh"), "\u2014")
+
+    # 国家表与页面上那份一致：两边各改一边就会对不上（只比前缀与两个名字，国旗只在页面上用）
+    js_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                           "oa", "roster.js")
+    pairs = None
+    try:
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        block = js.split("var REGIONS = [", 1)[1].split("\n  ];", 1)[0]
+        pairs = set(re.findall(r'\["([^"]+)", "([^"]+)", "([^"]+)"', block))
+    except (IOError, OSError, IndexError):
+        pairs = None
+    if pairs is not None:
+        check("国家表与页面那份一致", set(oa_region.REGIONS) == pairs, True)
+        check("国家表条数", len(oa_region.REGIONS), len(pairs))
+        check("带 SSID 也认", oa_region.region_of("bg7lzq-9"), ("中国", "China"))
+        check("长前缀先匹配", oa_region.region_of("VR2ABC")[1], "Hong Kong")
 
     # 名单里找一台：整串优先，去掉 SSID 只有唯一一台时才认
     two = {"stations": [{"call": "BG7LZQ-2"}, {"call": "BG7LZQ-3"}]}

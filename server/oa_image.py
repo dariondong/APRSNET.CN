@@ -17,6 +17,8 @@ import os
 import re
 from datetime import datetime, timezone, timedelta
 
+import oa_region
+
 PAPER = (242, 240, 234)
 INK = (21, 24, 28)
 GREY = (111, 118, 128)
@@ -43,7 +45,7 @@ TEXT = {
         "cert_cols": ("网格", "路径", "时间"),
         "serial": "编号",
         "duty": "轮值呼号",
-        "cols": ("呼号", "网格", "路径", "状态", "时间"),
+        "cols": ("呼号", "国家", "网格", "路径", "状态", "时间"),
         "rf": "射频",
         "is": "网络",
         "status": {"called": "只喊到", "acked": "已回 ACK", "confirmed": "已确认"},
@@ -62,7 +64,7 @@ TEXT = {
         "cert_cols": ("Grid", "Path", "Time"),
         "serial": "Serial",
         "duty": "Duty callsign",
-        "cols": ("Call", "Grid", "Path", "Status", "Time"),
+        "cols": ("Call", "Country", "Grid", "Path", "Status", "Time"),
         "rf": "RF",
         "is": "Network",
         "status": {"called": "Called", "acked": "ACKed", "confirmed": "Confirmed"},
@@ -102,6 +104,13 @@ def _path_text(station, words):
     if (station.get("via") or "") == "rf":
         return " · ".join([words["rf"]] + [" -> ".join(digi)] if digi else [words["rf"]])
     return words["is"]
+
+
+def _country(call, lang):
+    """这一台的国家：前缀表里查，认不出来给短横。"""
+    zh, en = oa_region.region_of(call)
+    name = en if str(lang).startswith("en") else zh
+    return name or "—"
 
 
 def _subtitle(row, note, words):
@@ -201,7 +210,7 @@ def _png(image):
 
 
 def render_board(row, note="", lang="zh"):
-    """签到表：一台一行，列是呼号 / 网格 / 路径 / 状态 / 时间。"""
+    """签到表：一台一行，列是呼号 / 国家 / 网格 / 路径 / 状态 / 时间。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
     stations = row.get("stations") or []
@@ -216,9 +225,9 @@ def render_board(row, note="", lang="zh"):
     heads = font(23)
     body = font(27)
     small = font(24)
-    # 列宽按最长的一行留出来，最右一列收在 WIDTH-PAD 里（英文的状态与时间更长）
-    xs = (72, 246, 370, 694, 848)
-    clips = (146, 96, 296, 126, 156)
+    # 列宽按最长的一行留出来，最右一列收在 WIDTH-PAD 里（英文的国家、状态与时间更长）
+    xs = (72, 222, 362, 448, 690, 806)
+    clips = (146, 130, 78, 236, 110, 128)
     for x, name in zip(xs, cols):
         draw.text((x, top), name, font=heads, fill=GREY)
     draw.line([PAD, top + 40, WIDTH - PAD, top + 40], fill=INK, width=2)
@@ -230,11 +239,13 @@ def render_board(row, note="", lang="zh"):
         if i % 2 == 1:                                  # 隔一行铺一层极淡的底，读起来不串行
             draw.rectangle([PAD - 12, y - 12, WIDTH - PAD + 12, y + row_h - 20], fill=(238, 235, 228))
         draw.text((xs[0], y), _clip(draw, station.get("call") or "", body, clips[0]), font=body, fill=INK)
-        draw.text((xs[1], y), _clip(draw, station.get("grid") or "—", small, clips[1]), font=small, fill=INK)
-        draw.text((xs[2], y), _clip(draw, _path_text(station, words), small, clips[2]), font=small, fill=INK)
-        draw.text((xs[3], y), _clip(draw, words["status"].get(station.get("status") or "", ""), small,
-                                   clips[3]), font=small, fill=GREY)
-        draw.text((xs[4], y), _clip(draw, station.get("at") or "", small, clips[4]), font=small, fill=GREY)
+        draw.text((xs[1], y), _clip(draw, _country(station.get("call"), lang), small, clips[1]),
+                  font=small, fill=GREY)
+        draw.text((xs[2], y), _clip(draw, station.get("grid") or "—", small, clips[2]), font=small, fill=INK)
+        draw.text((xs[3], y), _clip(draw, _path_text(station, words), small, clips[3]), font=small, fill=INK)
+        draw.text((xs[4], y), _clip(draw, words["status"].get(station.get("status") or "", ""), small,
+                                   clips[4]), font=small, fill=GREY)
+        draw.text((xs[5], y), _clip(draw, station.get("at") or "", small, clips[5]), font=small, fill=GREY)
     _footer(draw, height, words, words["count"] % len(stations))
     return _png(image)
 
