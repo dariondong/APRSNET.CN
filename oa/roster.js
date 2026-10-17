@@ -30,10 +30,11 @@
    stations = 各轮台站合计，rf = 走射频的，updated = 名单最后更新的日期。
    活动页没有这些位子，什么也不做。
 
-   顶层还有一个 meta：{"subtitleZh": "…", "subtitleEn": "…", "opName": "…"}。这三项只在
-   后台填过才写。页面上的 [data-oa-subtitle] 就是标题底下那一行大字（没填时是「测试轮次」），
-   按 <html lang> 取中英哪一条，没填就留着页面自己那句；[data-oa-op] 收主控昵称，写成
-   「 · 昵称」跟在轮值呼号后面，空串就藏起来。
+   顶层还有一个 meta：{"subtitleZh": "…", "subtitleEn": "…", "explainZh": "…",
+   "explainEn": "…", "opName": "…"}。这几项只在后台填过才写。页面上的 [data-oa-subtitle]
+   就是标题底下那一行大字（没填时是「测试轮次」），[data-oa-explain] 是它下面那个小一号的
+   解释标题，两个都按 <html lang> 取中英哪一条，没填就留着页面自己那句；[data-oa-op] 收主控
+   昵称，写成「 · 昵称」跟在轮值呼号后面，空串就藏起来。
 
    取不到、不是合法 JSON、一轮都没有时页面一动不动，留着 HTML 里写好的那条空状态。
    一律用 textContent 写入，不拼 HTML 字符串。
@@ -412,11 +413,12 @@
     Array.prototype.forEach.call(slots, function (el) { el.textContent = call; });
   };
 
-  /* 抬头那两行字：副标题与主控昵称，后台没填就藏起来 */
+  /* 抬头那几行字：副标题、解释标题与主控昵称，后台没填就用页面自己那句 */
   var fillMeta = function (meta) {
     if (!meta) return;
     var en = /^en\b/i.test(document.documentElement.lang || "");
     var sub = String((en ? meta.subtitleEn : meta.subtitleZh) || "").trim();
+    var exp = String((en ? meta.explainEn : meta.explainZh) || "").trim();
     var op = String(meta.opName || "").trim();
     Array.prototype.forEach.call(document.querySelectorAll("[data-oa-subtitle]"), function (el) {
       // 这一位就是标题底下那一行字（「测试轮次」那一行）：后台没填就留着页面自己那句
@@ -424,6 +426,15 @@
         el.setAttribute("data-oa-sub-fallback", el.textContent);
       }
       el.textContent = sub || el.getAttribute("data-oa-sub-fallback") || "";
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-oa-explain]"), function (el) {
+      // 副标题底下那一行小一点的字，同样没填就留着页面自己那句
+      if (!el.hasAttribute("data-oa-explain-fallback")) {
+        el.setAttribute("data-oa-explain-fallback", el.textContent);
+      }
+      var line = exp || el.getAttribute("data-oa-explain-fallback") || "";
+      el.textContent = line;
+      el.hidden = !line;
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-oa-op]"), function (el) {
       el.textContent = op ? " \u00b7 " + op : "";

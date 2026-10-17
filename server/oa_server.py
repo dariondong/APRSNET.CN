@@ -826,6 +826,7 @@ class Handler(BaseHTTPRequestHandler):
                 "round": self.rt.store.round_by_date(date),
                 "rounds": self.rt.store.rounds(),
                 "meta": self.rt.store.meta(),
+                "metaLog": self.rt.store.meta_history(24),
                 "stats": self.rt.store.round_stats(date),
                 "stations": self.rt.store.stations(date),
                 "packets": self.rt.store.packets(limit=30, kinds=CNNET_KINDS),

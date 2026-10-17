@@ -99,14 +99,18 @@ a{color:inherit}
 
   </details>
   <details class="fold">
-    <summary>页面上那两行字</summary>
-  <p class="note">副标题就是标题底下那一行大字，中英两页各取各的，没填就留着「测试轮次」；主控昵称跟在轮值呼号后面。留空就是不显示。</p>
+    <summary>页面上那几行字</summary>
+  <p class="note">副标题是标题底下那一行大字，解释标题在它下面、字号小一档。中英两页各取各的，没填就留着页面自己那句；主控昵称跟在轮值呼号后面，留空就不显示。</p>
   <form class="row" id="metaForm">
     <div><label>副标题（中文页）</label><input type="text" id="subZh" placeholder="周六空中签到"></div>
     <div><label>Subtitle (English page)</label><input type="text" id="subEn" placeholder="Saturday check-in"></div>
+    <div><label>解释标题（中文页）</label><input type="text" id="expZh" placeholder="北京时间周六整天的空中签到"></div>
+    <div><label>Explain line (English page)</label><input type="text" id="expEn" placeholder="An all-day Saturday check-in, Beijing time"></div>
     <div><label>主控昵称</label><input type="text" id="opName" placeholder="达里安"></div>
     <div><button type="submit">写到页面上</button></div>
   </form>
+  <p class="note">改过的每一行都记在这儿。点「填回去」就装进上面的框，再点「写到页面上」就换回去了。</p>
+  <div id="metaLog" class="scroll"></div>
 
   </details>
   <details class="fold" id="foldThread">
@@ -242,6 +246,7 @@ a{color:inherit}
         [paintBar, data.health, data.round],
         [paintStats, data.stats, data.round],
         [paintMeta, data.meta],
+        [paintMetaLog, data.metaLog],
         [paintRounds, data.rounds, data.round],
         [paintTodo, data.stations, data.round],
         [paintPackets, data.packets],
@@ -382,7 +387,67 @@ a{color:inherit}
     meta = meta || {};
     put("subZh", meta.subtitleZh);
     put("subEn", meta.subtitleEn);
+    put("expZh", meta.explainZh);
+    put("expEn", meta.explainEn);
     put("opName", meta.opName);
+  };
+
+  // 这几行字改过的旧样：新的在前，点一下装进对应的框
+  var META_FIELD = {
+    subtitle_zh: ["subZh", "副标题（中文）"],
+    subtitle_en: ["subEn", "Subtitle (English)"],
+    explain_zh: ["expZh", "解释标题（中文）"],
+    explain_en: ["expEn", "Explain line (English)"],
+    op_name: ["opName", "主控昵称"]
+  };
+
+  var paintMetaLog = function (rows) {
+    var box = $("metaLog");
+    box.textContent = "";
+    rows = rows || [];
+    if (!rows.length) {
+      var none = document.createElement("p");
+      none.className = "note";
+      none.textContent = "还没改过，改一次就记一条。";
+      box.appendChild(none);
+      return;
+    }
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["时间", "哪一行", "写的字", ""].forEach(function (t) {
+      var th = document.createElement("th");
+      th.textContent = t;
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    rows.forEach(function (r) {
+      var field = META_FIELD[r.key] || null;
+      var tr = document.createElement("tr");
+      var td = function (text) {
+        var cell = document.createElement("td");
+        cell.textContent = text;
+        tr.appendChild(cell);
+        return cell;
+      };
+      td(r.ts || "");
+      td(field ? field[1] : r.key);
+      td(r.value || "");
+      var last = td("");
+      if (field) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "填回去";
+        btn.addEventListener("click", function () {
+          var el = $(field[0]);
+          if (!el) return;
+          el.value = r.value || "";
+          el.focus();
+        });
+        last.appendChild(btn);
+      }
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
   };
 
   var paintRounds = function (rounds, round) {
@@ -840,12 +905,14 @@ a{color:inherit}
     }).then(function (d) { showErr(d && d.error); $("stCall").value = ""; refresh(); });
   });
 
-  // 页面上那两行字：副标题两语 + 主控昵称，一起写，空串就是抹掉
+  // 页面上那几行字：副标题、解释标题各两语 + 主控昵称，一起写，空串就是抹掉
   $("metaForm").addEventListener("submit", function (e) {
     e.preventDefault();
     api("/api/admin/settings", "POST", {
       subtitle_zh: $("subZh").value,
       subtitle_en: $("subEn").value,
+      explain_zh: $("expZh").value,
+      explain_en: $("expEn").value,
       op_name: $("opName").value
     }).then(function (d) {
       if (!d || !d.ok) {
@@ -855,7 +922,7 @@ a{color:inherit}
         return;
       }
       showErr("");
-      say("页面上的副标题与主控昵称已经换好，用户刷新就能看到。");
+      say("页面上的副标题、解释标题与主控昵称已经换好，用户刷新就能看到。");
       refresh();
     });
   });

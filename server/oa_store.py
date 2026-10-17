@@ -85,6 +85,13 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL DEFAULT '',
   ts    TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS meta_log (
+  id    INTEGER PRIMARY KEY AUTOINCREMENT,
+  key   TEXT NOT NULL,
+  value TEXT NOT NULL DEFAULT '',
+  ts    TEXT NOT NULL DEFAULT ''
+);
 """
 
 STATUS_ORDER = {"called": 1, "acked": 2, "confirmed": 3}
@@ -931,37 +938,56 @@ class Store(object):
         return row["value"] if row else default
 
     def set_setting(self, key, value):
+        value = str(value)
         with self.lock:
+            row = self.db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+            old = row["value"] if row else ""
             self.db.execute(
                 "INSERT INTO settings (key,value,ts) VALUES (?,?,?)"
                 " ON CONFLICT(key) DO UPDATE SET value=excluded.value, ts=excluded.ts",
-                (key, str(value), now_iso()))
+                (key, value, now_iso()))
+            # 页面上那几行字改一次记一条，操作台上能翻回以前写过的再填回去；
+            # 开关那几个键不记，抹成空也不记（记空串翻回去没意义）。
+            if key in self.META_KEYS and value.strip() and value != old:
+                self.db.execute("INSERT INTO meta_log (key,value,ts) VALUES (?,?,?)",
+                                (key, value, now_iso()))
             self.db.commit()
-        return str(value)
+        return value
 
     def settings(self):
         with self.lock:
             rows = self.db.execute("SELECT key, value FROM settings").fetchall()
         return dict((r["key"], r["value"]) for r in rows)
 
-    # ---- 页面上那两行字（主控自己在操作台上填，跟着名单一起发出去） ----
+    # ---- 页面上那几行字（主控自己在操作台上填，跟着名单一起发出去） ----
 
-    # 副标题两语各一条、主控昵称一条。空串就是「没填」，页面见到空串不显示那一位。
-    META_KEYS = ("subtitle_zh", "subtitle_en", "op_name")
+    # 副标题、解释标题各两语一条，主控昵称一条。空串就是「没填」，页面留在自己那句上。
+    META_KEYS = ("subtitle_zh", "subtitle_en",
+                 "explain_zh", "explain_en", "op_name")
 
     def meta(self):
-        """活动页上那两行字：副标题（中 / 英）与主控昵称。
+        """活动页抬头那几行字：副标题（中 / 英）、解释标题（中 / 英）、主控昵称。
 
         为什么不塞进 `rounds` 里：它们不随周更换，换一轮也不用重填 —— 副标题是这场
-        活动叫什么副题，昵称是这个主控叫什么。放在 settings 表里，跟 auto 那几个
-        开关同一处，页面上当名单的 meta 一起发出去。
+        活动叫什么副题，解释标题是副题底下一句更小的说明，昵称是这个主控叫什么。
+        放在 settings 表里，跟 auto 那几个开关同一处，页面上当名单的 meta 一起发出去。
         """
         st = self.settings()
         return {
             "subtitleZh": (st.get("subtitle_zh") or "").strip(),
             "subtitleEn": (st.get("subtitle_en") or "").strip(),
+            "explainZh": (st.get("explain_zh") or "").strip(),
+            "explainEn": (st.get("explain_en") or "").strip(),
             "opName": (st.get("op_name") or "").strip(),
         }
+
+    def meta_history(self, limit=30):
+        """这几行字改过的旧样，新的在前，操作台上点一句就能填回去。"""
+        with self.lock:
+            rows = self.db.execute(
+                "SELECT id, key, value, ts FROM meta_log ORDER BY id DESC LIMIT ?",
+                (int(limit),)).fetchall()
+        return [dict(r) for r in rows]
 
     def stats(self):
         with self.lock:
