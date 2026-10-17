@@ -42,7 +42,7 @@ TEXT = {
         "grid": "APRSNETCN OA 网格表",
         "cert": "参与证书",
         "cert_line": "%s 在 %s 这一轮的 APRSNETCN OA 活动里签到。",
-        "cert_cols": ("网格", "路径", "时间"),
+        "cert_cols": ("国家", "网格", "路径", "时间"),
         "serial": "编号",
         "duty": "轮值呼号",
         "cols": ("呼号", "国家", "网格", "路径", "状态", "时间"),
@@ -61,7 +61,7 @@ TEXT = {
         "grid": "APRSNETCN OA grid table",
         "cert": "Certificate of participation",
         "cert_line": "%s checked in on %s during the APRSNETCN OA activity.",
-        "cert_cols": ("Grid", "Path", "Time"),
+        "cert_cols": ("Country", "Grid", "Path", "Time"),
         "serial": "Serial",
         "duty": "Duty callsign",
         "cols": ("Call", "Country", "Grid", "Path", "Status", "Time"),
@@ -385,35 +385,48 @@ def render_grid(row, note="", lang="zh"):
 
 
 def render_cert(row, station, note="", lang="zh"):
-    """一台一张的参与证书：呼号、哪一轮、网格 / 路径 / 时间，脚上一个编号。"""
+    """一台一张的参与证书：一个大呼号压一根红杠，下面一张规规矩矩的字段表，右上是编号。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
-    call = (station.get("call") or "").strip() or "—"
+    call = (station.get("call") or "").strip() or "\u2014"
     date = (row.get("date") or "").strip()
-    height = 760
+    height = 800
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
+    draw.rectangle([26, 26, WIDTH - 27, height - 27], outline=INK, width=2)   # 外面一道粗线
+    draw.rectangle([36, 36, WIDTH - 37, height - 37], outline=LINE, width=1)  # 里面一道细线
     _head(draw, words["cert"], _subtitle(row, note, words), note)
 
-    big = font(92)                                   # 主角就是呼号，一根红杠压在下面
-    draw.text((PAD, 250), call, font=big, fill=INK)
-    draw.rectangle([PAD, 372, PAD + draw.textlength(call, font=big), 376], fill=HOT)
+    serial = "%s %s" % (words["serial"], serial_of(call, date))
+    plate = font(21)
+    plate_w = draw.textlength(serial, font=plate)
+    draw.rectangle([WIDTH - PAD - plate_w - 32, 56, WIDTH - PAD, 104], outline=LINE, width=1)
+    draw.text((WIDTH - PAD - plate_w - 16, 68), serial, font=plate, fill=GREY)
+
+    big = font(96)                                    # 主角就是呼号
+    draw.text((PAD, 246), call, font=big, fill=INK)
+    call_w = min(draw.textlength(call, font=big), WIDTH - PAD * 2)
+    draw.rectangle([PAD, 384, PAD + call_w, 388], fill=HOT)
 
     face = font(26)
     if date:
-        draw.text((PAD, 418), words["cert_line"] % (call, date), font=face, fill=INK)
+        draw.text((PAD, 408), words["cert_line"] % (call, date), font=face, fill=INK)
 
-    label = font(22)
-    value = font(24)
-    facts = (station.get("grid") or "—", _path_text(station, words), station.get("at") or "")
-    for i, (name, text) in enumerate(zip(words["cert_cols"], facts)):
-        if not text:
-            continue
-        y = 486 + i * 42
-        draw.text((PAD, y), name, font=label, fill=GREY)
-        draw.text((PAD + 130, y), _clip(draw, text, value, WIDTH - PAD * 2 - 130), font=value, fill=INK)
+    # 字段表：一行一条，细线隔开，右边留着长长的路径
+    facts = (_country(call, lang), station.get("grid") or "\u2014",
+             _path_text(station, words), station.get("at") or "")
+    label = font(21)
+    value = font(27)
+    y = 470
+    draw.line([PAD, y, WIDTH - PAD, y], fill=INK, width=2)
+    for name, text in zip(words["cert_cols"], facts):
+        draw.text((PAD, y + 14), name, font=label, fill=GREY)
+        draw.text((PAD + 150, y + 7), _clip(draw, text, value, WIDTH - PAD * 2 - 150),
+                  font=value, fill=INK)
+        y += 48
+        draw.line([PAD, y, WIDTH - PAD, y], fill=LINE, width=1)
 
-    _footer(draw, height, words, "%s %s" % (words["serial"], serial_of(call, date)))
+    _footer(draw, height, words)
     return _png(image)
 
 
