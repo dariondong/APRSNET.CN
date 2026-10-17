@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNETCN SERVER — 本站的 APRS-IS 服务器怎么连</title>
-<meta name="description" content="APRSNETCN SERVER 是 APRSNET.CN 自己架的 APRS-IS 服务器：接入端口 14580、登录行里的 auth 账号口令、过滤器认哪些前缀、qAC 标记与 24 小时台站接口，服务器地址由运营方公布。">
+<meta name="description" content="APRSNETCN SERVER 是 APRSNET.CN 自己架的 APRS-IS 服务器：接入端口 14580、登录行里的 auth 账号口令、过滤器认哪些前缀、qAC 标记与 24 小时台站接口，还有一张不用账号的台站地图。服务器地址由运营方公布。">
 <meta name="keywords" content="APRSNETCN SERVER,APRSNET CN CONNECT,APRS-IS 服务器,登录行,auth,过滤器,qAC,台站接口,APRS 服务器">
 <meta name="author" content="BG7LZQ (Darion)">
 <meta name="robots" content="index, follow, max-image-preview:large">
@@ -28,7 +28,7 @@
 <meta name="twitter:description" content="本站自己架的 APRS-IS 服务器：登录行里多一段账号口令，过滤器照老规矩。">
 <meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
 <link rel="stylesheet" href="style.css?v=35">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRSNETCN SERVER — 本站的 APRS-IS 服务器怎么连","url":"https://aprsnet.cn/aprsnetcn.html","inLanguage":"zh-CN","description":"APRSNETCN SERVER 是 APRSNET.CN 自己架的 APRS-IS 服务器：接入端口 14580、登录行里的 auth 账号口令、过滤器认哪些前缀、qAC 标记与 24 小时台站接口，服务器地址由运营方公布。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRSNETCN SERVER — 本站的 APRS-IS 服务器怎么连","url":"https://aprsnet.cn/aprsnetcn.html","inLanguage":"zh-CN","description":"APRSNETCN SERVER 是 APRSNET.CN 自己架的 APRS-IS 服务器：接入端口 14580、登录行里的 auth 账号口令、过滤器认哪些前缀、qAC 标记与 24 小时台站接口，还有一张不用账号的台站地图。服务器地址由运营方公布。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
 <script>
 /* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
    必须在首帧前执行，否则会闪一下深底。 */
@@ -169,6 +169,33 @@
       <p class="prose">报文转给别的连接时，路径末尾补一段 <code>qAC,登录呼号</code>，和 APRS-IS 的做法一样。报文本身还是 TNC2 一行，回车换行结尾，一行不超过 512 字节。</p>
       <p class="prose">服务器从 APRS-IS 拉的那一份上游只进本地库，不推给客户端。客户端之间转发的，是自己发进来的包。</p>
       <p class="prose">收到的位置在库里留 24 小时，HTTP 台站接口按窗口、范围、时间查。参数与返回字段见<a href="https://github.com/dariondong/APRSNETCN-SERVER/blob/main/docs/API.md" target="_blank" rel="noopener">台站接口说明</a>。</p>
+    </div>
+  </section>
+
+  <section class="section" id="aprsnetcn-stations">
+    <div class="section-head">
+      <h2>台站地图</h2>
+      <p>服务器地址后面接 <code>/stations</code>，浏览器里直接打开。</p>
+    </div>
+    <div class="section-body">
+      <p class="prose">地图上画的是 24 小时里收到的台站，一台一个点。点开一个点能看这台站的位置与轨迹。顶上的呼号前缀只筛不查，页面每分钟自己刷一次。</p>
+      <p class="prose">同一份数据有公开的 JSON，不用 token，按来源 IP 每分钟限 60 次。</p>
+      <ul class="fact-list">
+        <li>
+          <b>/stations</b>
+          台站地图本身，不用账号也不用令牌。
+        </li>
+        <li>
+          <b>/api/public/stations</b>
+          台站列表。参数 <code>window</code> <code>since</code> <code>bbox</code> <code>limit</code> <code>offset</code>。
+        </li>
+        <li>
+          <b>/api/public/stations/呼号</b>
+          单台站与它的轨迹，出了 24 小时窗口就查不到。
+        </li>
+      </ul>
+      <p class="prose">服务器默认只留位置，不把报文整行落盘。存档是运营方的开关，打开之后整行进库，默认留 72 小时，过期的在后台删掉。</p>
+      <p class="prose">从上游 APRS-IS 拉进来的那一份只填本机的库，不推给客户端。一台站是走射频还是走网络，看它那一行里的 <code>via</code>。</p>
     </div>
   </section>
 
