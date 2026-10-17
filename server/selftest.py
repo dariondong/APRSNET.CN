@@ -568,7 +568,11 @@ def main():
                     "%s%s?token=%s" % (base, path, conf["OA_ADMIN_TOKEN"]),
                     data=json.dumps(payload).encode("utf-8"),
                     headers={"Content-Type": "application/json"}, method="POST")
-                return json.loads(urllib.request.urlopen(req, timeout=10).read().decode("utf-8"))
+                try:
+                    body = urllib.request.urlopen(req, timeout=10).read()
+                except urllib.error.HTTPError as exc:
+                    body = exc.read()
+                return json.loads(body.decode("utf-8"))
 
             rdate = rounds[0]["date"]
             post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "OL62",
@@ -582,6 +586,10 @@ def main():
             post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "pm01"})
             check("表单写了新网格就换", rt.store.get_station(rdate, "BG3POST-9")["grid"], "PM01")
             rt.store.open_round(rdate, "BG7LZQ-3")
+            refused = post("/api/admin/station", {"date": rdate, "call": "BG7LZQ-3"})
+            check("台上加轮值呼号回一句说明", refused.get("error"),
+                  "轮值呼号不是参与台，不往名单里写")
+            check("轮值呼号没进名单", rt.store.get_station(rdate, "BG7LZQ-3"), None)
             acked = post("/api/admin/ack", {"date": rdate, "call": "BG3POST-9"})
             check("回 ACK 用当轮主控呼号", acked["line"], "BG7LZQ-3>APRS::BG3POST-9:ACK")
         finally:

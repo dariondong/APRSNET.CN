@@ -727,14 +727,18 @@ class Handler(BaseHTTPRequestHandler):
             # 空着的那几格不动库里已有的值：台上补一台站时表单多半是空的
             grid = str(body.get("grid") or "").strip().upper()
             chain = [d.strip().upper() for d in (digi or []) if d and d.strip()]
-            self.rt.store.set_station(
-                date, call,
-                grid=grid or None,
-                via=None if body.get("via") in (None, "") else str(body.get("via")).strip(),
-                digi=chain or None,
-                at=None if body.get("at") in (None, "") else str(body.get("at")).strip(),
-                status=None if body.get("status") in (None, "") else str(body.get("status")).strip(),
-                note=None if body.get("note") is None else str(body.get("note")).strip())
+            try:
+                self.rt.store.set_station(
+                    date, call,
+                    grid=grid or None,
+                    via=None if body.get("via") in (None, "") else str(body.get("via")).strip(),
+                    digi=chain or None,
+                    at=None if body.get("at") in (None, "") else str(body.get("at")).strip(),
+                    status=None if body.get("status") in (None, "") else str(body.get("status")).strip(),
+                    note=None if body.get("note") is None else str(body.get("note")).strip())
+            except ValueError as exc:
+                self._fail(400, str(exc))
+                return
             self._json({"ok": True, "stations": self.rt.store.stations(date)})
             return
         if path == "/api/admin/station/delete":

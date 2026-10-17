@@ -413,6 +413,10 @@ class Store(object):
         with self.lock:
             row = self.db.execute("SELECT * FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
             chain = "" if digi is None else ",".join([d.strip().upper() for d in digi if d and d.strip()])
+            if row is None and create:
+                duty = self.db.execute("SELECT duty FROM rounds WHERE id=?", (rid,)).fetchone()
+                if duty and (duty["duty"] or "").strip().upper() == call:
+                    raise ValueError("轮值呼号不是参与台，不往名单里写")
             if row is None and not create:
                 return None
             if row is None:
