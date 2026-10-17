@@ -248,6 +248,16 @@ class Runtime(object):
         # 不是发给本台的（区域里的位置报文之类）不回，免得往天上刷。
         kind = record.get("kind")
         try:
+            if kind in ("ack", "rej"):
+                # 机器回的确认只记投递：哪一条送到了，标在发件箱里，不再回话。
+                # 回一句就成了两边互相确认，没完地往天上刷。
+                if record.get("ack_id"):
+                    self.store.mark_acked((record.get("src") or "").strip().upper(),
+                                          record["ack_id"])
+                return
+            # 每一条发给本台的报文都先回一条机器 ack：喊到、回 U、普通一句话都一样
+            if kind in ("cq", "u") or self.to_duty(record):
+                self.ack_message(record, result.get("round_id"))
             if kind in ("cq", "u"):
                 if result.get("incomplete"):
                     self.note_hint(record, self.conf["OA_BAD_TEXT"])   # 没写网格
@@ -255,11 +265,6 @@ class Runtime(object):
                     self.maybe_auto_ack(record, result.get("round_id"))
                 else:
                     self.maybe_auto_tnx(record, result.get("round_id"))
-            elif kind in ("ack", "rej"):
-                # 机器回的确认只记投递：哪一条送到了，标在发件箱里，不再回话
-                if record.get("ack_id"):
-                    self.store.mark_acked((record.get("src") or "").strip().upper(),
-                                          record["ack_id"])
             elif self.to_duty(record):
                 self.note_hint(record, self.conf["OA_HELP_TEXT"])      # 不是签到那两步
         except Exception as exc:
@@ -484,8 +489,31 @@ class Runtime(object):
         checkin = self.store.last_checkin_ts(active["id"], call)
         return bool(checkin) and checkin > last_ok
 
+    def ack_message(self, record, rid=None):
+        """每一条发给本台的报文都回一条机器 ack：同一个编号只回一次。
+
+        对方那条带编号就回 `ack<编号>`（不带自己的编号）；没编号的没得引，
+        回配的那句 `OA_ACK_TEXT`，一台一轮一次。
+        """
+        if not self.auto_ack_on or not self.can_send():
+            return False
+        active = self.store.active_round()
+        if not active or (rid is not None and active["id"] != rid):
+            return False
+        src = (record.get("src") or "").strip().upper()
+        duty = self.duty_call()
+        if not src or not duty or src == duty:
+            return False
+        text = self.ack_text((record.get("msgid") or "").strip())
+        want = text.strip().lower()
+        for row in self.our_acks(src, active["opened"] or ""):
+            if line_text(row["line"]).strip().lower() == want:
+                return False                            # 这个编号已经回过
+        self.send_msg(src, text, date=active["date"], with_id=False)
+        return True
+
     def maybe_auto_ack(self, record, rid):
-        """有人喊到就回一条 ACK：他那条带编号就回 `ack<编号>`。"""
+        """喊到之后跟一句人话：机器确认已经由 ack_message 回过，这里只跟那一句。"""
         if not self.auto_ack_on or not self.can_send():
             return
         active = self.store.active_round()
@@ -495,10 +523,6 @@ class Runtime(object):
         duty = self.duty_call()
         if not src or not duty or src == duty:
             return
-        if not self.ack_pending(active, src):
-            return
-        self.send_msg(src, self.ack_text(record.get("msgid") or ""),
-                      date=active["date"], with_id=False)
         self.maybe_cq_reply(active, src, record)
 
     def cq_reply_text(self, active, call, record):
@@ -541,10 +565,7 @@ class Runtime(object):
         duty = self.duty_call()
         if not src or not duty or src == duty:
             return
-        # U 那条带了编号的，先回一份 ack：那是对他最后一条的确认
-        if record.get("msgid"):
-            self.send_msg(src, self.ack_text(record["msgid"]),
-                          date=active["date"], with_id=False)
+        # U 那条的确认已经由 ack_message 回过，这里只发那句 73
         tnx = self.conf.get("OA_TNX_TEXT") or "73 TNX!"
         mark = tnx[:8]
         for row in self.store.outbox_for(src, active["opened"] or ""):
