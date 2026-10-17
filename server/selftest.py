@@ -512,6 +512,7 @@ def main():
         conf = dict(oa_server.DEFAULTS)
         conf["OA_DATA_DIR"] = img_dir
         conf["OA_SITE_ROOT"] = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        conf["OA_ADMIN_TOKEN"] = "selftest-token"
         rt = oa_server.Runtime(conf)
         rt.store.add_packet(oa_aprs.parse_line(LINES[0]))
         rounds = rt.store.roster()["rounds"]
@@ -561,6 +562,25 @@ def main():
             src = open(os.path.join(conf["OA_SITE_ROOT"], "oa/data.html"), encoding="utf-8").read()
             ver = re.search(r'roster\.js\?v=(\d+)', src)
             check("页面里脚本走绝对路径", 'src="/oa/roster.js?v=%s"' % ver.group(1) in page, True)
+
+            def post(path, payload):
+                req = urllib.request.Request(
+                    "%s%s?token=%s" % (base, path, conf["OA_ADMIN_TOKEN"]),
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"}, method="POST")
+                return json.loads(urllib.request.urlopen(req, timeout=10).read().decode("utf-8"))
+
+            rdate = rounds[0]["date"]
+            post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "OL62",
+                                        "digi": "BG7LZQ-1,BG7YAB-3"})
+            post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "",
+                                        "digi": [], "status": "acked"})
+            posted = rt.store.get_station(rdate, "BG3POST-9")
+            check("表单空着不改已有的网格", posted["grid"], "OL62")
+            check("表单空着不改已有的中继", posted["digi"], "BG7LZQ-1,BG7YAB-3")
+            check("表单改得动状态", posted["status"], "acked")
+            post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "pm01"})
+            check("表单写了新网格就换", rt.store.get_station(rdate, "BG3POST-9")["grid"], "PM01")
         finally:
             httpd.shutdown()
             httpd.server_close()

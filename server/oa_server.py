@@ -724,11 +724,14 @@ class Handler(BaseHTTPRequestHandler):
             digi = body.get("digi")
             if isinstance(digi, str):
                 digi = [d for d in digi.split(",")]
+            # 空着的那几格不动库里已有的值：台上补一台站时表单多半是空的
+            grid = str(body.get("grid") or "").strip().upper()
+            chain = [d.strip().upper() for d in (digi or []) if d and d.strip()]
             self.rt.store.set_station(
                 date, call,
-                grid=None if body.get("grid") is None else str(body.get("grid")).strip().upper(),
+                grid=grid or None,
                 via=None if body.get("via") in (None, "") else str(body.get("via")).strip(),
-                digi=None if digi is None else digi,
+                digi=chain or None,
                 at=None if body.get("at") in (None, "") else str(body.get("at")).strip(),
                 status=None if body.get("status") in (None, "") else str(body.get("status")).strip(),
                 note=None if body.get("note") is None else str(body.get("note")).strip())
