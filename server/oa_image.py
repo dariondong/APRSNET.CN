@@ -132,6 +132,28 @@ def _clip(draw, text, face, width):
     return text + "…"
 
 
+def _fit_lines(draw, text, face, width, limit=2):
+    """一行装不下就在空格处断开，最多 limit 行；真装不下才切尾巴留点。"""
+    text = str(text or "")
+    if not text or draw.textlength(text, font=face) <= width:
+        return [text]
+    lines = []
+    cur = ""
+    for word in text.split(" "):
+        probe = (cur + " " + word).strip()
+        if cur and draw.textlength(probe, font=face) > width:
+            lines.append(cur)
+            cur = word
+        else:
+            cur = probe
+    if cur:
+        lines.append(cur)
+    while len(lines) > limit:
+        tail = " ".join(lines[limit - 1:])
+        lines = lines[:limit - 1] + [_clip(draw, tail, face, width)]
+    return [_clip(draw, line, face, width) for line in lines if line]
+
+
 def _wrap(draw, text, face, width, limit=2):
     """一格里呼号多的时候折行：按空格断，最多 limit 行，放不下最后一行留个省略号。"""
     lines = []
@@ -154,10 +176,9 @@ def _wrap(draw, text, face, width, limit=2):
 
 
 def _footer(draw, height, words, extra=""):
-    """脚注一行：左边是出处与生成时间，右边是站名。
+    """脚注：左边是出处与生成时间，右边是站名。
 
-    左边连上「编号 …」之后可能装不下，那就把站名挪到上一行右端，
-    两段文字照样都留着，别叠在一起。
+    一行装不下就折成两行，站名始终贴着最后一行的右端，两段文字都留着。
     """
     small = font(22)
     left = "%s · %s %s（北京时间）" % (words["foot"], words["gen"],
@@ -167,13 +188,12 @@ def _footer(draw, height, words, extra=""):
     mark = "aprsnet.cn/oa"
     mark_w = draw.textlength(mark, font=small)
     y = height - 62
-    room = WIDTH - PAD * 2
-    if draw.textlength(left, font=small) + 28 + mark_w > room:      # 一行挤不下
-        draw.text((WIDTH - PAD - mark_w, y - 34), mark, font=small, fill=GREY)
-    else:
-        draw.text((WIDTH - PAD - mark_w, y), mark, font=small, fill=GREY)
-        room = room - mark_w - 28
-    draw.text((PAD, y), _clip(draw, left, small, room), font=small, fill=GREY)
+    room = WIDTH - PAD * 2 - mark_w - 28
+    lines = _fit_lines(draw, left, small, room, 2)
+    y0 = y - 34 * (len(lines) - 1)
+    for i, line in enumerate(lines):
+        draw.text((PAD, y0 + i * 34), line, font=small, fill=GREY)
+    draw.text((WIDTH - PAD - mark_w, y0 + 34 * (len(lines) - 1)), mark, font=small, fill=GREY)
 
 
 def _head(draw, title, subtitle, note):
@@ -225,27 +245,61 @@ def render_board(row, note="", lang="zh"):
     heads = font(23)
     body = font(27)
     small = font(24)
-    # 列宽按最长的一行留出来，最右一列收在 WIDTH-PAD 里（英文的国家、状态与时间更长）
-    xs = (72, 222, 362, 448, 690, 806)
-    clips = (146, 130, 78, 236, 110, 128)
+    faces = (body, small, small, small, small, small)
+    cells = []
+    for station in stations:
+        cells.append((
+            str(station.get("call") or ""),
+            _country(station.get("call"), lang),
+            str(station.get("grid") or "\u2014"),
+            _path_text(station, words),
+            str(words["status"].get(station.get("status") or "", "")),
+            str(station.get("at") or ""),
+        ))
+    # 列宽按这份名单里最长的一条来排：宁可某一列宽一点，也不把字切成省略号
+    want = [0] * 6
+    for line in cells:
+        for i, cell in enumerate(line):
+            want[i] = max(want[i], draw.textlength(cell, font=faces[i]))
+    for i, name in enumerate(cols):
+        want[i] = max(want[i], draw.textlength(name, font=heads))
+    gap = 26
+    room = WIDTH - PAD * 2 - gap * 5
+    need = sum(want)
+    if need <= room:                                 # 富余的都给路径那一列
+        want[3] += room - need
+    else:                                            # 真挤不下：先压路径，再压国家、状态、时间
+        over = need - room
+        for i, floor in ((3, 260), (1, 90), (4, 100), (5, 140), (3, 120)):
+            take = min(over, max(0.0, want[i] - floor))
+            want[i] -= take
+            over -= take
+            if over <= 0:
+                break
+    xs = []
+    x = PAD
+    for width in want:
+        xs.append(int(round(x)))
+        x += width + gap
+    clips = list(want)
     for x, name in zip(xs, cols):
         draw.text((x, top), name, font=heads, fill=GREY)
     draw.line([PAD, top + 40, WIDTH - PAD, top + 40], fill=INK, width=2)
 
     if not stations:
         draw.text((PAD, top + 78), words["empty"], font=body, fill=GREY)
-    for i, station in enumerate(stations):
+    for i, line in enumerate(cells):
         y = top + 66 + i * row_h
         if i % 2 == 1:                                  # 隔一行铺一层极淡的底，读起来不串行
-            draw.rectangle([PAD - 12, y - 12, WIDTH - PAD + 12, y + row_h - 20], fill=(238, 235, 228))
-        draw.text((xs[0], y), _clip(draw, station.get("call") or "", body, clips[0]), font=body, fill=INK)
-        draw.text((xs[1], y), _clip(draw, _country(station.get("call"), lang), small, clips[1]),
-                  font=small, fill=GREY)
-        draw.text((xs[2], y), _clip(draw, station.get("grid") or "—", small, clips[2]), font=small, fill=INK)
-        draw.text((xs[3], y), _clip(draw, _path_text(station, words), small, clips[3]), font=small, fill=INK)
-        draw.text((xs[4], y), _clip(draw, words["status"].get(station.get("status") or "", ""), small,
-                                   clips[4]), font=small, fill=GREY)
-        draw.text((xs[5], y), _clip(draw, station.get("at") or "", small, clips[5]), font=small, fill=GREY)
+            draw.rectangle([PAD - 12, y - 12, WIDTH - PAD + 12, y + 46], fill=(238, 235, 228))
+        for j, cell in enumerate(line):
+            face = faces[j]
+            fill = INK if j in (0, 2, 3) else GREY
+            if j == 3:                                  # 路径最长：一行装不下就在本行里折成两行
+                for k, part in enumerate(_fit_lines(draw, cell, face, clips[j], 2)):
+                    draw.text((xs[j], y + k * 29), part, font=face, fill=fill)
+            else:
+                draw.text((xs[j], y), _clip(draw, cell, face, clips[j]), font=face, fill=fill)
     _footer(draw, height, words, words["count"] % len(stations))
     return _png(image)
 
@@ -390,17 +444,22 @@ def render_cert(row, station, note="", lang="zh"):
     words = TEXT.get(lang, TEXT["zh"])
     call = (station.get("call") or "").strip() or "\u2014"
     date = (row.get("date") or "").strip()
-    height = 800
+    # 字段表：一行一条，细线隔开。一行装不下就折成两行，整张纸跟着长高，不切字
+    facts = (_country(call, lang), station.get("grid") or "\u2014",
+             _path_text(station, words), station.get("at") or "")
+    value = font(27)
+    label = font(21)
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8), PAPER))
+    rows = [(name, _fit_lines(probe, text, value, WIDTH - PAD * 2 - 150, 2))
+            for name, text in zip(words["cert_cols"], facts)]
+    height = 800 + sum(34 * (len(lines) - 1) for _, lines in rows)
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
-    draw.rectangle([26, 26, WIDTH - 27, height - 27], outline=INK, width=2)   # 外面一道粗线
-    draw.rectangle([36, 36, WIDTH - 37, height - 37], outline=LINE, width=1)  # 里面一道细线
     _head(draw, words["cert"], _subtitle(row, note, words), note)
 
     serial = "%s %s" % (words["serial"], serial_of(call, date))
     plate = font(21)
     plate_w = draw.textlength(serial, font=plate)
-    draw.rectangle([WIDTH - PAD - plate_w - 32, 56, WIDTH - PAD, 104], outline=LINE, width=1)
     draw.text((WIDTH - PAD - plate_w - 16, 68), serial, font=plate, fill=GREY)
 
     big = font(96)                                    # 主角就是呼号
@@ -412,18 +471,13 @@ def render_cert(row, station, note="", lang="zh"):
     if date:
         draw.text((PAD, 408), words["cert_line"] % (call, date), font=face, fill=INK)
 
-    # 字段表：一行一条，细线隔开，右边留着长长的路径
-    facts = (_country(call, lang), station.get("grid") or "\u2014",
-             _path_text(station, words), station.get("at") or "")
-    label = font(21)
-    value = font(27)
     y = 470
     draw.line([PAD, y, WIDTH - PAD, y], fill=INK, width=2)
-    for name, text in zip(words["cert_cols"], facts):
+    for name, lines in rows:
         draw.text((PAD, y + 14), name, font=label, fill=GREY)
-        draw.text((PAD + 150, y + 7), _clip(draw, text, value, WIDTH - PAD * 2 - 150),
-                  font=value, fill=INK)
-        y += 48
+        for i, line in enumerate(lines):
+            draw.text((PAD + 150, y + 7 + i * 34), line, font=value, fill=INK)
+        y += 48 + 34 * (len(lines) - 1)
         draw.line([PAD, y, WIDTH - PAD, y], fill=LINE, width=1)
 
     _footer(draw, height, words)
