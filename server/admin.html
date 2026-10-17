@@ -18,6 +18,10 @@ p.note{color:var(--grey);font-size:13px;margin:0 0 12px}
 .ok{color:#137a3f}
 .bad{color:var(--hot)}
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);font-size:13px}
+.scroll{max-height:46vh;overflow:auto;border:1px solid var(--line);background:var(--card)}
+.scroll.tall{max-height:62vh}
+.scroll table{border:0;background:none}
+.scroll th{position:sticky;top:0;background:var(--card);box-shadow:0 1px 0 var(--line)}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-weight:600;color:var(--grey);font-size:12px}
 tr:last-child td{border-bottom:0}
@@ -83,9 +87,9 @@ a{color:inherit}
   <p class="note" id="todoNote">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
   <div id="todo"></div>
 
-  <h2>报到流水（最近 200 条）</h2>
-  <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。</p>
-  <div id="packets"></div>
+  <h2>报到流水（最近 30 条）</h2>
+  <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。更多在「报文 CSV」里。</p>
+  <div id="packets" class="scroll"></div>
 
   <h2>对话历史</h2>
   <p class="note">某一台发来的、我们回给的，按时间排在一起。流水与名单那行右端的「对话」也到这里。</p>
@@ -97,11 +101,11 @@ a{color:inherit}
   <div id="thread"></div>
 
   <h2>本轮名单</h2>
-  <div id="stations"></div>
+  <div id="stations" class="scroll tall"></div>
 
   <h2>发件箱</h2>
   <p class="note">回出去的 ACK 都记在这里。发失败的那条会带一句原因。</p>
-  <div id="outbox"></div>
+  <div id="outbox" class="scroll"></div>
 
   <h2>手动加一台</h2>
   <form class="row" id="stForm">

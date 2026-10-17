@@ -64,9 +64,9 @@ DEFAULTS = {
     "OA_KEEP_OTHER": "2000",
 }
 
-# 主控台的流水只列签到那几步：喊到、确认、对方回的 ack/rej。
-# 区域里的位置报文一小时几千条，一进流水就把签到那几行挤没了。
-CNNET_KINDS = ("cq", "u", "ack", "rej")
+# 主控台的流水只列签到那两步：喊到、确认。
+# 区域里的位置报文一小时几千条，进来的 ack/rej 是机器对号，都不进流水。
+CNNET_KINDS = ("cq", "u")
 
 PAGES = {
     "/": "oa/index.html",
@@ -828,7 +828,7 @@ class Handler(BaseHTTPRequestHandler):
                 "meta": self.rt.store.meta(),
                 "stats": self.rt.store.round_stats(date),
                 "stations": self.rt.store.stations(date),
-                "packets": self.rt.store.packets(limit=200, kinds=CNNET_KINDS),
+                "packets": self.rt.store.packets(limit=30, kinds=CNNET_KINDS),
                 "outbox": self.rt.store.outbox(limit=20),
             })
             return
