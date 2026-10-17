@@ -522,7 +522,10 @@ class Store(object):
         sql = sql + " ORDER BY id DESC LIMIT ?"
         args.append(int(limit))
         with self.lock:
-            return [dict(r) for r in self.db.execute(sql, tuple(args)).fetchall()]
+            rows = [dict(r) for r in self.db.execute(sql, tuple(args)).fetchall()]
+        for row in rows:            # 库里 digi 是逗号串，发出去一律是列表，跟名单那边一个形状
+            row["digi"] = [d for d in (row.get("digi") or "").split(",") if d]
+        return rows
 
     # ---- 名单 ----
 

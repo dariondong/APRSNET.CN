@@ -846,6 +846,10 @@ def main():
             flow = [p["kind"] for p in state["packets"]]
             check("流水里没有闲聊报文", "other" in flow, False)
             check("流水里有签到报文", ("cq" in flow or "u" in flow), True)
+            # 流水那几行的中继是列表：浏览器那边直接 join，写成字符串就抛错，
+            # 后面几块（名单、发件箱）跟着画不出来。
+            check("流水里报文的中继是列表",
+                  all(isinstance(p["digi"], list) for p in state["packets"]), True)
             post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "OL62",
                                         "digi": "BG7LZQ-1,BG7YAB-3"})
             post("/api/admin/station", {"date": rdate, "call": "BG3POST-9", "grid": "",

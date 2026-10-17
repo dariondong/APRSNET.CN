@@ -210,14 +210,24 @@ a{color:inherit}
       state.archive = (data.health && data.health.archive_dir) || "";
       state.auto = !!(data.health && data.health.auto);
       lastSync = Date.now();
-      paintBar(data.health, data.round);
-      paintStats(data.stats, data.round);
-      paintMeta(data.meta);
-      paintRounds(data.rounds, data.round);
-      paintTodo(data.stations, data.round);
-      paintPackets(data.packets);
-      paintStations(data.stations, data.round);
-      paintOutbox(data.outbox);
+      // 一块画不出来不能让后面几块跟着停：一块抛错就在顶上写一句，其余照画
+      var blocks = [
+        [paintBar, data.health, data.round],
+        [paintStats, data.stats, data.round],
+        [paintMeta, data.meta],
+        [paintRounds, data.rounds, data.round],
+        [paintTodo, data.stations, data.round],
+        [paintPackets, data.packets],
+        [paintStations, data.stations, data.round],
+        [paintOutbox, data.outbox]
+      ];
+      blocks.forEach(function (one) {
+        try {
+          one[0].apply(null, one.slice(1));
+        } catch (e) {
+          showErr("有一块没画出来：" + ((e && e.message) || e));
+        }
+      });
       if (state.thread) openThread(state.thread);
     });
   };
@@ -430,7 +440,8 @@ a{color:inherit}
       var kind = cell(tr, p.kind === "cq" ? "喊到" : (p.kind === "u" ? "确认" : p.kind));
       kind.className = "k " + p.kind;
       cell(tr, p.msg_grid || p.grid || "", "mono");
-      cell(tr, (p.via === "rf" ? "射频" : "网络") + (p.digi && p.digi.length ? " " + p.digi.join(" → ") : ""));
+      cell(tr, (p.via === "rf" ? "射频" : "网络") +
+            ((p.digi && p.digi.length) ? " " + p.digi.join(" → ") : ""));
       var textCell = cell(tr, p.text || "", "mono");
       var ops = cell(tr);
       var add = document.createElement("button");
