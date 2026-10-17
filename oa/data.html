@@ -91,6 +91,24 @@
 .st-cert { margin-left: auto; color: var(--hot); font-size: 14px; border-bottom: 1px dotted currentColor; }
 .st-cert:hover, .st-cert:focus-visible { color: var(--hot-deep); }
 \.oa-actions a.oa-btn { opacity: 1; }
+/* 首屏那四个数字：一格一个，数字大、标签小，细线分开 */
+.oa-stats { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 34px 0 0; border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line); }
+.oa-stats li { padding: 20px 16px 22px; border-left: 1px solid var(--line); }
+.oa-stats li:first-child { border-left: 0; padding-left: 0; }
+.oa-stats b { display: block; font-size: clamp(32px, 5.6vw, 54px); font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.oa-stats span { display: block; margin-top: 12px; font-size: 13.5px; color: var(--text-faint); }
+.oa-stamp { margin-top: 14px; font-size: 14px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.oa-stamp b { font-weight: 400; color: var(--text-dim); }
+/* 名单那一节顶上那一行：切轮次在左，下载按钮在右，窄屏自己换行 */
+.oa-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 18px; }
+.oa-tools .oa-switch { margin-bottom: 0; }
+.oa-tools .oa-actions { margin-top: 0; }
+@media (max-width: 640px) {
+  .oa-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .oa-stats li { border-top: 1px solid var(--line); padding: 16px 14px; }
+  .oa-stats li:nth-child(-n+2) { border-top: 0; }
+  .oa-stats li:nth-child(odd) { border-left: 0; padding-left: 0; }
+}
 /* 网格图：一张世界网格地图，180×180 个 4 位格子，有签到的格子点亮 */
 .oa-grid { margin: 26px 0 4px; }
 .gc-map { margin: 26px 0 24px; border: 1px solid var(--line-strong); }
@@ -137,13 +155,13 @@
     <p class="oa-lang"><strong>中文</strong><a href="en/data.html" hreflang="en" lang="en">English</a></p>
     <p class="oa-kicker">APRSNETCN OA · 数据面板</p>
     <h1 class="oa-title">数据面板</h1>
-    <ul class="fact-list">
-      <li><b>轮次</b><span data-oa-stat="rounds">0</span></li>
-      <li><b>最新一轮台站</b><span data-oa-stat="latest">0</span></li>
-      <li><b>各轮台站合计</b><span data-oa-stat="stations">0</span></li>
-      <li><b>走射频的</b><span data-oa-stat="rf">0</span></li>
-      <li><b>名单最后更新</b><span data-oa-stat="updated">—</span></li>
+    <ul class="oa-stats">
+      <li><b data-oa-stat="rounds">0</b><span>轮次</span></li>
+      <li><b data-oa-stat="latest">0</b><span>最新一轮台站</span></li>
+      <li><b data-oa-stat="stations">0</b><span>各轮台站合计</span></li>
+      <li><b data-oa-stat="rf">0</b><span>走射频的</span></li>
     </ul>
+    <p class="oa-stamp">名单最后更新 <b data-oa-stat="updated">—</b></p>
     <div class="oa-actions">
       <a class="btn btn-ghost oa-btn" href="./">回到活动页</a>
     </div>
@@ -156,13 +174,15 @@
     <p>每台下面写着网格、路径与时间。名单每周换一轮。</p>
   </div>
   <div class="section-body">
-    <div class="oa-switch" id="oaSwitch" hidden>
-      <label for="oaRound">看哪一轮</label>
-      <select id="oaRound"></select>
-    </div>
-    <div class="oa-actions">
-      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">下载签到表 PNG</a>
-      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">下载网格表 PNG</a>
+    <div class="oa-tools">
+      <div class="oa-switch" id="oaSwitch" hidden>
+        <label for="oaRound">看哪一轮</label>
+        <select id="oaRound"></select>
+      </div>
+      <div class="oa-actions">
+        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">下载签到表 PNG</a>
+        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">下载网格表 PNG</a>
+      </div>
     </div>
     <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-cert-label="奖状" data-image-base="https://oa.aprsnet.cn/api/" data-label-grid="网格" data-label-path="路径" data-label-at="时间" data-label-packets="报文" data-label-msg="消息" data-status-called="只喊到" data-status-acked="已回 ACK" data-status-confirmed="已确认" data-path-rf="射频" data-path-is="网络" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
       <li>

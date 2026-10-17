@@ -91,6 +91,24 @@
 .st-cert { margin-left: auto; color: var(--hot); font-size: 14px; border-bottom: 1px dotted currentColor; }
 .st-cert:hover, .st-cert:focus-visible { color: var(--hot-deep); }
 \.oa-actions a.oa-btn { opacity: 1; }
+/* 首屏那四个数字：一格一个，数字大、标签小，细线分开 */
+.oa-stats { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 34px 0 0; border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line); }
+.oa-stats li { padding: 20px 16px 22px; border-left: 1px solid var(--line); }
+.oa-stats li:first-child { border-left: 0; padding-left: 0; }
+.oa-stats b { display: block; font-size: clamp(32px, 5.6vw, 54px); font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.oa-stats span { display: block; margin-top: 12px; font-size: 13.5px; color: var(--text-faint); }
+.oa-stamp { margin-top: 14px; font-size: 14px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.oa-stamp b { font-weight: 400; color: var(--text-dim); }
+/* 名单那一节顶上那一行：切轮次在左，下载按钮在右，窄屏自己换行 */
+.oa-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 18px; }
+.oa-tools .oa-switch { margin-bottom: 0; }
+.oa-tools .oa-actions { margin-top: 0; }
+@media (max-width: 640px) {
+  .oa-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .oa-stats li { border-top: 1px solid var(--line); padding: 16px 14px; }
+  .oa-stats li:nth-child(-n+2) { border-top: 0; }
+  .oa-stats li:nth-child(odd) { border-left: 0; padding-left: 0; }
+}
 /* 网格图：一张世界网格地图，180×180 个 4 位格子，有签到的格子点亮 */
 .oa-grid { margin: 26px 0 4px; }
 .gc-map { margin: 26px 0 24px; border: 1px solid var(--line-strong); }
@@ -137,13 +155,13 @@
     <p class="oa-lang"><a href="../data.html" hreflang="zh-CN" lang="zh-CN">中文</a><strong>English</strong></p>
     <p class="oa-kicker">APRSNETCN OA · data panel</p>
     <h1 class="oa-title">Data panel</h1>
-    <ul class="fact-list">
-      <li><b>Rounds</b><span data-oa-stat="rounds">0</span></li>
-      <li><b>Stations in the newest round</b><span data-oa-stat="latest">0</span></li>
-      <li><b>Stations across all rounds</b><span data-oa-stat="stations">0</span></li>
-      <li><b>Over RF</b><span data-oa-stat="rf">0</span></li>
-      <li><b>Roster last updated</b><span data-oa-stat="updated">—</span></li>
+    <ul class="oa-stats">
+      <li><b data-oa-stat="rounds">0</b><span>Rounds</span></li>
+      <li><b data-oa-stat="latest">0</b><span>Newest round</span></li>
+      <li><b data-oa-stat="stations">0</b><span>All rounds</span></li>
+      <li><b data-oa-stat="rf">0</b><span>Over RF</span></li>
     </ul>
+    <p class="oa-stamp">Roster last updated <b data-oa-stat="updated">—</b></p>
     <div class="oa-actions">
       <a class="btn btn-ghost oa-btn" href="../">Back to the net page</a>
     </div>
@@ -156,13 +174,15 @@
     <p>Every station carries its grid, path and time. The roster is renewed every round.</p>
   </div>
   <div class="section-body">
-    <div class="oa-switch" id="oaSwitch" hidden>
-      <label for="oaRound">Round</label>
-      <select id="oaRound"></select>
-    </div>
-    <div class="oa-actions">
-      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">Download check-in table (PNG)</a>
-      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">Download grid table (PNG)</a>
+    <div class="oa-tools">
+      <div class="oa-switch" id="oaSwitch" hidden>
+        <label for="oaRound">Round</label>
+        <select id="oaRound"></select>
+      </div>
+      <div class="oa-actions">
+        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">Download check-in table (PNG)</a>
+        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">Download grid table (PNG)</a>
+      </div>
     </div>
     <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-cert-label="Certificate" data-image-base="https://oa.aprsnet.cn/api/" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
