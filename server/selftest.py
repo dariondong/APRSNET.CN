@@ -159,39 +159,58 @@ def main():
         roster = store.roster()
         check("只有一轮", len(roster["rounds"]), 1)
         check("没填那几行字时元数据都是空的", roster["meta"],
-              {"subtitleZh": "", "subtitleEn": "",
+              {"code": "", "nameZh": "", "nameEn": "",
+               "subtitleZh": "", "subtitleEn": "",
                "explainZh": "", "explainEn": "", "opName": ""})
-        store.set_setting("subtitle_zh", " 周六空中签到 ")
-        store.set_setting("subtitle_en", "Saturday check-in")
+        check("编号只收数字字母", store.set_setting("activity_code", " #26-10 17ab "), "261017ab")
+        store.set_setting("activity_name_zh", " 测试轮次 ")
+        store.set_setting("activity_name_en", "Test round")
         store.set_setting("explain_zh", "北京时间周六整天")
         store.set_setting("explain_en", "All day Saturday, Beijing time")
         store.set_setting("op_name", "达里安")
         meta = store.roster()["meta"]
-        check("副标题、解释标题与主控昵称跟着名单发出去",
-              (meta["subtitleZh"], meta["subtitleEn"], meta["explainZh"],
-               meta["explainEn"], meta["opName"]),
-              ("周六空中签到", "Saturday check-in", "北京时间周六整天",
-               "All day Saturday, Beijing time", "达里安"))
+        check("副标题由编号与名称拼出来", (meta["subtitleZh"], meta["subtitleEn"]),
+              ("#261017ab 测试轮次", "#261017ab Test round"))
+        check("名单顶上带着编号", store.roster()["code"], "261017ab")
+        check("名称、解释标题与昵称跟着名单发出去",
+              (meta["nameZh"], meta["explainZh"], meta["opName"]),
+              ("测试轮次", "北京时间周六整天", "达里安"))
+        check("旧副标题拆成编号与名称", oa_store.split_headline("#261017 测试轮次"),
+              ("261017", "测试轮次"))
+        check("没编号就把整行当名称", oa_store.split_headline("测试轮次"), ("", "测试轮次"))
+        legacy_dir = os.path.join(tempfile.mkdtemp(), "legacy")
+        old = oa_store.Store(legacy_dir)
+        old._put_setting("subtitle_zh", "#261017 测试轮次")
+        old._put_setting("subtitle_en", "Test round")
+        old.db.commit()
+        old.close()
+        reopened = oa_store.Store(legacy_dir)
+        check("老库那行副标题拆完编号还在", reopened.meta()["code"], "261017")
+        check("老库拆完副标题照旧", reopened.meta()["subtitleZh"], "#261017 测试轮次")
+        check("老库英文名称也拆下来了", reopened.meta()["nameEn"], "Test round")
+        reopened.close()
         store.set_setting("op_name", "")
         check("抹掉就是不显示", store.meta()["opName"], "")
         # 改过的每一行都记一条，新的在前；抹成空、动开关都不记
         store.set_setting("explain_zh", "周六在空中")
         log = store.meta_history(50)
-        check("改一行记一条", len(log), 6)
+        check("改一行记一条", len(log), 7)
         check("新的在前", log[0]["value"], "周六在空中")
         check("换成新的一句后旧那句还在",
               [r["value"] for r in log if r["key"] == "explain_zh"],
               ["周六在空中", "北京时间周六整天"])
         store.set_setting("explain_zh", "")
         store.set_setting("auto", "1")
-        check("抹成空与开关不记", len(store.meta_history(50)), 6)
+        check("抹成空与开关不记", len(store.meta_history(50)), 7)
         check("解释标题抹掉就是空串", store.meta()["explainZh"], "")
         # 后面还要比「写出来的名单与内存里的是同一份」，先把几件改回空的
-        store.set_setting("subtitle_zh", "")
-        store.set_setting("subtitle_en", "")
+        store.set_setting("activity_code", "")
+        store.set_setting("activity_name_zh", "")
+        store.set_setting("activity_name_en", "")
         store.set_setting("explain_en", "")
         check("几件都抹掉后元数据回到空", store.meta(),
-              {"subtitleZh": "", "subtitleEn": "",
+              {"code": "", "nameZh": "", "nameEn": "",
+               "subtitleZh": "", "subtitleEn": "",
                "explainZh": "", "explainEn": "", "opName": ""})
         rnd = roster["rounds"][0]
         check("轮次日期是周六", oa_store.round_date_of(records[0]["ts"]) == rnd["date"], True)

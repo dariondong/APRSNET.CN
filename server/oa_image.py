@@ -233,17 +233,18 @@ def _wrap_tight(draw, text, face, width, limit=2):
     return lines
 
 
-def _footer(draw, height, words, extra=""):
-    """脚注：左边是出处与生成时间，右边是站名。
+def _footer(draw, height, words, extra="", code=""):
+    """脚注：左边是出处与生成时间，右边是站名加活动编号。
 
-    一行装不下就折成两行，站名始终贴着最后一行的右端，两段文字都留着。
+    一行装不下就折成两行，右边那段始终贴着最后一行的右端，两段文字都留着。
+    编号跟着图走：纸上只剩这一张图的时候，靠「#261017」就能找回这一场。
     """
     small = font(22)
     left = "%s · %s %s（北京时间）" % (words["foot"], words["gen"],
                                   datetime.now(BJ).strftime("%Y-%m-%d %H:%M"))
     if extra:
         left = left + " · " + extra
-    mark = "aprsnet.cn/oa"
+    mark = "aprsnet.cn/oa" + ((" · #%s" % code) if code else "")
     mark_w = draw.textlength(mark, font=small)
     y = height - 62
     room = WIDTH - PAD * 2 - mark_w - 28
@@ -468,7 +469,8 @@ def render_board(row, note="", lang="zh", meta=None):
                     draw.text((xs[j], y + k * 29), part, font=face, fill=fill)
             else:
                 draw.text((xs[j], y), _clip(draw, cell, face, clips[j]), font=face, fill=fill)
-    _footer(draw, height, words, words["count"] % len(stations))
+    _footer(draw, height, words, words["count"] % len(stations),
+            str((meta or {}).get("code") or "").strip())
     return _png(image)
 
 
@@ -606,7 +608,8 @@ def render_grid(row, note="", lang="zh", meta=None):
                 draw.text((PAD + 150, y + i * 34), line, font=small, fill=GREY)
             y += 44 + 34 * (len(lines) - 1)
 
-    _footer(draw, height, words, words["count"] % len(row.get("stations") or []))
+    _footer(draw, height, words, words["count"] % len(row.get("stations") or []),
+            str((meta or {}).get("code") or "").strip())
     return _png(image)
 
 
@@ -660,7 +663,7 @@ def render_cert(row, station, note="", lang="zh", meta=None):
         y += 48 + 34 * (len(lines) - 1)
         draw.line([PAD, y, WIDTH - PAD, y], fill=LINE, width=1)
 
-    _footer(draw, height, words)
+    _footer(draw, height, words, code=str((meta or {}).get("code") or "").strip())
     return _png(image)
 
 
@@ -674,7 +677,8 @@ if __name__ == "__main__":                              # 手边看一眼：pyth
         {"call": "BH4HGA-9", "grid": "", "via": "is", "digi": [], "at": "10-17 09:26",
          "status": "called"},
     ]}
-    meta = {"subtitle": "测试轮次", "explain": "北京时间周六整天的空中签到"}
+    meta = {"code": "261017", "subtitle": "#261017 测试轮次",
+            "explain": "北京时间周六整天的空中签到"}
     shots = [("board", render_board(demo, note="测试轮次", meta=meta)),
              ("grid", render_grid(demo, note="测试轮次", meta=meta)),
              ("cert", render_cert(demo, demo["stations"][0], note="测试轮次", meta=meta))]

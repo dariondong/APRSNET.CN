@@ -1067,7 +1067,7 @@ class Handler(BaseHTTPRequestHandler):
             exp = meta.get("explainEn") or meta.get("explainZh") or ""
         else:
             sub, exp = meta.get("subtitleZh") or "", meta.get("explainZh") or ""
-        return {"subtitle": sub, "explain": exp}
+        return {"code": meta.get("code") or "", "subtitle": sub, "explain": exp}
 
     def _oa_image(self):
         """拿画图那份模块；没装 Pillow 就回 503 并给 None。"""

@@ -19,6 +19,36 @@ from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 BJ = timezone(timedelta(hours=8))
 
+# 活动编号：只留数字字母，最多 16 位。整个活动就靠这一串溯源。
+CODE_MAX = 16
+_CODE_JUNK = re.compile(r"[^0-9A-Za-z]")
+# 副标题写成「#编号 名称」：编号在前，名称在后（名称里可以有空格）
+HEAD_RE = re.compile(r"^\s*#\s*([0-9A-Za-z][0-9A-Za-z._-]*)\s*(.*)$", re.S)
+
+
+def clean_code(text):
+    """活动编号归一：去掉前面的 # 与所有非数字字母，超长的切掉。"""
+    return _CODE_JUNK.sub("", str(text or "").strip())[:CODE_MAX]
+
+
+def headline(code, name):
+    """副标题就是把编号与名称拼起来，没编号就只剩名称。"""
+    parts = []
+    if code:
+        parts.append("#%s" % code)
+    if name:
+        parts.append(name)
+    return " ".join(parts)
+
+
+def split_headline(text):
+    """把旧的副标题「#编号 名称」拆回两半；认不出编号就把整行当名称。"""
+    found = HEAD_RE.match(str(text or ""))
+    if not found:
+        return "", str(text or "").strip()
+    return clean_code(found.group(1)), found.group(2).strip()
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS packets (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -256,6 +286,17 @@ class Store(object):
         for name in ("msgid", "acked"):
             if name not in ocols:
                 self.db.execute("ALTER TABLE outbox ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
+        # 副标题原本是一整行「#编号 名称」，现在拆成编号与名称两项：拆一次，以后就只读新的
+        st = dict((r["key"], r["value"]) for r in
+                  self.db.execute("SELECT key, value FROM settings").fetchall())
+        if not clean_code(st.get("activity_code") or ""):
+            code_zh, name_zh = split_headline(st.get("subtitle_zh") or "")
+            code_en, name_en = split_headline(st.get("subtitle_en") or "")
+            code = code_zh or code_en
+            if code or name_zh or name_en:
+                self._put_setting("activity_code", code)
+                self._put_setting("activity_name_zh", name_zh)
+                self._put_setting("activity_name_en", name_en or name_zh)
 
     def close(self):
         with self.lock:
@@ -739,8 +780,11 @@ class Store(object):
                 "call": rnd["duty"],
                 "stations": stations,
             })
+        meta = self.meta()
         return {"updated": (out[0]["updated"] or None) if out else None,
-                "meta": self.meta(), "rounds": out}
+                # 顶上也放一份编号：拿到名单、拿到一张图，都先看这一串对不对得上这一场
+                "code": meta["code"],
+                "meta": meta, "rounds": out}
 
     def write_roster(self, path):
         """把名单写到磁盘上（给静态站或备份用），没有变化就不动文件。"""
@@ -823,6 +867,7 @@ class Store(object):
         stations = self.stations(date)
         packets = self.round_packets(date)
         data = {
+            "activity": self.meta(),
             "date": date,
             "duty": row["duty"],
             "opened": row["opened"],
@@ -939,6 +984,8 @@ class Store(object):
 
     def set_setting(self, key, value):
         value = str(value)
+        if key == "activity_code":
+            value = clean_code(value)
         with self.lock:
             row = self.db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
             old = row["value"] if row else ""
@@ -954,6 +1001,13 @@ class Store(object):
             self.db.commit()
         return value
 
+    def _put_setting(self, key, value):
+        """只写不改历史：老库迁移时补上编号与名称，不往 meta_log 里塞一条假的「改过」。"""
+        self.db.execute(
+            "INSERT INTO settings (key,value,ts) VALUES (?,?,?)"
+            " ON CONFLICT(key) DO UPDATE SET value=excluded.value, ts=excluded.ts",
+            (key, str(value), now_iso()))
+
     def settings(self):
         with self.lock:
             rows = self.db.execute("SELECT key, value FROM settings").fetchall()
@@ -961,21 +1015,28 @@ class Store(object):
 
     # ---- 页面上那几行字（主控自己在操作台上填，跟着名单一起发出去） ----
 
-    # 副标题、解释标题各两语一条，主控昵称一条。空串就是「没填」，页面留在自己那句上。
-    META_KEYS = ("subtitle_zh", "subtitle_en",
+    # 活动编号一项、活动名称两语各一条、解释标题两语各一条、主控昵称一条。
+    # 副标题不再单独存：它由编号与名称拼出来（见 headline）。
+    META_KEYS = ("activity_code", "activity_name_zh", "activity_name_en",
                  "explain_zh", "explain_en", "op_name")
 
     def meta(self):
-        """活动页抬头那几行字：副标题（中 / 英）、解释标题（中 / 英）、主控昵称。
+        """活动页抬头那几行字：副标题（编号 + 名称）、解释标题、主控昵称。
 
-        为什么不塞进 `rounds` 里：它们不随周更换，换一轮也不用重填 —— 副标题是这场
-        活动叫什么副题，解释标题是副题底下一句更小的说明，昵称是这个主控叫什么。
+        副标题是拼的：编号是这场活动的唯一标识，印在签到表与奖状的抬头和犄角上，
+        凭「#261017」就能找回这一场。名称中英各一句，英文空着就用中文那句。
         放在 settings 表里，跟 auto 那几个开关同一处，页面上当名单的 meta 一起发出去。
         """
         st = self.settings()
+        code = clean_code(st.get("activity_code") or "")
+        name_zh = (st.get("activity_name_zh") or "").strip()
+        name_en = (st.get("activity_name_en") or "").strip() or name_zh
         return {
-            "subtitleZh": (st.get("subtitle_zh") or "").strip(),
-            "subtitleEn": (st.get("subtitle_en") or "").strip(),
+            "code": code,
+            "nameZh": name_zh,
+            "nameEn": name_en,
+            "subtitleZh": headline(code, name_zh),
+            "subtitleEn": headline(code, name_en),
             "explainZh": (st.get("explain_zh") or "").strip(),
             "explainEn": (st.get("explain_en") or "").strip(),
             "opName": (st.get("op_name") or "").strip(),
