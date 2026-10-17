@@ -27,8 +27,7 @@
    字段名、路径的两种写法、空状态、「最后更新」的前缀都从页面的 data-* 上取，中英两页共用这份脚本。
 
    页面上的 [data-oa-stat] 是数据面板上那几个数字：rounds = 轮次，latest = 最新一轮台站，
-   stations = 各轮台站合计，rf = 走射频的，digis = 用过的中继（去重），
-   updated = 名单最后更新的日期。
+   stations = 各轮台站合计，rf = 走射频的，updated = 名单最后更新的日期。
    活动页没有这些位子，什么也不做。
 
    取不到、不是合法 JSON、一轮都没有时页面一动不动，留着 HTML 里写好的那条空状态。
@@ -413,27 +412,18 @@
     var slots = document.querySelectorAll("[data-oa-stat]");
     if (!slots.length) return;
     var total = 0, rf = 0, updated = "";
-    var digiSet = [];
-    var countDigis = function (s) {
-      var chain = (s && Array.isArray(s.digi)) ? s.digi : [];
-      chain.forEach(function (d) {
-        var name = String(d == null ? "" : d).trim();
-        if (name && digiSet.indexOf(name) < 0) digiSet.push(name);
-      });
-    };
     rounds.forEach(function (r) {
       var st = (r && Array.isArray(r.stations)) ? r.stations : [];
       total += st.length;
       st.forEach(function (s) {
         if (s && s.via === "rf") rf += 1;
-        countDigis(s);
       });
       if (!updated && r && r.updated) updated = String(r.updated);
       if (!updated && r && r.date) updated = String(r.date);
     });
     var latest = (rounds[0] && Array.isArray(rounds[0].stations)) ? rounds[0].stations.length : 0;
-    var keys = ["rounds", "latest", "stations", "rf", "digis", "updated"];
-    var vals = [rounds.length, latest, total, rf, digiSet.length, updated];
+    var keys = ["rounds", "latest", "stations", "rf", "updated"];
+    var vals = [rounds.length, latest, total, rf, updated];
     Array.prototype.forEach.call(slots, function (el) {
       var i = keys.indexOf(el.getAttribute("data-oa-stat"));
       if (i < 0) return;
