@@ -442,8 +442,43 @@
     });
   };
 
-  /* 数据面板上的网格表：一个网格一行，后面跟着这一格里的呼号。页面上没有这个位子就跳过。 */
+  /* 数据面板上的网格图：一个 field 一张 10×10 的格网，100 个格子全画出来，
+     有签到的格子点亮，下面按格子列出呼号。页面上没有这个位子就跳过。 */
   var gridBox = document.getElementById("oaGrid");
+
+  /* 网格按前 4 位算：OL62AA 与 OL62CQ 都是 OL62。认不出的原样留着。 */
+  var gridCell = function (grid) {
+    var text = String(grid == null ? "" : grid).trim().toUpperCase();
+    if (!text) return "";
+    var hit = /^([A-R]{2}[0-9]{2})/.exec(text);
+    return hit ? hit[1] : text;
+  };
+
+  var drawField = function (field, lit) {
+    var box = document.createElement("div");
+    box.className = "gc-field";
+    var name = document.createElement("b");
+    name.className = "gc-name";
+    name.textContent = field;
+    box.appendChild(name);
+    var cells = document.createElement("div");
+    cells.className = "gc-cells";
+    for (var lat = 9; lat >= 0; lat--) {            /* 纬度位从 9 排到 0，上北下南 */
+      for (var lon = 0; lon < 10; lon++) {          /* 经度位从 0 排到 9，向右为东 */
+        var code = field + lon + lat;
+        var cell = document.createElement("i");
+        cell.className = "gc-cell";
+        cell.textContent = code;
+        if (lit[code]) {
+          cell.className = "gc-cell is-lit";
+          cell.setAttribute("title", lit[code].join(" · "));
+        }
+        cells.appendChild(cell);
+      }
+    }
+    box.appendChild(cells);
+    return box;
+  };
 
   var fillGrid = function (round) {
     if (!gridBox) return;
@@ -453,7 +488,7 @@
     stations.forEach(function (st) {
       var call = String(st && st.call != null ? st.call : "").trim();
       if (!call) return;
-      var grid = String(st && st.grid != null ? st.grid : "").trim().toUpperCase() || "\u2014";
+      var grid = gridCell(st && st.grid) || "—";
       if (!groups[grid]) { groups[grid] = []; order.push(grid); }
       groups[grid].push(call);
     });
@@ -461,27 +496,42 @@
     var frag = document.createDocumentFragment();
     if (!order.length) {
       if (!emptyTitle && !emptyNote) return;      /* 没有可写的占位文案：宁可让页面保持原样 */
-      var alone = document.createElement("li");
-      var title = document.createElement("b");
-      title.textContent = emptyTitle || "\u2014";
-      alone.appendChild(title);
-      if (emptyNote) {
-        var note = document.createElement("span");
-        note.textContent = emptyNote;
-        alone.appendChild(note);
-      }
+      var alone = document.createElement("p");
+      alone.className = "prose";
+      alone.textContent = emptyTitle || "—";
       frag.appendChild(alone);
+      if (emptyNote) {
+        var extra = document.createElement("p");
+        extra.className = "prose";
+        extra.textContent = emptyNote;
+        frag.appendChild(extra);
+      }
+    } else {
+      var fields = [];
+      var byField = {};
+      order.forEach(function (grid) {
+        if (!/^[A-R]{2}[0-9]{2}$/.test(grid)) return;   /* 认不出的网格只进下面那份清单 */
+        var field = grid.slice(0, 2);
+        if (!byField[field]) { byField[field] = {}; fields.push(field); }
+        byField[field][grid] = groups[grid];
+      });
+      fields.forEach(function (field) {
+        frag.appendChild(drawField(field, byField[field]));
+      });
+      var legend = document.createElement("ul");
+      legend.className = "fact-list";
+      order.forEach(function (grid) {
+        var li = document.createElement("li");
+        var b = document.createElement("b");
+        b.textContent = grid;
+        var span = document.createElement("span");
+        span.textContent = groups[grid].join(" · ");
+        li.appendChild(b);
+        li.appendChild(span);
+        legend.appendChild(li);
+      });
+      frag.appendChild(legend);
     }
-    order.forEach(function (grid) {
-      var li = document.createElement("li");
-      var b = document.createElement("b");
-      b.textContent = grid;
-      var span = document.createElement("span");
-      span.textContent = groups[grid].join(" \u00b7 ");
-      li.appendChild(b);
-      li.appendChild(span);
-      frag.appendChild(li);
-    });
     gridBox.textContent = "";
     gridBox.appendChild(frag);
   };
