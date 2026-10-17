@@ -13,6 +13,7 @@ fonts-wqy-zenhei 之类的中文字体。
 配色照站点：纸白 #f2f0ea、墨 #15181c、灰 #6f7680、那一点红 #b3141f。
 """
 import io
+import re
 from datetime import datetime, timezone, timedelta
 
 PAPER = (242, 240, 234)
@@ -36,7 +37,6 @@ TEXT = {
     "zh": {
         "board": "APRSNETCN OA 签到表",
         "grid": "APRSNETCN OA 网格表",
-        "grid_cols": ("网格", "呼号", "台数"),
         "cert": "参与证书",
         "cert_line": "%s 在 %s 这一轮的 APRSNETCN OA 活动里签到。",
         "cert_cols": ("网格", "路径", "时间"),
@@ -48,6 +48,7 @@ TEXT = {
         "status": {"called": "只喊到", "acked": "已回 ACK", "confirmed": "已确认"},
         "empty": "这一轮还没有台站",
         "gridless": "（没有格子）",
+        "lit": "有签到的格子",
         "count": "共 %d 台",
         "foot": "数据取自轮值台收到的报文",
         "gen": "生成",
@@ -55,7 +56,6 @@ TEXT = {
     "en": {
         "board": "APRSNETCN OA check-in table",
         "grid": "APRSNETCN OA grid table",
-        "grid_cols": ("Grid", "Callsigns", "Stations"),
         "cert": "Certificate of participation",
         "cert_line": "%s checked in on %s during the APRSNETCN OA activity.",
         "cert_cols": ("Grid", "Path", "Time"),
@@ -67,6 +67,7 @@ TEXT = {
         "status": {"called": "Called", "acked": "ACKed", "confirmed": "Confirmed"},
         "empty": "No station in this round yet",
         "gridless": "(no grid)",
+        "lit": "Squares with a check-in",
         "count": "%d station(s)",
         "foot": "The figures come from the messages the duty station received",
         "gen": "Generated",
@@ -237,60 +238,124 @@ def render_board(row, note="", lang="zh"):
     return _png(image)
 
 
+GRID4 = re.compile(r"^([A-R]{2}[0-9]{2})")
+
+CELL_W = 88                                   # 格网上一个格子的宽与高
+CELL_H = 46
+AXIS_W = 34
+AXIS_H = 28
+FIELD_GAP = 34
+
+
+def grid_cell(grid):
+    """把报出来的网格收成 4 位那一格：OL62AA 与 ol62cq 都是 OL62。认不出的原样留着。"""
+    text = str(grid or "").strip().upper()
+    if not text:
+        return ""
+    hit = GRID4.match(text)
+    return hit.group(1) if hit else text
+
+
 def grid_groups(row):
-    """把这一轮的台站按网格归拢：[(网格, [呼号…]), …]，网格从 A 排到 Z，没网格的排最后。"""
+    """按 4 位那一格归拢：[(网格, [呼号…]), …]，格子按字母序，没写网格的收在最后。"""
     groups = {}
     for station in row.get("stations") or []:
         call = (station.get("call") or "").strip()
         if call:
-            key = (station.get("grid") or "").strip().upper() or "\u2014"
+            key = grid_cell(station.get("grid")) or "—"
             groups.setdefault(key, []).append(call)
-    return sorted(groups.items(), key=lambda item: (item[0] == "\u2014", item[0]))
+    return sorted(groups.items(), key=lambda item: (item[0] == "—", item[0]))
+
+
+def grid_fields(groups):
+    """按 field 分成一张张格网：[(OL, {(经度位, 纬度位): [呼号…]}), …]。"""
+    order = {}
+    out = []
+    for grid, calls in groups:
+        if len(grid) == 4 and grid[:2].isalpha() and grid[2:].isdigit():
+            field = grid[:2]
+            if field not in order:
+                order[field] = {}
+                out.append((field, order[field]))
+            order[field].setdefault((int(grid[2]), int(grid[3])), []).extend(calls)
+    return out
+
+
+def _chart(draw, x, y, field, cells):
+    """一张 field 的 10×10 格网：100 个格子全画出来，有签到的填红。返回这张图的底边。"""
+    name = font(28)
+    label = font(20)
+    code_face = font(21)
+    draw.text((x, y), field, font=name, fill=INK)
+    top = y + 44
+    for lat in range(9, -1, -1):                    # 纬度位从 9 排到 0，上北下南
+        for lon in range(0, 10):                    # 经度位从 0 排到 9，向右为东
+            cx = x + AXIS_W + lon * CELL_W
+            cy = top + (9 - lat) * CELL_H
+            code = "%s%d%d" % (field, lon, lat)
+            lit = cells.get((lon, lat))
+            box = [cx, cy, cx + CELL_W - 2, cy + CELL_H - 2]
+            if lit:
+                draw.rectangle(box, fill=HOT)
+                fill = (255, 255, 255)
+            else:
+                draw.rectangle(box, outline=LINE, width=1)
+                fill = GREY
+            words = draw.textbbox((0, 0), code, font=code_face)
+            draw.text((cx + (CELL_W - 2 - (words[2] - words[0])) / 2.0 - words[0],
+                       cy + (CELL_H - 2 - (words[3] - words[1])) / 2.0 - words[1]),
+                      code, font=code_face, fill=fill)
+        draw.text((x + AXIS_W - 10 - draw.textlength(str(lat), font=label),
+                   top + (9 - lat) * CELL_H + 12), str(lat), font=label, fill=GREY)
+    base = top + 10 * CELL_H
+    for lon in range(0, 10):
+        cx = x + AXIS_W + lon * CELL_W
+        draw.text((cx + (CELL_W - 2 - draw.textlength(str(lon), font=label)) / 2.0, base + 6),
+                  str(lon), font=label, fill=GREY)
+    return base + AXIS_H
 
 
 def render_grid(row, note="", lang="zh"):
-    """网格表：一个网格一行，列是网格 / 呼号 / 台数。"""
+    """网格表：一 field 一张 10×10 的格网，格子全画出来，有签到的填红；下面跟着呼号。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
     groups = grid_groups(row)
-    stations = row.get("stations") or []
+    fields = grid_fields(groups)
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+    small = font(24)
+    legend = []
+    for grid, calls in groups:
+        lines = _wrap(probe, " · ".join(calls), small, WIDTH - PAD * 2 - 150) or [""]
+        legend.append((grid, lines))
+
     top = 218
-    row_h = 62
-    height = max(560, top + 76 + row_h * max(len(groups), 1) + 110)
+    legend_h = 0
+    if legend:
+        legend_h = 46 + sum(44 + 34 * (len(lines) - 1) for _, lines in legend)
+    chart_h = (44 + 10 * CELL_H + AXIS_H + FIELD_GAP) * len(fields) - FIELD_GAP if fields else 0
+    height = max(560, top + chart_h + (34 if fields and legend else 0) + legend_h + 110)
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
     _head(draw, words["grid"], _subtitle(row, note, words), note)
 
-    heads = font(23)
-    body = font(27)
-    small = font(24)
-    xs = (72, 260)
-    clips = (150, 640)
-    for x, name in zip(xs, words["grid_cols"]):
-        draw.text((x, top), name, font=heads, fill=GREY)
-    # 台数一列右对齐收在版心里（英文的 Stations 比数字宽得多）
-    draw.text((WIDTH - PAD - draw.textlength(words["grid_cols"][2], font=heads), top),
-              words["grid_cols"][2], font=heads, fill=GREY)
-    draw.line([PAD, top + 40, WIDTH - PAD, top + 40], fill=INK, width=2)
+    y = top
+    for field, cells in fields:
+        y = _chart(draw, PAD, y, field, cells) + FIELD_GAP
+    if fields:
+        y += 34 - FIELD_GAP
 
     if not groups:
-        draw.text((PAD, top + 78), words["empty"], font=body, fill=GREY)
-    rows = []
-    for grid, calls in groups:
-        lines = _wrap(draw, " \u00b7 ".join(calls), small, clips[1]) or [""]
-        rows.append((grid, lines, len(calls)))
-    y = top + 66
-    for i, (grid, lines, count) in enumerate(rows):
-        box_h = row_h + 34 * (len(lines) - 1)
-        if i % 2 == 1:                                  # 隔一行铺一层极淡的底，读起来不串行
-            draw.rectangle([PAD - 12, y - 12, WIDTH - PAD + 12, y + box_h - 20], fill=(238, 235, 228))
-        draw.text((xs[0], y), _clip(draw, grid, body, clips[0]), font=body, fill=INK)
-        for j, line in enumerate(lines):
-            draw.text((xs[1], y + j * 34), line, font=small, fill=INK)
-        draw.text((WIDTH - PAD - draw.textlength(str(count), font=small), y),
-                  str(count), font=small, fill=GREY)
-        y += box_h
-    _footer(draw, height, words, words["count"] % len(stations))
+        draw.text((PAD, top + 78), words["empty"], font=font(27), fill=GREY)
+    elif legend:
+        draw.text((PAD, y), words["lit"], font=font(24), fill=GREY)
+        y += 46
+        for grid, lines in legend:
+            draw.text((PAD, y), grid, font=font(27), fill=INK)
+            for i, line in enumerate(lines):
+                draw.text((PAD + 150, y + i * 34), line, font=small, fill=GREY)
+            y += 44 + 34 * (len(lines) - 1)
+
+    _footer(draw, height, words, words["count"] % len(row.get("stations") or []))
     return _png(image)
 
 
