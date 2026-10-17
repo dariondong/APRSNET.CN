@@ -1059,6 +1059,16 @@ class Handler(BaseHTTPRequestHandler):
             note = self.rt.conf.get("OA_TEST_NOTE_EN") or note
         return note
 
+    def _meta_text(self, lang):
+        """页面上那两行字：副标题与解释标题，按语言取，英文空着就沿用中文那句。"""
+        meta = self.rt.store.meta()
+        if lang == "en":
+            sub = meta.get("subtitleEn") or meta.get("subtitleZh") or ""
+            exp = meta.get("explainEn") or meta.get("explainZh") or ""
+        else:
+            sub, exp = meta.get("subtitleZh") or "", meta.get("explainZh") or ""
+        return {"subtitle": sub, "explain": exp}
+
     def _oa_image(self):
         """拿画图那份模块；没装 Pillow 就回 503 并给 None。"""
         try:
@@ -1082,7 +1092,8 @@ class Handler(BaseHTTPRequestHandler):
         if row is None:
             row = {"date": date, "call": "", "stations": []}
         try:
-            body = steps[what](row, note=self._note(lang), lang=lang)
+            body = steps[what](row, note=self._note(lang), lang=lang,
+                               meta=self._meta_text(lang))
         except Exception as exc:
             self._fail(500, "画不出来：%s" % exc)
             return
@@ -1113,7 +1124,8 @@ class Handler(BaseHTTPRequestHandler):
             self._fail(404, "这一轮没有 %s 这一台" % want)
             return
         try:
-            body = oa_image.render_cert(row, station, note=self._note(lang), lang=lang)
+            body = oa_image.render_cert(row, station, note=self._note(lang), lang=lang,
+                                        meta=self._meta_text(lang))
         except Exception as exc:
             self._fail(500, "画不出来：%s" % exc)
             return

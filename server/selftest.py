@@ -762,6 +762,38 @@ def main():
                                     {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
                                      "digi": [], "at": "10-17 01:08"})
         check("奖状画得出 PNG", cert[:8], b"\x89PNG\r\n\x1a\n")
+        # 抬头那两行：主控台填过的副标题（红字）与解释标题（灰字）都得印上去
+        from io import BytesIO as _BytesIO
+        from PIL import Image as _Image
+        portrait = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": []}
+        plain = oa_image.render_board(portrait)
+        filled = oa_image.render_board(portrait, note="测试轮次", meta={
+            "subtitle": "测试轮次", "explain": "北京时间周六整天的空中签到"})
+
+        def _count(body, y, want):
+            img = _Image.open(_BytesIO(body)).convert("RGB")
+            px = img.load()
+            n = 0
+            for x in range(oa_image.PAD, oa_image.PAD + 300):
+                r, g, b = px[x, y]
+                if want == "red" and r > 120 and r - g > 60 and r - b > 60:
+                    n += 1
+                if want == "grey" and abs(r - g) < 26 and abs(g - b) < 26 and 70 < r < 200:
+                    n += 1
+            return n
+
+        check("签到表抬头印上副标题（红字）", _count(filled, 178, "red") > 10, True)
+        check("没填副标题就不多那一行", _count(plain, 178, "red"), 0)
+        check("解释标题印在副标题下面", _count(filled, 226, "grey") > 10, True)
+        tall = oa_image.render_board(portrait, meta={
+            "subtitle": "测试轮次",
+            "explain": "北京时间的周六整天都算，报文发到轮值呼号就行，不用报名，也不用到现场"})
+        check("解释标题写长了也画得出", tall[:8], b"\x89PNG\r\n\x1a\n")
+        cert_meta = oa_image.render_cert(portrait, {"call": "BG7LZQ-2", "grid": "OL62AA"},
+                                         meta={"subtitle": "测试轮次",
+                                               "explain": "北京时间周六整天的空中签到"})
+        check("奖状跟着长高",
+              _Image.open(_BytesIO(cert_meta)).size[1] > _Image.open(_BytesIO(cert)).size[1], True)
         check("编号是 20 位",
               len(oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62")), 20)
         check("编号拆回去就是那四样",

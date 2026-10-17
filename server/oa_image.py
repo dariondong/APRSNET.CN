@@ -131,6 +131,36 @@ def _subtitle(row, note, words):
     return " · ".join([p for p in parts if p])
 
 
+HEAD_TOP = 164
+
+
+def _heads(meta, note):
+    """图上抬头那两行：副标题（主控台上改的那句）与解释标题。
+
+    副标题没填就退回配置里那句红字（老样子），两行都空就只剩标题与日期那行。
+    """
+    meta = meta or {}
+    subtitle = str(meta.get("subtitle") or "").strip()
+    explain = str(meta.get("explain") or "").strip()
+    return subtitle or str(note or "").strip(), explain
+
+
+def _head_plan(draw, head, explain, room):
+    """抬头那两行排成什么样：量一次，算高度与画上去用的是同一份。"""
+    plan = []
+    y = HEAD_TOP
+    if head:
+        face = font(30)
+        plan.append((face, _clip(draw, head, face, room), HOT, y))
+        y += 48
+    if explain:
+        face = font(23)
+        for line in _wrap_tight(draw, explain, face, room, 2):
+            plan.append((face, line, GREY, y))
+            y += 33
+    return plan, y + 12
+
+
 def _clip(draw, text, face, width):
     """太长就切到装得下，末尾留个点。"""
     if not text or draw.textlength(text, font=face) <= width:
@@ -183,6 +213,26 @@ def _wrap(draw, text, face, width, limit=2):
     return [line.rstrip(" \u00b7") for line in lines]
 
 
+def _wrap_tight(draw, text, face, width, limit=2):
+    """解释标题写长了没有空格可断，就挨个字断，最多 limit 行，还装不下才切尾巴。"""
+    text = str(text or "")
+    if not text or draw.textlength(text, font=face) <= width:
+        return [text] if text else []
+    lines, cur = [], ""
+    for ch in text:
+        if cur and draw.textlength(cur + ch, font=face) > width:
+            lines.append(cur)
+            cur = ch
+        else:
+            cur += ch
+    if cur:
+        lines.append(cur)
+    if len(lines) > limit:
+        lines = lines[:limit - 1] + ["".join(lines[limit - 1:])]
+        lines[-1] = _clip(draw, lines[-1], face, width)
+    return lines
+
+
 def _footer(draw, height, words, extra=""):
     """脚注：左边是出处与生成时间，右边是站名。
 
@@ -204,23 +254,12 @@ def _footer(draw, height, words, extra=""):
     draw.text((WIDTH - PAD - mark_w, y0 + 34 * (len(lines) - 1)), mark, font=small, fill=GREY)
 
 
-def _head(draw, title, subtitle, note):
-    """标题、红杠、副标题；返回正文开始的 y。"""
-    big = font(46)
-    draw.text((PAD, 58), title, font=big, fill=INK)
+def _head(draw, title, plan):
+    """标题、红杠，再把排好的那两行画上去。"""
+    draw.text((PAD, 58), title, font=font(46), fill=INK)
     draw.rectangle([PAD, 138, PAD + 120, 143], fill=HOT)
-    y = 168
-    face = font(24)
-    small = font(22)
-    x = PAD
-    parts = [p for p in subtitle.split(" · ") if p]
-    for i, part in enumerate(parts):
-        label = part + (" · " if i < len(parts) - 1 else "")
-        fill = HOT if (note and part == note) else GREY
-        drawn = face if fill == HOT else small
-        draw.text((x, y), label, font=drawn, fill=fill)
-        x = x + draw.textlength(label, font=drawn)
-    return 218
+    for face, text, fill, y in plan:
+        draw.text((PAD, y), text, font=face, fill=fill)
 
 
 def serial_of(call, date=None, at="", grid=""):
@@ -350,17 +389,25 @@ def _png(image):
     return buf.getvalue()
 
 
-def render_board(row, note="", lang="zh"):
-    """签到表：一台一行，列是呼号 / 国家 / 网格 / 路径 / 状态 / 时间。"""
+def render_board(row, note="", lang="zh", meta=None):
+    """签到表：一台一行，列是呼号 / 国家 / 网格 / 路径 / 状态 / 时间。
+
+    meta 里是页面上那两行字（subtitle / explain），主控台填过的就印在抬头。
+    """
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
     stations = row.get("stations") or []
-    top = 218
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8), PAPER))
+    head, explain = _heads(meta, note)
+    plan, y_end = _head_plan(probe, head, explain, WIDTH - PAD * 2)
+    facts = _subtitle(row, "", words)
+    top = y_end + 42
     row_h = 62
     height = max(560, top + 76 + row_h * max(len(stations), 1) + 110)
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
-    _head(draw, words["board"], _subtitle(row, note, words), note)
+    _head(draw, words["board"], plan)
+    draw.text((PAD, y_end), facts, font=font(22), fill=GREY)
 
     cols = words["cols"]
     heads = font(23)
@@ -515,7 +562,7 @@ def _world_map(draw, x, y, lit):
     return y + MAP_H
 
 
-def render_grid(row, note="", lang="zh"):
+def render_grid(row, note="", lang="zh", meta=None):
     """网格图：一张世界网格地图，180×180 个 4 位格子全在，有签到的点亮；下面跟着呼号。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
@@ -531,13 +578,17 @@ def render_grid(row, note="", lang="zh"):
         if square is not None:
             lit.append(square)
 
-    top = 218
+    head, explain = _heads(meta, note)
+    plan, y_end = _head_plan(probe, head, explain, WIDE - PAD * 2)
+    facts = _subtitle(row, "", words)
+    top = y_end + 42
     map_top = top + 30
     legend_h = 46 + sum(44 + 34 * (len(lines) - 1) for _, lines in legend) if legend else 0
     height = max(560, map_top + MAP_H + 46 + legend_h + 110)
     image = Image.new("RGB", (WIDE, height), PAPER)
     draw = ImageDraw.Draw(image)
-    _head(draw, words["grid"], _subtitle(row, note, words), note)
+    _head(draw, words["grid"], plan)
+    draw.text((PAD, y_end), facts, font=font(22), fill=GREY)
     base = _world_base()
     if base is not None:                         # 陆地压在网格线底下
         image.paste(base, (PAD, map_top), base)
@@ -559,7 +610,7 @@ def render_grid(row, note="", lang="zh"):
     return _png(image)
 
 
-def render_cert(row, station, note="", lang="zh"):
+def render_cert(row, station, note="", lang="zh", meta=None):
     """一台一张的参与证书：一个大呼号压一根红杠，下面一张规规矩矩的字段表，右上是编号。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
@@ -573,10 +624,14 @@ def render_cert(row, station, note="", lang="zh"):
     probe = ImageDraw.Draw(Image.new("RGB", (8, 8), PAPER))
     rows = [(name, _fit_lines(probe, text, value, WIDTH - PAD * 2 - 150, 2))
             for name, text in zip(words["cert_cols"], facts)]
-    height = 800 + sum(34 * (len(lines) - 1) for _, lines in rows)
+    head, explain = _heads(meta, note)
+    plan, y_end = _head_plan(probe, head, explain, WIDTH - PAD * 2)
+    shift = y_end + 42 - 218                          # 抬头长高了，下面的一起往下挪
+    height = 800 + shift + sum(34 * (len(lines) - 1) for _, lines in rows)
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
-    _head(draw, words["cert"], _subtitle(row, note, words), note)
+    _head(draw, words["cert"], plan)
+    draw.text((PAD, y_end), _subtitle(row, "", words), font=font(22), fill=GREY)
 
     serial = "%s %s" % (words["serial"], serial_of(call, date, station.get("at"),
                                                   station.get("grid")))
@@ -588,15 +643,15 @@ def render_cert(row, station, note="", lang="zh"):
     draw.text((WIDTH - PAD - plate_w - 16, 68), serial, font=plate, fill=GREY)
 
     big = font(96)                                    # 主角就是呼号
-    draw.text((PAD, 246), call, font=big, fill=INK)
+    draw.text((PAD, 246 + shift), call, font=big, fill=INK)
     call_w = min(draw.textlength(call, font=big), WIDTH - PAD * 2)
-    draw.rectangle([PAD, 384, PAD + call_w, 388], fill=HOT)
+    draw.rectangle([PAD, 384 + shift, PAD + call_w, 388 + shift], fill=HOT)
 
     face = font(26)
     if date:
-        draw.text((PAD, 408), words["cert_line"] % (call, date), font=face, fill=INK)
+        draw.text((PAD, 408 + shift), words["cert_line"] % (call, date), font=face, fill=INK)
 
-    y = 470
+    y = 470 + shift
     draw.line([PAD, y, WIDTH - PAD, y], fill=INK, width=2)
     for name, lines in rows:
         draw.text((PAD, y + 14), name, font=label, fill=GREY)
@@ -619,9 +674,10 @@ if __name__ == "__main__":                              # 手边看一眼：pyth
         {"call": "BH4HGA-9", "grid": "", "via": "is", "digi": [], "at": "10-17 09:26",
          "status": "called"},
     ]}
-    shots = [("board", render_board(demo, note="测试轮次")),
-             ("grid", render_grid(demo, note="测试轮次")),
-             ("cert", render_cert(demo, demo["stations"][0], note="测试轮次"))]
+    meta = {"subtitle": "测试轮次", "explain": "北京时间周六整天的空中签到"}
+    shots = [("board", render_board(demo, note="测试轮次", meta=meta)),
+             ("grid", render_grid(demo, note="测试轮次", meta=meta)),
+             ("cert", render_cert(demo, demo["stations"][0], note="测试轮次", meta=meta))]
     for name, body in shots:
         with open("/root/.nanobot/workspace/.scratch/oa_%s.png" % name, "wb") as fh:
             fh.write(body)
