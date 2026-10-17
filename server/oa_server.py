@@ -38,6 +38,7 @@ DEFAULTS = {
     "OA_HOST": "127.0.0.1",
     "OA_PORT": "8090",
     "OA_SITE_ROOT": "",
+    "OA_SITE_URL": "aprsnet.cn/oa",
     "OA_ADMIN_TOKEN": "",
     "OA_APRS_HOST": "rotate.aprs2.net",
     "OA_APRS_PORT": "14580",
@@ -46,7 +47,7 @@ DEFAULTS = {
     "OA_TX_PASSCODE": "",
     "OA_AUTO_ACK": "1",
     "OA_ACK_TEXT": "ACK",
-    "OA_CQ_REPLY": "Got {grid}, you are #{rank} on the roster. 73",
+    "OA_CQ_REPLY": "Got {grid}, you are #{rank} on the roster. {url}",
     "OA_TNX_TEXT": "73 TNX!",
     "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <CALL> <GRID>",
     "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET",
@@ -526,7 +527,7 @@ class Runtime(object):
         self.maybe_cq_reply(active, src, record)
 
     def cq_reply_text(self, active, call, record):
-        """喊到回了确认之后再跟一句人话：收到的是哪个网格、排在名单第几位。
+        """喊到回了确认之后再跟一句人话：收到的是哪个网格、排在名单第几位、站点在哪看。
 
         确认是给机器看的，这一句是给人的：只回一个 `ack1234` 等于没答理人。
         回话用英文：报文是往天上发的，中文到多数台与手持机上是乱码。
@@ -537,9 +538,14 @@ class Runtime(object):
         grid = (record.get("msg_grid") or record.get("grid") or "").strip().upper()
         calls = [s["call"] for s in self.store.stations(active["date"])]
         rank = calls.index(call) + 1 if call in calls else 0
-        text = tpl.replace("{grid}", grid).replace("{rank}", str(rank) if rank else "")
+        site = (self.conf.get("OA_SITE_URL") or "").strip().rstrip("/")
+        text = (tpl.replace("{grid}", grid)
+                   .replace("{rank}", str(rank) if rank else "")
+                   .replace("{url}", site))
         if not grid:                                # 没写网格的把那半句接平，不留一个空逗号
             text = text.replace("Got ,", "Got it,").replace("收到 ，", "收到，").replace("收到 ,", "收到,")
+        if not site:                                # 没配站点就整段不占位，不留一个空格
+            text = " ".join(text.split())
         return text.strip()
 
     def maybe_cq_reply(self, active, call, record):

@@ -439,7 +439,24 @@ def main():
         check("第一次喊到回一条确认", len(acks(rt, "BG5CCC-7")), 1)
         check("第一次回的写法", said(rows[0]["line"]), "ACK")
         check("回的那条地址对", rows[0]["line"] == "BG7LZQ-3>APRS::BG5CCC-7 :ACK", True)
-        check("确认后面跟一句人话", said(rows[1]["line"]), "Got OL51, you are #1 on the roster. 73")
+        check("确认后面跟一句人话", said(rows[1]["line"]),
+              "Got OL51, you are #1 on the roster. aprsnet.cn/oa")
+        # 那句里的 {url} 换成 OA_SITE_URL；没配就整段不占位，不留一个空尾巴
+        rec = {"msg_grid": "OL51"}
+        active = rt.store.active_round()
+        rt.conf["OA_SITE_URL"] = "https://oa.aprsnet.cn/"
+        check("站点地址可改，末尾斜杠不要",
+              rt.cq_reply_text(active, "BG5CCC-7", rec),
+              "Got OL51, you are #1 on the roster. https://oa.aprsnet.cn")
+        rt.conf["OA_SITE_URL"] = ""
+        check("没配站点就不留空位",
+              rt.cq_reply_text(active, "BG5CCC-7", rec),
+              "Got OL51, you are #1 on the roster.")
+        rt.conf["OA_SITE_URL"] = oa_server.DEFAULTS["OA_SITE_URL"]
+        rt.conf["OA_CQ_REPLY"] = "Got {grid}."
+        check("模板里不写 {url} 就不多出地址",
+              rt.cq_reply_text(active, "BG5CCC-7", rec), "Got OL51.")
+        rt.conf["OA_CQ_REPLY"] = oa_server.DEFAULTS["OA_CQ_REPLY"]
         rt.on_line(oa_aprs.parse_line(first))
         check("没编号的同一条不重复确认", len(acks(rt, "BG5CCC-7")), 1)
         check("排队时不重发那句话", len(rt.store.outbox_for("BG5CCC-7")), 2)
@@ -609,7 +626,8 @@ def main():
         # 名次取决于前面那几台是哪一秒进名单的，只比句式，不钉死数字
         said_back = said(rt.store.outbox_for("BG7AAA-9")[-1]["line"])
         check("ACK 后面跟一句人话",
-              said_back.startswith("Got OL62, you are #") and said_back.endswith(" on the roster. 73"), True)
+              said_back.startswith("Got OL62, you are #") and
+              said_back.endswith(" on the roster. aprsnet.cn/oa"), True)
         rt.on_line(oa_aprs.parse_line(
             "BG6BBB-5>APRS,TCPIP*,qAC,T2X::BD9ZZZ   :你好"))
         check("发给别人的不回", rt.store.outbox_for("BG6BBB-5"), [])
