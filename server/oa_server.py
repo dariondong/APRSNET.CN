@@ -46,6 +46,7 @@ DEFAULTS = {
     "OA_TX_PASSCODE": "",
     "OA_AUTO_ACK": "1",
     "OA_ACK_TEXT": "ACK",
+    "OA_CQ_REPLY": "收到 {grid}，名单上第 {rank} 位。73",
     "OA_TNX_TEXT": "73 TNX!",
     "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <CALL> <GRID>",
     "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET",
@@ -170,6 +171,7 @@ class Runtime(object):
         self._send_lock = threading.Lock()
         self._sender = None
         self._msg_lock = threading.Lock()
+        self._cq_replied = {}                       # 呼号 → 上一句回话的时间
         self._stop = threading.Event()
 
     # ---- 全自动 ----
@@ -497,6 +499,35 @@ class Runtime(object):
             return
         self.send_msg(src, self.ack_text(record.get("msgid") or ""),
                       date=active["date"], with_id=False)
+        self.maybe_cq_reply(active, src, record)
+
+    def cq_reply_text(self, active, call, record):
+        """喊到回了确认之后再跟一句人话：收到的是哪个网格、排在名单第几位。
+
+        确认是给机器看的，这一句是给人的：只回一个 `ack1234` 等于没答理人。
+        """
+        tpl = (self.conf.get("OA_CQ_REPLY") or "").strip()
+        if not tpl or tpl.lower() in ("-", "0", "off", "no"):
+            return ""                                 # 不想要这一句就把那一项留空
+        grid = (record.get("msg_grid") or record.get("grid") or "").strip().upper()
+        calls = [s["call"] for s in self.store.stations(active["date"])]
+        rank = calls.index(call) + 1 if call in calls else 0
+        text = tpl.replace("{grid}", grid).replace("{rank}", str(rank) if rank else "")
+        if not grid:                                # 没写网格的把那半句接平，不留一个空逗号
+            text = text.replace("收到 ，", "收到，").replace("收到 ,", "收到,")
+        return text.strip()
+
+    def maybe_cq_reply(self, active, call, record):
+        """跟的那句话：同一台短时间里只跟一句，手机把同一条重发两遍也只回一次。"""
+        now = time.time()
+        if now - self._cq_replied.get(call, 0.0) < 30.0:
+            return False
+        text = self.cq_reply_text(active, call, record)
+        if not text:
+            return False
+        self._cq_replied[call] = now
+        self.send_msg(call, text, date=active["date"])
+        return True
 
     def maybe_auto_tnx(self, record, rid):
         """一台走完 U CNNET 回一句 73：一台一轮一份。"""
