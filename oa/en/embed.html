@@ -5,56 +5,67 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNETCN OA countdown</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#f2f0ea">
+<meta name="theme-color" content="#1c2228">
 <link rel="icon" type="image/png" href="https://aprsnet.cn/assets/favicon.png?v=5">
-<link rel="stylesheet" href="https://aprsnet.cn/style.css?v=35">
 <script>
-/* Theme: ?theme=dark|light wins (the host page picks it), then localStorage,
-   then the system preference. Runs before the first frame so nothing flashes.
-   ?theme=auto is the same as leaving it out. */
+/* A readout dressed in the APRSLocus site's clothes: panel grey, aluminium
+   white, cool blue marks. ?theme=light gives the day palette, ?theme=auto
+   follows the system, nothing means the site's dark default. Runs before the
+   first frame so nothing flashes. */
 (function () {
   try {
     var m = /[?&]theme=(dark|light|auto)/.exec(location.search);
-    var t = m ? m[1] : '';
-    if (t !== 'dark' && t !== 'light') {
-      t = localStorage.getItem('theme');
-      if (t !== 'dark' && t !== 'light') {
-        t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      }
+    var t = m ? m[1] : 'dark';
+    if (t === 'auto') {
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     document.documentElement.setAttribute('data-theme', t);
     var mc = document.querySelector('meta[name="theme-color"]');
-    if (mc) mc.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+    if (mc) mc.setAttribute('content', t === 'dark' ? '#1c2228' : '#ffffff');
   } catch (e) {}
 })();
 </script>
 <style>
-/* Page-local styles: one small widget meant to be embedded elsewhere.
-   The host decides the height, the content sits in the middle.
-   Colours come from style.css tokens only. */
+/* Page-local styles: one readout meant to be embedded elsewhere. The palette
+   and the font stack copy the APRSLocus site's tokens (a cross-origin iframe
+   cannot read them); the rules below still only use variables. */
+:root {
+  color-scheme: dark;
+  --bg: #1c2228;
+  --text: #d8dde3;
+  --faint: #868f9a;
+  --cyan: #4da3ff;
+  --line: rgba(216, 221, 227, .14);
+  --font: Inter, "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --text: #0f172a;
+  --faint: #5b6b85;
+  --cyan: #1d6fd0;
+  --line: rgba(148, 160, 178, .34);
+}
 html, body { height: 100%; }
-.em { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; padding: 12px var(--gut); text-align: center; }
-.em-kicker { font-size: 12px; line-height: 1.2; letter-spacing: .18em; text-transform: uppercase; color: var(--text-faint); }
-.em-clock { list-style: none; margin-top: 8px; }
-.em-clock b { display: block; font-size: 13px; line-height: 1.2; font-weight: 400; letter-spacing: .06em; color: var(--text-faint); }
-.em-clock span { display: block; margin-top: 6px; font-family: var(--font-mono); font-size: clamp(28px, 8vw, 46px); line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--hot); }
-.em-facts { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 24px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-strong); }
-.em-fact { font-size: 13.5px; line-height: 1.2; color: var(--text-faint); }
-.em-fact b { margin-right: 6px; font-family: var(--font-mono); font-size: 20px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+.em { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 100%; padding: 14px clamp(20px, 5vw, 34px); }
+.em-label { font-size: 11.5px; line-height: 1.2; letter-spacing: .22em; text-transform: uppercase; color: var(--faint); }
+.em-value { margin-top: 6px; font-size: clamp(32px, 8vw, 46px); font-weight: 800; line-height: .92; letter-spacing: -.04em; font-variant-numeric: tabular-nums; color: var(--text); }
+.em-facts { display: flex; flex-wrap: wrap; gap: 4px 26px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.em-cell { display: flex; align-items: baseline; gap: 7px; font-size: 11.5px; line-height: 1.2; letter-spacing: .16em; color: var(--faint); }
+.em-cell b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--cyan); }
 </style>
 </head>
 
-<body class="em-body">
+<body>
 
-<main class="em" id="main">
-  <p class="em-kicker">APRSNETCN OA</p>
-  <ul class="em-clock" data-oa-clock data-clock-day="d" data-clock-days="Sun,Mon,Tue,Wed,Thu,Fri,Sat"
-      data-clock-label-start="Starts in" data-clock-label-end="Ends in">
-    <li><b data-clock="label">Starts in</b><span data-clock="value">—</span></li>
-  </ul>
+<main class="em" id="main" data-oa-clock data-clock-day="d" data-clock-days="Sun,Mon,Tue,Wed,Thu,Fri,Sat"
+      data-clock-label-start="APRSNETCN OA · Starts in" data-clock-label-end="APRSNETCN OA · Ends in">
+  <p class="em-label" data-clock="label">APRSNETCN OA · Starts in</p>
+  <p class="em-value" data-clock="value">—</p>
   <p class="em-facts" data-em-roster="https://oa.aprsnet.cn/api/roster">
-    <span class="em-fact"><b data-em="stations">—</b>stations</span>
-    <span class="em-fact"><b data-em="grids">—</b>grids</span>
+    <span class="em-cell"><b data-em="stations">—</b>stations</span>
+    <span class="em-cell"><b data-em="grids">—</b>grids</span>
   </p>
 </main>
 

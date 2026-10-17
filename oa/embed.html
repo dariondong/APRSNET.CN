@@ -5,55 +5,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APRSNETCN OA 倒计时</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#f2f0ea">
+<meta name="theme-color" content="#1c2228">
 <link rel="icon" type="image/png" href="https://aprsnet.cn/assets/favicon.png?v=5">
-<link rel="stylesheet" href="https://aprsnet.cn/style.css?v=35">
 <script>
-/* 主题：?theme=dark|light 优先（嵌进别人的页面时由宿主指定），其次 localStorage，
-   最后跟系统的深浅色。必须在首帧前执行，否则会闪一下。
-   ?theme=auto 和没写一样，都走「localStorage → 系统」。 */
+/* 一块读数，穿的是官网（aprslocus）那套衣服：面板灰底、铝白读数、冷蓝标记。
+   ?theme=light 换成白天那套配色；?theme=auto 跟系统的深浅色；
+   不写就是官网默认的深色。必须在首帧前执行，否则会闪一下。 */
 (function () {
   try {
     var m = /[?&]theme=(dark|light|auto)/.exec(location.search);
-    var t = m ? m[1] : '';
-    if (t !== 'dark' && t !== 'light') {
-      t = localStorage.getItem('theme');
-      if (t !== 'dark' && t !== 'light') {
-        t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      }
+    var t = m ? m[1] : 'dark';
+    if (t === 'auto') {
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     document.documentElement.setAttribute('data-theme', t);
     var mc = document.querySelector('meta[name="theme-color"]');
-    if (mc) mc.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+    if (mc) mc.setAttribute('content', t === 'dark' ? '#1c2228' : '#ffffff');
   } catch (e) {}
 })();
 </script>
 <style>
-/* 本页自用样式：一块嵌在别处的小件。宿主给多高就多高，内容垂直居中。
-   颜色一律走 style.css 的 token，不写死颜色。 */
+/* 本页自用样式：一块可以嵌在别处的读数，配色与字体照官网的 token 抄一份
+   （跨站读不到对方的 CSS 变量，只能把值写在这里；规则里仍然只用变量）。 */
+:root {
+  color-scheme: dark;
+  --bg: #1c2228;
+  --text: #d8dde3;
+  --faint: #868f9a;
+  --cyan: #4da3ff;
+  --line: rgba(216, 221, 227, .14);
+  --font: Inter, "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --text: #0f172a;
+  --faint: #5b6b85;
+  --cyan: #1d6fd0;
+  --line: rgba(148, 160, 178, .34);
+}
 html, body { height: 100%; }
-.em { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; padding: 12px var(--gut); text-align: center; }
-.em-kicker { font-size: 12px; line-height: 1.2; letter-spacing: .18em; text-transform: uppercase; color: var(--text-faint); }
-.em-clock { list-style: none; margin-top: 8px; }
-.em-clock b { display: block; font-size: 13px; line-height: 1.2; font-weight: 400; letter-spacing: .06em; color: var(--text-faint); }
-.em-clock span { display: block; margin-top: 6px; font-family: var(--font-mono); font-size: clamp(28px, 8vw, 46px); line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--hot); }
-.em-facts { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 24px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-strong); }
-.em-fact { font-size: 13.5px; line-height: 1.2; color: var(--text-faint); }
-.em-fact b { margin-right: 6px; font-family: var(--font-mono); font-size: 20px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+.em { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 100%; padding: 14px clamp(20px, 5vw, 34px); }
+.em-label { font-size: 11.5px; line-height: 1.2; letter-spacing: .22em; text-transform: uppercase; color: var(--faint); }
+.em-value { margin-top: 6px; font-size: clamp(32px, 8vw, 46px); font-weight: 800; line-height: .92; letter-spacing: -.04em; font-variant-numeric: tabular-nums; color: var(--text); }
+.em-facts { display: flex; flex-wrap: wrap; gap: 4px 26px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.em-cell { display: flex; align-items: baseline; gap: 7px; font-size: 11.5px; line-height: 1.2; letter-spacing: .16em; color: var(--faint); }
+.em-cell b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--cyan); }
 </style>
 </head>
 
-<body class="em-body">
+<body>
 
-<main class="em" id="main">
-  <p class="em-kicker">APRSNETCN OA</p>
-  <ul class="em-clock" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六"
-      data-clock-label-start="距开始" data-clock-label-end="距结束">
-    <li><b data-clock="label">距开始</b><span data-clock="value">—</span></li>
-  </ul>
+<main class="em" id="main" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六"
+      data-clock-label-start="APRSNETCN OA · 距开始" data-clock-label-end="APRSNETCN OA · 距结束">
+  <p class="em-label" data-clock="label">APRSNETCN OA · 距开始</p>
+  <p class="em-value" data-clock="value">—</p>
   <p class="em-facts" data-em-roster="https://oa.aprsnet.cn/api/roster">
-    <span class="em-fact"><b data-em="stations">—</b>台站</span>
-    <span class="em-fact"><b data-em="grids">—</b>网格</span>
+    <span class="em-cell"><b data-em="stations">—</b>台站</span>
+    <span class="em-cell"><b data-em="grids">—</b>网格</span>
   </p>
 </main>
 
