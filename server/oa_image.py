@@ -143,15 +143,26 @@ def _wrap(draw, text, face, width, limit=2):
 
 
 def _footer(draw, height, words, extra=""):
+    """脚注一行：左边是出处与生成时间，右边是站名。
+
+    左边连上「编号 …」之后可能装不下，那就把站名挪到上一行右端，
+    两段文字照样都留着，别叠在一起。
+    """
     small = font(22)
     left = "%s · %s %s（北京时间）" % (words["foot"], words["gen"],
                                   datetime.now(BJ).strftime("%Y-%m-%d %H:%M"))
     if extra:
         left = left + " · " + extra
-    draw.text((PAD, height - 62), left, font=small, fill=GREY)
     mark = "aprsnet.cn/oa"
-    draw.text((WIDTH - PAD - draw.textlength(mark, font=small), height - 62),
-              mark, font=small, fill=GREY)
+    mark_w = draw.textlength(mark, font=small)
+    y = height - 62
+    room = WIDTH - PAD * 2
+    if draw.textlength(left, font=small) + 28 + mark_w > room:      # 一行挤不下
+        draw.text((WIDTH - PAD - mark_w, y - 34), mark, font=small, fill=GREY)
+    else:
+        draw.text((WIDTH - PAD - mark_w, y), mark, font=small, fill=GREY)
+        room = room - mark_w - 28
+    draw.text((PAD, y), _clip(draw, left, small, room), font=small, fill=GREY)
 
 
 def _head(draw, title, subtitle, note):
@@ -253,10 +264,13 @@ def render_grid(row, note="", lang="zh"):
     heads = font(23)
     body = font(27)
     small = font(24)
-    xs = (72, 260, 930)
-    clips = (150, 640, 78)
+    xs = (72, 260)
+    clips = (150, 640)
     for x, name in zip(xs, words["grid_cols"]):
         draw.text((x, top), name, font=heads, fill=GREY)
+    # 台数一列右对齐收在版心里（英文的 Stations 比数字宽得多）
+    draw.text((WIDTH - PAD - draw.textlength(words["grid_cols"][2], font=heads), top),
+              words["grid_cols"][2], font=heads, fill=GREY)
     draw.line([PAD, top + 40, WIDTH - PAD, top + 40], fill=INK, width=2)
 
     if not groups:
@@ -273,7 +287,8 @@ def render_grid(row, note="", lang="zh"):
         draw.text((xs[0], y), _clip(draw, grid, body, clips[0]), font=body, fill=INK)
         for j, line in enumerate(lines):
             draw.text((xs[1], y + j * 34), line, font=small, fill=INK)
-        draw.text((xs[2], y), str(count), font=small, fill=GREY)
+        draw.text((WIDTH - PAD - draw.textlength(str(count), font=small), y),
+                  str(count), font=small, fill=GREY)
         y += box_h
     _footer(draw, height, words, words["count"] % len(stations))
     return _png(image)
