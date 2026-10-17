@@ -380,7 +380,7 @@ def main():
         check("第一次喊到回一条确认", len(acks(rt, "BG5CCC-7")), 1)
         check("第一次回的写法", said(rows[0]["line"]), "ACK")
         check("回的那条地址对", rows[0]["line"] == "BG7LZQ-3>APRS::BG5CCC-7 :ACK", True)
-        check("确认后面跟一句人话", said(rows[1]["line"]), "收到 OL51，名单上第 1 位。73")
+        check("确认后面跟一句人话", said(rows[1]["line"]), "Got OL51, you are #1 on the roster. 73")
         rt.on_line(oa_aprs.parse_line(first))
         check("还排着队的不重复入队", len(acks(rt, "BG5CCC-7")), 1)
         check("排队时不重发那句话", len(rt.store.outbox_for("BG5CCC-7")), 2)
@@ -535,7 +535,7 @@ def main():
         # 名次取决于前面那几台是哪一秒进名单的，只比句式，不钉死数字
         said_back = said(rt.store.outbox_for("BG7AAA-9")[-1]["line"])
         check("ACK 后面跟一句人话",
-              said_back.startswith("收到 OL62，名单上第 ") and said_back.endswith(" 位。73"), True)
+              said_back.startswith("Got OL62, you are #") and said_back.endswith(" on the roster. 73"), True)
         rt.on_line(oa_aprs.parse_line(
             "BG6BBB-5>APRS,TCPIP*,qAC,T2X::BD9ZZZ   :你好"))
         check("发给别人的不回", rt.store.outbox_for("BG6BBB-5"), [])
