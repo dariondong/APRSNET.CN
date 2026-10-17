@@ -492,11 +492,13 @@ class Store(object):
                 rows = self.db.execute(
                     "SELECT * FROM stations WHERE round_id=? ORDER BY first_ts ASC, call ASC",
                     (rnd["id"],)).fetchall()
-                # 每台自己那句话：签到那两行去掉前缀、再去掉呼号与网格，留最后一回非空的
+                # 每台自己那句话：签到那两行去掉前缀、再去掉呼号与网格，留最后一回非空的。
+                # 同一秒里来的两条时间戳一样，必须再按 id 排：只按 ts 排，同秒的两条
+                # 谁先出来不定，后面那句覆盖不到前面那句。
                 msgs = {}
                 for msg_row in self.db.execute(
                         "SELECT src, text FROM packets WHERE round_id=? AND kind IN ('cq','u')"
-                        " ORDER BY ts ASC", (rnd["id"],)):
+                        " ORDER BY ts ASC, id ASC", (rnd["id"],)):
                     note = cnnet_note(msg_row["text"], msg_row["src"])
                     if note:
                         msgs[msg_row["src"]] = note

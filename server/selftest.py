@@ -235,6 +235,19 @@ def main():
             check("路径：%s" % line.split(">", 1)[1].split(":", 1)[0], (rec["via"], rec["digi"]),
                   (want, want_digi))
 
+        # 已经签过到的那一台再签一次：还是同一行，这一次的网格与那句话盖掉前一次的
+        again = oa_store.Store(os.path.join(work, "again"), default_duty="BG7LZQ-2")
+        try:
+            for line in ("BG6TA>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET BG6TA OL62 周末在山上{21",
+                         "BG6TA>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET BG6TA PM01 改到城里了{22"):
+                again.add_packet(oa_aprs.parse_line(line))
+            rows = again.roster()["rounds"][0]["stations"]
+            check("再签一次还是一个人", len(rows), 1)
+            check("再签一次的网格盖掉前一次", rows[0]["grid"], "PM01")
+            check("再签一次的那句话盖掉前一次", rows[0]["msg"], "改到城里了")
+        finally:
+            again.close()
+
         store.close()
     finally:
         shutil.rmtree(work, ignore_errors=True)
