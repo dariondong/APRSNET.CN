@@ -57,7 +57,6 @@ CREATE TABLE IF NOT EXISTS stations (
   grid     TEXT NOT NULL DEFAULT '',
   via      TEXT NOT NULL DEFAULT '',
   digi     TEXT NOT NULL DEFAULT '',
-  tocall   TEXT NOT NULL DEFAULT '',
   at       TEXT NOT NULL DEFAULT '',
   status   TEXT NOT NULL DEFAULT 'called',
   packets  INTEGER NOT NULL DEFAULT 0,
@@ -242,17 +241,6 @@ class Store(object):
         for name in ("acked_ts", "confirmed_ts"):
             if name not in cols:
                 self.db.execute("ALTER TABLE stations ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
-        if "tocall" not in cols:                   # 设备名要的那一列：老库按报文补上
-            self.db.execute("ALTER TABLE stations ADD COLUMN tocall TEXT NOT NULL DEFAULT ''")
-            self.db.execute(
-                "UPDATE stations SET tocall = COALESCE("
-                " (SELECT p.dst FROM packets p WHERE p.round_id=stations.round_id"
-                " AND p.src=stations.call AND p.kind='cq' AND p.dst<>''"
-                " ORDER BY p.id DESC LIMIT 1),"
-                " (SELECT p.dst FROM packets p WHERE p.round_id=stations.round_id"
-                " AND p.src=stations.call AND p.dst<>''"
-                " ORDER BY p.id DESC LIMIT 1), '')")
-            self.db.commit()
         pcols = set(row["name"] for row in self.db.execute("PRAGMA table_info(packets)"))
         for name in ("msg_grid", "msgid"):
             if name not in pcols:
@@ -398,35 +386,32 @@ class Store(object):
         grid = record.get("msg_grid") or record.get("grid") or ""
         via = record.get("via", "") or ""
         digi = ",".join(record.get("digi") or [])
-        tocall = (record.get("dst") or "").strip().upper()
         row = self.db.execute("SELECT * FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
         if row is None:
             self.db.execute(
-                "INSERT INTO stations (round_id,call,grid,via,digi,tocall,at,status,packets,"
-                " first_ts,last_ts,acked_ts,confirmed_ts) VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?)",
-                (rid, call, grid, via, digi, tocall, bj_at(ts), status, ts, ts,
+                "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts,"
+                " acked_ts,confirmed_ts) VALUES (?,?,?,?,?,?,?,1,?,?,?,?)",
+                (rid, call, grid, via, digi, bj_at(ts), status, ts, ts,
                  ts if status in ("acked", "confirmed") else "",
                  ts if status == "confirmed" else ""))
             return
         old = STATUS_ORDER.get(row["status"], 0)
         new_status = status if STATUS_ORDER.get(status, 0) > old else row["status"]
-        # 路径与设备跟这一次喊到走：再签一次换了链路或换了个软件，这一行就换成新的。
+        # 路径跟这一次喊到走：再签一次换了链路，这一行就换成新的。
         # 回过 U 那条只算确认，不改路径（确认常常是从另一条链路过来的）。
         if record.get("kind") == "cq":
             new_via = via or row["via"]
             new_digi = digi
-            new_tocall = tocall or row["tocall"]
         else:
             new_via = row["via"] or via
             new_digi = row["digi"] or digi
-            new_tocall = row["tocall"] or tocall
         acked_ts = row["acked_ts"] or (ts if new_status in ("acked", "confirmed") else "")
         confirmed_ts = row["confirmed_ts"] or (ts if new_status == "confirmed" else "")
         self.db.execute(
-            "UPDATE stations SET grid=?, via=?, digi=?, tocall=?, status=?, packets=packets+1,"
-            " last_ts=?, acked_ts=?, confirmed_ts=? WHERE round_id=? AND call=?",
-            (grid or row["grid"], new_via, new_digi, new_tocall, new_status, ts, acked_ts,
-             confirmed_ts, rid, call))
+            "UPDATE stations SET grid=?, via=?, digi=?, status=?, packets=packets+1, last_ts=?,"
+            " acked_ts=?, confirmed_ts=? WHERE round_id=? AND call=?",
+            (grid or row["grid"], new_via, new_digi, new_status, ts, acked_ts, confirmed_ts,
+             rid, call))
 
     # ---- 删报文、删轮次 ----
 
@@ -486,21 +471,19 @@ class Store(object):
                 if not echo:
                     kept.append(r)
             rows = kept
-            grid, via, digi, tocall, note = "", "", "", "", ""
+            grid, via, digi, note = "", "", "", ""
             status = "called"
             for r in rows:
                 g = (r["msg_grid"] or r["grid"] or "").strip()
                 if g:
                     grid = g
                 if r["kind"] == "cq":
-                    # 路径与设备跟最近一次喊到走，跟 _touch 一个口径
+                    # 路径跟最近一次喊到走，跟 _touch 一个口径
                     via = r["via"] or via
                     digi = r["digi"] or ""
-                    tocall = (r["dst"] or "").strip().upper() or tocall
                     note = cnnet_note(r["text"] or "", call) or note
                 else:
                     status = "confirmed"
-                    tocall = tocall or (r["dst"] or "").strip().upper()
             acked_ts, confirmed_ts = "", ""
             if status == "confirmed":
                 first_u = [r["ts"] for r in rows if r["kind"] == "u"]
@@ -519,18 +502,16 @@ class Store(object):
                                   (rid, call)).fetchone()
             if old:
                 self.db.execute(
-                    "UPDATE stations SET grid=?, via=?, digi=?, tocall=?, at=?, status=?, packets=?,"
-                    " first_ts=?, last_ts=?, note=?, acked_ts=?, confirmed_ts=?"
-                    " WHERE round_id=? AND call=?",
-                    (grid, via, digi, tocall, at, status, len(rows), first_ts, last_ts, note,
+                    "UPDATE stations SET grid=?, via=?, digi=?, at=?, status=?, packets=?, first_ts=?,"
+                    " last_ts=?, note=?, acked_ts=?, confirmed_ts=? WHERE round_id=? AND call=?",
+                    (grid, via, digi, at, status, len(rows), first_ts, last_ts, note,
                      acked_ts, confirmed_ts, rid, call))
             else:
                 self.db.execute(
-                    "INSERT INTO stations (round_id,call,grid,via,digi,tocall,at,status,packets,"
-                    " first_ts,last_ts,note,acked_ts,confirmed_ts)"
-                    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (rid, call, grid, via, digi, tocall, at, status, len(rows), first_ts, last_ts,
-                     note, acked_ts, confirmed_ts))
+                    "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts,"
+                    " note,acked_ts,confirmed_ts) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (rid, call, grid, via, digi, at, status, len(rows), first_ts, last_ts, note,
+                     acked_ts, confirmed_ts))
             self.db.commit()
         return {"call": call, "status": status, "packets": len(rows)}
 
@@ -732,7 +713,6 @@ class Store(object):
                     "grid": row["grid"],
                     "via": row["via"],
                     "digi": [d for d in (row["digi"] or "").split(",") if d],
-                    "tocall": row["tocall"],
                     "at": row["at"],
                     "status": row["status"],
                     "packets": row["packets"],
