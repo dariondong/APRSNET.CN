@@ -412,6 +412,15 @@ def main():
         six = oa_image.grid_center("ol62ab")
         check("6 位网格算出格子中心", tuple(round(v, 3) for v in six), (22.125, 112.083))
         check("认不出的网格给 None", oa_image.grid_center("XX"), None)
+        cert = oa_image.render_cert({"date": "2026-10-17", "call": "BG7LZQ-3"},
+                                    {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
+                                     "digi": [], "at": "10-17 01:08"})
+        check("奖状画得出 PNG", cert[:8], b"\x89PNG\r\n\x1a\n")
+        check("奖状编号同台同轮不变", oa_image.serial_of("BG7LZQ-2", "2026-10-17"),
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17"))
+        check("奖状编号换了轮次就变",
+              oa_image.serial_of("BG7LZQ-2", "2026-10-18") !=
+              oa_image.serial_of("BG7LZQ-2", "2026-10-17"), True)
 
     img_dir = tempfile.mkdtemp(prefix="oa-selftest-image-")
     try:

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""把当轮的签到表与签到点画成 PNG。
+"""把当轮的签到表、签到点与每台的奖状画成 PNG。
 
-数据页面上的那两个下载按钮点到的就是这里：`/api/board.png` 是签到表，
-`/api/points.png` 是签到点。可以用 `?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文。
+数据面板上那两个下载按钮点到的就是这里：`/api/board.png` 是签到表，
+`/api/points.png` 是签到点。名单里每一台自己那份奖状是 `/api/cert.png`，
+参数是 `?call=呼号`。三张都可以用 `?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文。
 
 画图用 Pillow（装了才画得动；没装时服务器回 503）。中文字体先找系统里常见的几款黑体，
 找不到就退回 Pillow 自带的位图字，那时候中文会变成方块 —— 正式机器上请装上
@@ -35,6 +36,10 @@ TEXT = {
     "zh": {
         "board": "APRSNETCN OA 签到表",
         "points": "APRSNETCN OA 签到点",
+        "cert": "参与证书",
+        "cert_line": "%s 在 %s 这一轮的 APRSNETCN OA 活动里签到。",
+        "cert_cols": ("网格", "路径", "时间"),
+        "serial": "编号",
         "duty": "轮值呼号",
         "cols": ("呼号", "网格", "路径", "状态", "时间"),
         "rf": "射频",
@@ -52,6 +57,10 @@ TEXT = {
     "en": {
         "board": "APRSNETCN OA check-in table",
         "points": "APRSNETCN OA check-in points",
+        "cert": "Certificate of participation",
+        "cert_line": "%s checked in on %s during the APRSNETCN OA activity.",
+        "cert_cols": ("Grid", "Path", "Time"),
+        "serial": "Serial",
         "duty": "Duty callsign",
         "cols": ("Call", "Grid", "Path", "Status", "Time"),
         "rf": "RF",
@@ -161,6 +170,14 @@ def _head(draw, title, subtitle, note):
         draw.text((x, y), label, font=drawn, fill=fill)
         x = x + draw.textlength(label, font=drawn)
     return 218
+
+
+def serial_of(call, date):
+    """呼号 + 轮次 的 32 位 FNV-1a，写成 8 位十六进制，当奖状编号。同名同轮永远一样。"""
+    h = 0x811C9DC5
+    for byte in ("%s|%s" % (call, date)).encode("utf-8"):
+        h = ((h ^ byte) * 0x01000193) & 0xFFFFFFFF
+    return "%08X" % h
 
 
 def _png(image):
@@ -277,6 +294,39 @@ def render_points(row, note="", lang="zh"):
                 lx = x - 12 - draw.textlength(label, font=name)
             draw.text((lx, y - 12), label, font=name, fill=INK)
     _footer(draw, height, words, words["count"] % len(stations))
+    return _png(image)
+
+
+def render_cert(row, station, note="", lang="zh"):
+    """一台一张的参与证书：呼号、哪一轮、网格 / 路径 / 时间，脚上一个编号。"""
+    from PIL import Image, ImageDraw
+    words = TEXT.get(lang, TEXT["zh"])
+    call = (station.get("call") or "").strip() or "—"
+    date = (row.get("date") or "").strip()
+    height = 760
+    image = Image.new("RGB", (WIDTH, height), PAPER)
+    draw = ImageDraw.Draw(image)
+    _head(draw, words["cert"], _subtitle(row, note, words), note)
+
+    big = font(92)                                   # 主角就是呼号，一根红杠压在下面
+    draw.text((PAD, 250), call, font=big, fill=INK)
+    draw.rectangle([PAD, 372, PAD + draw.textlength(call, font=big), 376], fill=HOT)
+
+    face = font(26)
+    if date:
+        draw.text((PAD, 418), words["cert_line"] % (call, date), font=face, fill=INK)
+
+    label = font(22)
+    value = font(24)
+    facts = (station.get("grid") or "—", _path_text(station, words), station.get("at") or "")
+    for i, (name, text) in enumerate(zip(words["cert_cols"], facts)):
+        if not text:
+            continue
+        y = 486 + i * 42
+        draw.text((PAD, y), name, font=label, fill=GREY)
+        draw.text((PAD + 130, y), _clip(draw, text, value, WIDTH - PAD * 2 - 130), font=value, fill=INK)
+
+    _footer(draw, height, words, "%s %s" % (words["serial"], serial_of(call, date)))
     return _png(image)
 
 
