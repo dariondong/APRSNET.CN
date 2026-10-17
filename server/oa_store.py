@@ -194,6 +194,18 @@ def seconds_since(text):
     return (datetime.now(UTC) - dt).total_seconds()
 
 
+# 同一条报文换个链路又收一遍，一般一两秒就到了
+ECHO_WINDOW = 15.0
+
+
+def iso_gap(a, b):
+    """两个时间点差多少秒，认不出来就是 None。"""
+    da, db2 = parse_iso(a), parse_iso(b)
+    if not da or not db2:
+        return None
+    return abs((da - db2).total_seconds())
+
+
 def bj_weekday(text=None):
     """北京时间的星期几，0 是周一。"""
     dt = datetime.now(UTC) if text is None else (parse_iso(text) or datetime.now(UTC))
@@ -329,12 +341,37 @@ class Store(object):
                 known = call and self.db.execute(
                     "SELECT 1 FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
                 if known or record.get("msg_grid") or record.get("grid"):
-                    self._touch(rid, call, ts, record,
-                                "confirmed" if record.get("kind") == "u" else "called")
+                    echo = self.is_echo(rid, call, record.get("kind"), record.get("text") or "",
+                                        record.get("msgid") or "", ts, pid)
+                    if not echo:        # 同一条又收一遍：名单不动，报文数也不多算一条
+                        self._touch(rid, call, ts, record,
+                                    "confirmed" if record.get("kind") == "u" else "called")
                 else:
                     incomplete = True
             self.db.commit()
         return {"id": pid, "round_id": rid, "incomplete": incomplete}
+
+    def is_echo(self, rid, call, kind, text, msgid, ts, pid):
+        """这一条是不是同一台同一条报文从另一条链路又收了一遍。
+
+        网上的喊到被网关转到射频，另一台网关再收上来，库里就成了两条：
+        一条算网络、一条算射频。路径按最近一次喊到算，这种重复的一条不能算，
+        不然一台只用手机的台站也会被翻成射频。
+        """
+        if not call or not text:
+            return False
+        rows = self.db.execute(
+            "SELECT id, ts, text, msgid FROM packets WHERE round_id=? AND src=? AND kind=?"
+            " AND id<>? ORDER BY id DESC LIMIT 8", (rid, call, kind, pid)).fetchall()
+        for r in rows:
+            if (r["text"] or "") != text:
+                continue
+            if msgid and (r["msgid"] or "") and r["msgid"] != msgid:
+                continue
+            gap = iso_gap(r["ts"], ts)
+            if gap is not None and gap <= ECHO_WINDOW:
+                return True
+        return False
 
     def _touch(self, rid, call, ts, record, status):
         """一台站进了名单：有就更新，没有就新建。空字段不覆盖已有的值。
@@ -360,9 +397,14 @@ class Store(object):
             return
         old = STATUS_ORDER.get(row["status"], 0)
         new_status = status if STATUS_ORDER.get(status, 0) > old else row["status"]
-        # 路径按喊到那一下算：这一台后面的报文（回过 U、换链路再发）不改它
-        new_via = row["via"] or via
-        new_digi = row["digi"] or digi
+        # 路径跟这一次喊到走：再签一次换了链路，这一行就换成新的。
+        # 回过 U 那条只算确认，不改路径（确认常常是从另一条链路过来的）。
+        if record.get("kind") == "cq":
+            new_via = via or row["via"]
+            new_digi = digi
+        else:
+            new_via = row["via"] or via
+            new_digi = row["digi"] or digi
         acked_ts = row["acked_ts"] or (ts if new_status in ("acked", "confirmed") else "")
         confirmed_ts = row["confirmed_ts"] or (ts if new_status == "confirmed" else "")
         self.db.execute(
@@ -413,18 +455,35 @@ class Store(object):
                 self.db.execute("DELETE FROM stations WHERE round_id=? AND call=?", (rid, call))
                 self.db.commit()
                 return None
+            # 同一条改个链路又收一遍的不算：跟在线收到的口径一致
+            kept, seen = [], []
+            for r in rows:
+                text = r["text"] or ""
+                echo = False
+                for other_text, other_ts in seen:
+                    if other_text != text:
+                        continue
+                    gap = iso_gap(other_ts, r["ts"])
+                    if gap is not None and gap <= ECHO_WINDOW:
+                        echo = True
+                        break
+                seen.append((text, r["ts"]))
+                if not echo:
+                    kept.append(r)
+            rows = kept
             grid, via, digi, note = "", "", "", ""
             status = "called"
             for r in rows:
                 g = (r["msg_grid"] or r["grid"] or "").strip()
                 if g:
                     grid = g
-                via = via or (r["via"] or "")
-                digi = digi or (r["digi"] or "")
-                if r["kind"] == "u":
-                    status = "confirmed"
-                else:
+                if r["kind"] == "cq":
+                    # 路径跟最近一次喊到走，跟 _touch 一个口径
+                    via = r["via"] or via
+                    digi = r["digi"] or ""
                     note = cnnet_note(r["text"] or "", call) or note
+                else:
+                    status = "confirmed"
             acked_ts, confirmed_ts = "", ""
             if status == "confirmed":
                 first_u = [r["ts"] for r in rows if r["kind"] == "u"]

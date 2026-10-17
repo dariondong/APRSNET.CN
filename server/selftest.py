@@ -331,7 +331,41 @@ def main():
         check("网上喊到的，后面走射频也不改成射频", via_rows["BH5DDD"]["via"], "is")
         check("喊到时过的中继留着", via_rows["BH6EEE"]["digi"], "BG7LZQ-1")
         check("喊到走射频的，后面走网络也留着射频", via_rows["BH6EEE"]["via"], "rf")
-        check("两台都算确认了", sorted(r["status"] for r in via_store.stations(day)),
+        # 再签一次换了链路：路径按后一次算，不沿用第一次的
+        via_store.add_packet(oa_aprs.parse_line(
+            "BH6EEE>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET OL65"))
+        again = dict((r["call"], r) for r in via_store.stations(day))["BH6EEE"]
+        check("再签一次走网络就换成网络", again["via"], "is")
+        check("再签一次没中继就清掉中继", again["digi"], "")
+        via_store.add_packet(oa_aprs.parse_line(
+            "BH6EEE>APRS,BG7LZQ-1*,qAR,BG7YAB-3::BG7LZQ-2 :CQ CNNET OL66"))
+        again = dict((r["call"], r) for r in via_store.stations(day))["BH6EEE"]
+        check("再签一次走射频又换成射频", (again["via"], again["digi"]), ("rf", "BG7LZQ-1"))
+        # 主控台改报文或删报文后会重算那一行，口径得跟上
+        via_store.rebuild_station(via_store.active_round()["id"], "BH6EEE")
+        rebuilt = dict((r["call"], r) for r in via_store.stations(day))["BH6EEE"]
+        check("重算名单也按最近一次喊到", (rebuilt["via"], rebuilt["digi"]), ("rf", "BG7LZQ-1"))
+        # 同一条报文从另一条链路又收一遍（网上发的被转到射频，另一台网关再收上来）：
+        # 不算好几次喊到，也不把网络翻成射频
+        via_store.add_packet(oa_aprs.parse_line(
+            "BH7ZZZ-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET PM01"))
+        via_store.add_packet(oa_aprs.parse_line(
+            "BH7ZZZ-9>APRS,WIDE1-1,qAR,BG7YAB-3::BG7LZQ-2 :CQ CNNET PM01"))
+        echo_row = dict((r["call"], r) for r in via_store.stations(day))["BH7ZZZ-9"]
+        check("同一条又收一遍不翻成射频", echo_row["via"], "is")
+        check("那一条也不多算报文", echo_row["packets"], 1)
+        # 真是再签一次（话不一样）就按新的算
+        via_store.add_packet(oa_aprs.parse_line(
+            "BH7ZZZ-9>APRS,BG7YAB-3*,qAR,BG7LZQ-1::BG7LZQ-2 :CQ CNNET PM01 on the hill"))
+        again2 = dict((r["call"], r) for r in via_store.stations(day))["BH7ZZZ-9"]
+        check("再签一次换了链路就换成射频", (again2["via"], again2["digi"]), ("rf", "BG7YAB-3"))
+        check("再签一次报文数加一", again2["packets"], 2)
+        via_store.rebuild_station(via_store.active_round()["id"], "BH7ZZZ-9")
+        rebuilt2 = dict((r["call"], r) for r in via_store.stations(day))["BH7ZZZ-9"]
+        check("重算时同一条的重复也不算", rebuilt2["packets"], 2)
+        check("重算后路径还是最近一次那条", (rebuilt2["via"], rebuilt2["digi"]), ("rf", "BG7YAB-3"))
+        check("两台都算确认了",
+              [via_rows["BH5DDD"]["status"], via_rows["BH6EEE"]["status"]],
               ["confirmed", "confirmed"])
         via_store.close()
     finally:
