@@ -212,12 +212,12 @@ PAGES = [
         file="aprsnetcn.html", nav="", nav_active="tools.html", h1="APRSNETCN SERVER",
         lead="APRSNET.CN 自己架了一台 APRS-IS 服务器，接入协议由本站起草。客户端照老办法连，登录行里多一段账号口令。",
         title="APRSNETCN SERVER — 本站的 APRS-IS 服务器怎么连",
-        desc="APRSNETCN SERVER 是 APRSNET.CN 自己架的 APRS-IS 服务器：接入端口 14580、登录行里的 auth 账号口令、过滤器认哪些前缀、qAC 标记与 24 小时台站接口，还有一张不用账号的台站地图。服务器地址由运营方公布。",
+        desc="APRSNETCN SERVER 是 APRSNET.CN 自己架的 APRS-IS 服务器：接入端口 14580、登录行里的 auth 账号口令、过滤器认哪些前缀、qAC 标记与 24 小时台站接口，服务器地址由运营方公布。",
         og="本站自己架的 APRS-IS 服务器：登录行里多一段账号口令，过滤器照老规矩。",
         keywords="APRSNETCN SERVER,APRSNET CN CONNECT,APRS-IS 服务器,登录行,auth,过滤器,"
                  "qAC,台站接口,APRS 服务器",
         blocks=["aprsnetcn-connect", "aprsnetcn-login", "aprsnetcn-send",
-                "aprsnetcn-stations"],
+                "aprsnetcn-diff"],
     ),
     dict(
         file="tools.html", nav="工具", h1="工具与链接",
