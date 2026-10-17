@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APRSNETCN OA 倒计时</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f2f0ea">
+<link rel="icon" type="image/png" href="https://aprsnet.cn/assets/favicon.png?v=5">
+<link rel="stylesheet" href="https://aprsnet.cn/style.css?v=35">
+<script>
+/* 主题：?theme=dark|light 优先（嵌进别人的页面时由宿主指定），其次 localStorage，
+   最后跟系统的深浅色。必须在首帧前执行，否则会闪一下。
+   ?theme=auto 和没写一样，都走「localStorage → 系统」。 */
+(function () {
+  try {
+    var m = /[?&]theme=(dark|light|auto)/.exec(location.search);
+    var t = m ? m[1] : '';
+    if (t !== 'dark' && t !== 'light') {
+      t = localStorage.getItem('theme');
+      if (t !== 'dark' && t !== 'light') {
+        t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+    }
+    document.documentElement.setAttribute('data-theme', t);
+    var mc = document.querySelector('meta[name="theme-color"]');
+    if (mc) mc.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+  } catch (e) {}
+})();
+</script>
+<style>
+/* 本页自用样式：一块嵌在别处的小件。宿主给多高就多高，内容垂直居中。
+   颜色一律走 style.css 的 token，不写死颜色。 */
+html, body { height: 100%; }
+.em { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; padding: 12px var(--gut); text-align: center; }
+.em-kicker { font-size: 12px; line-height: 1.2; letter-spacing: .18em; text-transform: uppercase; color: var(--text-faint); }
+.em-clock { list-style: none; margin-top: 8px; }
+.em-clock b { display: block; font-size: 13px; line-height: 1.2; font-weight: 400; letter-spacing: .06em; color: var(--text-faint); }
+.em-clock span { display: block; margin-top: 6px; font-family: var(--font-mono); font-size: clamp(28px, 8vw, 46px); line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--hot); }
+.em-facts { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 24px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-strong); }
+.em-fact { font-size: 13.5px; line-height: 1.2; color: var(--text-faint); }
+.em-fact b { margin-right: 6px; font-family: var(--font-mono); font-size: 20px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+
+<body class="em-body">
+
+<main class="em" id="main">
+  <p class="em-kicker">APRSNETCN OA</p>
+  <ul class="em-clock" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六"
+      data-clock-label-start="距开始" data-clock-label-end="距结束">
+    <li><b data-clock="label">距开始</b><span data-clock="value">—</span></li>
+  </ul>
+  <p class="em-facts" data-em-roster="https://oa.aprsnet.cn/api/roster">
+    <span class="em-fact"><b data-em="stations">—</b>台站</span>
+    <span class="em-fact"><b data-em="grids">—</b>网格</span>
+  </p>
+</main>
+
+<script src="clock.js?v=1"></script>
+<script src="embed.js?v=1"></script>
+</body>
+</html>

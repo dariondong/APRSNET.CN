@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APRSNETCN OA countdown</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f2f0ea">
+<link rel="icon" type="image/png" href="https://aprsnet.cn/assets/favicon.png?v=5">
+<link rel="stylesheet" href="https://aprsnet.cn/style.css?v=35">
+<script>
+/* Theme: ?theme=dark|light wins (the host page picks it), then localStorage,
+   then the system preference. Runs before the first frame so nothing flashes.
+   ?theme=auto is the same as leaving it out. */
+(function () {
+  try {
+    var m = /[?&]theme=(dark|light|auto)/.exec(location.search);
+    var t = m ? m[1] : '';
+    if (t !== 'dark' && t !== 'light') {
+      t = localStorage.getItem('theme');
+      if (t !== 'dark' && t !== 'light') {
+        t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+    }
+    document.documentElement.setAttribute('data-theme', t);
+    var mc = document.querySelector('meta[name="theme-color"]');
+    if (mc) mc.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+  } catch (e) {}
+})();
+</script>
+<style>
+/* Page-local styles: one small widget meant to be embedded elsewhere.
+   The host decides the height, the content sits in the middle.
+   Colours come from style.css tokens only. */
+html, body { height: 100%; }
+.em { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; padding: 12px var(--gut); text-align: center; }
+.em-kicker { font-size: 12px; line-height: 1.2; letter-spacing: .18em; text-transform: uppercase; color: var(--text-faint); }
+.em-clock { list-style: none; margin-top: 8px; }
+.em-clock b { display: block; font-size: 13px; line-height: 1.2; font-weight: 400; letter-spacing: .06em; color: var(--text-faint); }
+.em-clock span { display: block; margin-top: 6px; font-family: var(--font-mono); font-size: clamp(28px, 8vw, 46px); line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--hot); }
+.em-facts { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 24px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-strong); }
+.em-fact { font-size: 13.5px; line-height: 1.2; color: var(--text-faint); }
+.em-fact b { margin-right: 6px; font-family: var(--font-mono); font-size: 20px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+
+<body class="em-body">
+
+<main class="em" id="main">
+  <p class="em-kicker">APRSNETCN OA</p>
+  <ul class="em-clock" data-oa-clock data-clock-day="d" data-clock-days="Sun,Mon,Tue,Wed,Thu,Fri,Sat"
+      data-clock-label-start="Starts in" data-clock-label-end="Ends in">
+    <li><b data-clock="label">Starts in</b><span data-clock="value">—</span></li>
+  </ul>
+  <p class="em-facts" data-em-roster="https://oa.aprsnet.cn/api/roster">
+    <span class="em-fact"><b data-em="stations">—</b>stations</span>
+    <span class="em-fact"><b data-em="grids">—</b>grids</span>
+  </p>
+</main>
+
+<script src="../clock.js?v=1"></script>
+<script src="../embed.js?v=1"></script>
+</body>
+</html>
