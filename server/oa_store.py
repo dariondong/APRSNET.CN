@@ -477,6 +477,38 @@ class Store(object):
             self.db.commit()
         return {"date": date, "stations": n_st, "packets": n_pk}
 
+    def edit_packet(self, pid, record):
+        """改一条报文的原文：按新的一句重写这一行，再把受影响的那一台重算。
+
+        解析在新一句那边做（服务器拿 `oa_aprs.parse_line` 解好再递进来），这里只管写库
+        与重算名单。报文是名单的来源，改一条就是重收一条。
+
+        呼号也改了的话，旧的那一台与新的一台都要重算：旧的可能一条都不剩（撤掉），
+        新的可能多出一条。没这条报文返回 None。
+        """
+        with self.lock:
+            old = self.db.execute("SELECT src, round_id FROM packets WHERE id=?",
+                                  (int(pid),)).fetchone()
+            if old is None:
+                return None
+            digi = ",".join(record.get("digi") or [])
+            self.db.execute(
+                "UPDATE packets SET ts=?, src=?, dst=?, msgto=?, path=?, kind=?, text=?, msgid=?,"
+                " lat=?, lon=?, grid=?, msg_grid=?, via=?, digi=?, raw=? WHERE id=?",
+                (record.get("ts") or now_iso(), record.get("src", ""), record.get("dst", ""),
+                 record.get("msgto", ""), record.get("path", ""), record.get("kind", "other"),
+                 record.get("text", ""), record.get("msgid", "") or "", record.get("lat"),
+                 record.get("lon"), record.get("grid", ""), record.get("msg_grid", "") or "",
+                 record.get("via", ""), digi, record.get("raw", ""), int(pid)))
+            self.db.commit()
+            rid, was = old["round_id"], old["src"] or ""
+        now_call = record.get("src", "") or ""
+        out = {"id": int(pid), "call": now_call, "was": was}
+        for call in (was, now_call):
+            if rid and call:
+                out["station"] = self.rebuild_station(rid, call)
+        return out
+
     def packets(self, limit=200, kind=None):
         sql = "SELECT * FROM packets"
         args = []

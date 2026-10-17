@@ -918,6 +918,28 @@ class Handler(BaseHTTPRequestHandler):
             ok = self.rt.store.drop_station(date, call)
             self._json({"ok": ok, "stations": self.rt.store.stations(date)})
             return
+        if path == "/api/admin/packet":
+            if not self._need_token():
+                return
+            try:
+                pid = int(body.get("id"))
+            except (TypeError, ValueError):
+                self._json({"ok": False, "error": "没写要改哪一条"})
+                return
+            raw = str(body.get("raw") or "").strip()
+            if not raw:
+                self._json({"ok": False, "error": "空的一行，什么都没改"})
+                return
+            record = oa_aprs.parse_line(raw)
+            if not record:
+                self._json({"ok": False, "error": "这一行不像 APRS 报文，什么都没改"})
+                return
+            res = self.rt.store.edit_packet(pid, record)
+            if res is None:
+                self._json({"ok": False, "error": "没有这条报文"})
+                return
+            self._json({"ok": True, "packet": res})
+            return
         if path == "/api/admin/packet/delete":
             if not self._need_token():
                 return

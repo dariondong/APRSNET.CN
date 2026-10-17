@@ -22,6 +22,7 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertic
 th{font-weight:600;color:var(--grey);font-size:12px}
 tr:last-child td{border-bottom:0}
 td.mono,th.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+td.pkt-edit input{min-width:320px;width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:2px 4px}
 .k{display:inline-block;padding:0 5px;border:1px solid var(--line);font-size:11px}
 .k.cq{color:var(--hot);border-color:var(--hot)}
 form.row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:var(--card);border:1px solid var(--line);padding:10px}
@@ -366,6 +367,42 @@ a{color:inherit}
     }
   };
 
+  // 改一条报文的原文：改完按新的一句重解析，名单跟着重算
+  var editPacket = function (td, p) {
+    td.className = "mono pkt-edit";
+    td.textContent = "";
+    var input = document.createElement("input");
+    input.type = "text";
+    input.value = p.raw || p.text || "";
+    td.appendChild(input);
+    var save = document.createElement("button");
+    save.type = "button";
+    save.className = "mini";
+    save.textContent = "存";
+    save.onclick = function () {
+      api("/api/admin/packet", "POST", { id: p.id, raw: input.value }).then(function (d) {
+        if (!d || !d.ok) {
+          var why = (d && d.error) || "改不进去。";
+          showErr(why);
+          say(why, true);
+          return;
+        }
+        showErr("");
+        say("改好了，名单按新的一句重算。");
+        if (state.thread) openThread(state.thread);
+        refresh();
+      });
+    };
+    var back = document.createElement("button");
+    back.type = "button";
+    back.className = "mini";
+    back.textContent = "算了";
+    back.onclick = function () { td.className = "mono"; td.textContent = p.text || ""; };
+    td.appendChild(save);
+    td.appendChild(back);
+    input.focus();
+  };
+
   var paintPackets = function (packets) {
     var box = $("packets");
     box.textContent = "";
@@ -394,7 +431,7 @@ a{color:inherit}
       kind.className = "k " + p.kind;
       cell(tr, p.msg_grid || p.grid || "", "mono");
       cell(tr, (p.via === "rf" ? "射频" : "网络") + (p.digi && p.digi.length ? " " + p.digi.join(" → ") : ""));
-      cell(tr, p.text || "", "mono");
+      var textCell = cell(tr, p.text || "", "mono");
       var ops = cell(tr);
       var add = document.createElement("button");
       add.type = "button";
@@ -419,6 +456,13 @@ a{color:inherit}
       talk.textContent = "对话";
       talk.onclick = function () { openThread(p.src); };
       ops.appendChild(talk);
+      var fix = document.createElement("button");
+      fix.type = "button";
+      fix.className = "mini";
+      fix.textContent = "改";
+      fix.title = "改这一条的报文原文，改完按新的一句重解析，名单跟着重算";
+      fix.onclick = function () { editPacket(textCell, p); };
+      ops.appendChild(fix);
       var drop = document.createElement("button");
       drop.type = "button";
       drop.className = "mini hot";

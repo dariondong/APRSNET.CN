@@ -280,6 +280,19 @@ def main():
                 store.add_packet(record)
         check("重新收一份回来还是三台", len(store.stations(rnd["date"])), 3)
 
+        # 改一条报文：按新的一句重解析，名单跟着重算
+        target = [p for p in store.packets(limit=50) if p["src"] == "BH4AAA"][0]
+        fixed = oa_aprs.parse_line("BH4AAA>APRS,TCPIP*,qAC,T2CHILE:!3113.00N/12122.00E> CQ CNNET PN01")
+        res = store.edit_packet(target["id"], fixed)
+        check("改一条报文，重算的是这一台", (res["call"], res["was"]), ("BH4AAA", "BH4AAA"))
+        live = dict((s["call"], s) for s in store.stations(rnd["date"]))
+        check("改过的网格写进名单", live["BH4AAA"]["grid"], "PN01")
+        check("改不存在的报文不算数", store.edit_packet(999999, fixed), None)
+        moved = oa_aprs.parse_line("BH4ZZZ>APRS,TCPIP*,qAC,T2CHILE:!3113.00N/12122.00E> CQ CNNET PN01")
+        store.edit_packet(target["id"], moved)
+        calls = [s["call"] for s in store.stations(rnd["date"])]
+        check("改呼号：旧的撤掉、新的进来", ("BH4AAA" in calls, "BH4ZZZ" in calls), (False, True))
+
         # 路径怎么算射频、怎么算网络：网关从射频转上来、网口直上、别名与模式标记各一套
         for line, want, want_digi in PATHS:
             rec = oa_aprs.parse_line(line)
