@@ -807,6 +807,13 @@ class Handler(BaseHTTPRequestHandler):
                 "outbox": self.rt.store.outbox(limit=20),
             })
             return
+        if path == "/api/admin/thread":
+            if not self._need_token():
+                return
+            call = (query.get("call") or [""])[0]
+            self._json({"ok": True, "call": call,
+                        "lines": self.rt.store.thread(call, limit=200)})
+            return
         if path == "/api/admin/export":
             if not self._need_token():
                 return

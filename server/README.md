@@ -48,6 +48,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `POST /api/admin/duty` | 换轮值呼号 |
 | `POST /api/admin/station` | 加或改一台：呼号、网格、路径、中继、时间、状态 |
 | `POST /api/admin/station/delete` | 删一台 |
+| `GET /api/admin/thread` | 一台的往来：`?call=BG7XXX-9`，它发来的与我们回给它的按时间排在一起 |
 | `POST /api/admin/ack` | 回 ACK：记下报文并标 `acked`，配了口令才真发 |
 | `POST /api/inject` | 拿一行报文试一下：`{"line":"BG7XXX-9>APRS:…"}` |
 

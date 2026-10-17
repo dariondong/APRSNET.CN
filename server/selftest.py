@@ -419,6 +419,17 @@ def main():
               said(rt.store.outbox_for("BG5CCC-7")[-1]["line"]), "73 TNX!")
         check("U 那条也回确认", said(rt.store.outbox_for("BG5CCC-7")[-2]["line"]), "ack22")
         check("那句就是 73", len(rt.store.outbox_for("BG5CCC-7")), 5)
+
+        # 对话历史：这一台发来的与我们回给的，合成一条时间线
+        lines = rt.store.thread("BG5CCC-7")
+        check("对话里两边都有", sorted(set(x["dir"] for x in lines)), ["in", "out"])
+        check("对话按时间排", lines == sorted(lines, key=lambda x: x["at"]), True)
+        check("对话里的来件是它的报文",
+              any(x["dir"] == "in" and "CNNET" in x["text"] for x in lines), True)
+        check("对话里的去件都是回它的",
+              all(x["text"].startswith("BG7LZQ-3>APRS::BG5CCC-7")
+                  for x in lines if x["dir"] == "out"), True)
+        check("没写呼号就没有对话", rt.store.thread(""), [])
         rt.on_line(oa_aprs.parse_line(
             "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET"))
         check("再回一次 U 不重复回 73", len(rt.store.outbox_for("BG5CCC-7")), 5)

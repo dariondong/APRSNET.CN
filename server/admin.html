@@ -85,6 +85,15 @@ a{color:inherit}
   <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。</p>
   <div id="packets"></div>
 
+  <h2>对话历史</h2>
+  <p class="note">某一台发来的、我们回给的，按时间排在一起。流水与名单那行右端的「对话」也到这里。</p>
+  <form class="row" id="threadForm">
+    <div><label>呼号</label><input type="text" id="threadCall" placeholder="BG7XXX-9"></div>
+    <div><button type="submit">看这一台</button></div>
+    <div><button type="button" id="threadClose">收起</button></div>
+  </form>
+  <div id="thread"></div>
+
   <h2>本轮名单</h2>
   <div id="stations"></div>
 
@@ -121,7 +130,7 @@ a{color:inherit}
     try { localStorage.setItem("oa_token", token); } catch (e) {}
   }
 
-  var state = { date: "", round: "", archive: "", auto: false, routes: [] };
+  var state = { date: "", round: "", archive: "", auto: false, routes: [], thread: "" };
   var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -207,6 +216,7 @@ a{color:inherit}
       paintPackets(data.packets);
       paintStations(data.stations, data.round);
       paintOutbox(data.outbox);
+      if (state.thread) openThread(state.thread);
     });
   };
 
@@ -402,9 +412,73 @@ a{color:inherit}
       ack.textContent = "回 ACK";
       ack.onclick = function () { doAck(p.src, ack); };
       ops.appendChild(ack);
+      var talk = document.createElement("button");
+      talk.type = "button";
+      talk.className = "mini";
+      talk.textContent = "对话";
+      talk.onclick = function () { openThread(p.src); };
+      ops.appendChild(talk);
       table.appendChild(tr);
     });
     box.appendChild(table);
+  };
+
+  // 这一台的往来：它发来的与我们回给的排在一起，一来一去才是对话
+  var paintThread = function (lines, call) {
+    var box = $("thread");
+    box.textContent = "";
+    if (!call) return;
+    if (!(lines || []).length) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = "还没有跟 " + call + " 的往来。";
+      box.appendChild(p);
+      return;
+    }
+    var kindName = { cq: "喊到", u: "确认", ack: "回 ACK", other: "别的" };
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["时间", "方向", "报文", "结果"].forEach(function (label, i) {
+      var th = document.createElement("th");
+      th.textContent = label;
+      if (i === 2) th.className = "mono";
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    (lines || []).forEach(function (ln) {
+      var tr = document.createElement("tr");
+      cell(tr, bjTime(ln.at), "mono");
+      cell(tr, ln.dir === "out" ? "去 " + (kindName[ln.kind] || ln.kind)
+                                 : "来 " + (kindName[ln.kind] || ln.kind || ""));
+      cell(tr, ln.text || "", "mono");
+      var res = "";
+      var bad = "";
+      if (ln.dir === "out") {
+        res = ln.error ? ln.error : (ln.sent ? "已发 " + bjTime(ln.sent) : "排队中");
+        if (ln.acked) res = res + " · 对方已确认";
+        bad = ln.error ? "bad" : "";
+      } else if (ln.grid) {
+        res = "网格 " + ln.grid;
+      }
+      cell(tr, res, bad);
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+  };
+
+  var openThread = function (call) {
+    call = String(call || "").trim();
+    state.thread = call;
+    if (!call) {
+      $("thread").textContent = "";
+      return;
+    }
+    $("threadCall").value = call;
+    api("/api/admin/thread?call=" + encodeURIComponent(call)).then(function (d) {
+      if (state.thread !== call) return;
+      if (d && d.error) showErr(d.error);
+      paintThread((d && d.lines) || [], call);
+    }).catch(function () {});
   };
 
   var paintStations = function (stations, round) {    var box = $("stations");
@@ -459,6 +533,12 @@ a{color:inherit}
         $("stStatus").value = s.status || "called";
       };
       ops.appendChild(edit);
+      var talk = document.createElement("button");
+      talk.type = "button";
+      talk.className = "mini";
+      talk.textContent = "对话";
+      talk.onclick = function () { openThread(s.call); };
+      ops.appendChild(talk);
       var del = document.createElement("button");
       del.type = "button";
       del.className = "mini hot";
@@ -644,6 +724,17 @@ a{color:inherit}
       say("页面上的副标题与主控昵称已经换好，用户刷新就能看到。");
       refresh();
     });
+  });
+
+  // 对话历史：填个呼号看这一台，或者从流水 / 名单那行点「对话」过来
+  $("threadForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    openThread($("threadCall").value);
+  });
+
+  $("threadClose").addEventListener("click", function () {
+    $("threadCall").value = "";
+    openThread("");
   });
 
   refresh();

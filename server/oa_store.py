@@ -675,6 +675,40 @@ class Store(object):
             return [dict(r) for r in self.db.execute(
                 "SELECT * FROM outbox ORDER BY id DESC LIMIT ?", (int(limit),)).fetchall()]
 
+    def thread(self, call, limit=200):
+        """这一台的往来：它发来的与我们发给它的，按时间排在一起。
+
+        主控台点某一行右端的「对话」就调这个。一来一去都是同一个人跟同一台的
+        对话，所以两边合成一条时间线，不分开摆。时间一律用写库时的 ISO 串，
+        两边本来就同一种写法，直接排就行。
+        """
+        call = (call or "").strip()
+        if not call:
+            return []
+        limit = int(limit)
+        with self.lock:
+            ins = self.db.execute(
+                "SELECT id, ts, kind, text, raw, msg_grid, grid, via, digi, msgid FROM packets"
+                " WHERE src=? ORDER BY id DESC LIMIT ?", (call, limit)).fetchall()
+            outs = self.db.execute(
+                "SELECT id, created, line, sent, error, acked, msgid FROM outbox"
+                " WHERE dst=? ORDER BY id DESC LIMIT ?", (call, limit)).fetchall()
+        lines = []
+        for r in ins:
+            lines.append({
+                "dir": "in", "at": r["ts"], "kind": r["kind"], "text": r["text"] or "",
+                "raw": r["raw"] or "", "grid": r["msg_grid"] or r["grid"] or "",
+                "via": r["via"] or "", "digi": r["digi"] or "", "msgid": r["msgid"] or "",
+            })
+        for r in outs:
+            lines.append({
+                "dir": "out", "at": r["created"], "kind": "ack", "text": r["line"] or "",
+                "sent": r["sent"] or "", "error": r["error"] or "", "acked": r["acked"] or "",
+                "msgid": r["msgid"] or "",
+            })
+        lines.sort(key=lambda x: (x.get("at") or "", x.get("dir") or ""))
+        return lines
+
     def outbox_for(self, dst, since=""):
         """发给这一台的那些，早的在前。看它排着队、发失败过几次都靠这个。"""
         sql = "SELECT * FROM outbox WHERE dst=?"
