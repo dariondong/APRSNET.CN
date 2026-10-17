@@ -62,6 +62,7 @@ a{color:inherit}
     <div><button type="button" id="closeRound">结束这一轮</button></div>
     <div><label>看哪一轮</label><select id="roundPick"></select></div>
     <div><button type="button" id="archBtn">归档本轮</button></div>
+    <div><button type="button" id="delRound" class="hot">删掉这一轮</button></div>
     <div><a href="#" id="exportBtn"><button type="button">roster.json</button></a></div>
     <div><a href="#" id="csvStBtn"><button type="button">名单 CSV</button></a></div>
     <div><a href="#" id="csvPktBtn"><button type="button">报文 CSV</button></a></div>
@@ -418,6 +419,22 @@ a{color:inherit}
       talk.textContent = "对话";
       talk.onclick = function () { openThread(p.src); };
       ops.appendChild(talk);
+      var drop = document.createElement("button");
+      drop.type = "button";
+      drop.className = "mini hot";
+      drop.textContent = "删";
+      drop.title = "删掉这一条报文，这一台的名单跟着重算";
+      drop.onclick = function () {
+        if (!window.confirm("删掉 " + p.src + " 的这条报文？名单跟着重算。")) return;
+        api("/api/admin/packet/delete", "POST", { id: p.id }).then(function (d) {
+          if (!d || !d.ok) { showErr((d && d.error) || "删不掉。"); return; }
+          showErr("");
+          say("删了 " + p.src + " 的这条报文，名单已经跟着重算。");
+          if (state.thread) openThread(state.thread);
+          refresh();
+        });
+      };
+      ops.appendChild(drop);
       table.appendChild(tr);
     });
     box.appendChild(table);
@@ -722,6 +739,30 @@ a{color:inherit}
       }
       showErr("");
       say("页面上的副标题与主控昵称已经换好，用户刷新就能看到。");
+      refresh();
+    });
+  });
+
+  // 删掉一轮：连名单与报文一起拔，删错一轮靠这个
+  $("delRound").addEventListener("click", function () {
+    var date = $("roundDate").value || state.date;
+    if (!date) return;
+    if (!window.confirm("删掉 " + date + " 这一轮？名单与报文一起删，找不回来。")) return;
+    api("/api/admin/round/delete", "POST", { date: date }).then(function (d) {
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "删不掉。";
+        showErr(why);
+        say(why, true);
+        return;
+      }
+      var gone = d.deleted || {};
+      showErr("");
+      say("删了 " + date + " 这一轮，" + (gone.stations || 0) + " 台与 " +
+          (gone.packets || 0) + " 条报文一起走了。");
+      state.date = "";
+      state.thread = "";
+      $("threadCall").value = "";
+      $("thread").textContent = "";
       refresh();
     });
   });

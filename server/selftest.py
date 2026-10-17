@@ -250,6 +250,36 @@ def main():
             check("CSV 带 BOM", fh.read(3), b"\xef\xbb\xbf")
         check("没这一轮就归档不出东西", store.archive_round("1999-01-02", arch_dir), [])
 
+        # 删一条报文：名单跟着重算；一条不剩就把这一台从名单上撤掉
+        u_line = [p for p in store.packets(limit=50)
+                  if p["src"] == "BG7XXX-9" and p["kind"] == "u"][0]
+        check("删掉一条，返回是哪一台", store.delete_packet(u_line["id"])["call"], "BG7XXX-9")
+        live = dict((s["call"], s) for s in store.stations(rnd["date"]))
+        check("删掉那条确认，这一台退回只喊到", live["BG7XXX-9"]["status"], "called")
+        check("删掉一条报文，这一台的条数跟着少", live["BG7XXX-9"]["packets"], 1)
+        check("删掉那条确认的报文不见了",
+              any(p["id"] == u_line["id"] for p in store.packets(limit=50)), False)
+        check("删不存在的报文不算数", store.delete_packet(999999), None)
+        for p in [p for p in store.packets(limit=50) if p["src"] == "BH4AAA"]:
+            store.delete_packet(p["id"])
+        check("删光了这一台就从名单上撤掉",
+              "BH4AAA" in [s["call"] for s in store.stations(rnd["date"])], False)
+
+        # 删一轮：连名单与报文一起拔
+        gone = store.delete_round(rnd["date"])
+        check("删一轮报出连带走几台几条", (gone["stations"] >= 1, gone["packets"] >= 1),
+              (True, True))
+        check("删完这一轮就没了", store.round_by_date(rnd["date"]), None)
+        check("删完名单也空了", store.stations(rnd["date"]), [])
+        check("没这一轮就删不出东西", store.delete_round("1999-01-02"), None)
+
+        # 后面那几条比对的是三台那一轮的名单，删完重收一份回来
+        for line in LINES:
+            record = oa_aprs.parse_line(line)
+            if record:
+                store.add_packet(record)
+        check("重新收一份回来还是三台", len(store.stations(rnd["date"])), 3)
+
         # 路径怎么算射频、怎么算网络：网关从射频转上来、网口直上、别名与模式标记各一套
         for line, want, want_digi in PATHS:
             rec = oa_aprs.parse_line(line)

@@ -371,6 +371,112 @@ class Store(object):
             (grid or row["grid"], new_via, new_digi, new_status, ts, acked_ts, confirmed_ts,
              rid, call))
 
+    # ---- 删报文、删轮次 ----
+
+    def delete_packet(self, pid):
+        """删掉一条报文，并按剩下的重算它那一台在名单上的那一行。
+
+        名单是从报文推出来的，删一条就得把受影响的那一台重算：剩下的还有就按剩下的算，
+        一条都不剩就把这一台从名单上撤掉。删不存在的编号返回 None。
+        """
+        with self.lock:
+            row = self.db.execute("SELECT src, round_id FROM packets WHERE id=?",
+                                  (int(pid),)).fetchone()
+            if row is None:
+                return None
+            self.db.execute("DELETE FROM packets WHERE id=?", (int(pid),))
+            self.db.commit()
+            rid, src = row["round_id"], row["src"] or ""
+        if rid and src:
+            self.rebuild_station(rid, src)
+        return {"id": int(pid), "call": src}
+
+    def rebuild_station(self, rid, call):
+        """按这一轮还剩下的报文，重算一台在名单上的那一行。
+
+        结果与一条条重新收进来一样：网格取最后报过的，路径取第一次报的，
+        回过 U CNNET 算已确认，没回但我们发出去过 ACK 算已回 ACK。剩零条就撤掉这一行。
+
+        轮值呼号不是参与台，跟 `_touch` 一样跳过。
+        """
+        call = (call or "").strip().upper()
+        if not call:
+            return None
+        with self.lock:
+            duty = self.db.execute("SELECT duty FROM rounds WHERE id=?", (rid,)).fetchone()
+            if duty and (duty["duty"] or "").strip().upper() == call:
+                return None
+            rows = self.db.execute(
+                "SELECT * FROM packets WHERE round_id=? AND src=? AND kind IN ('cq','u')"
+                " ORDER BY id ASC", (rid, call)).fetchall()
+            if not rows:
+                self.db.execute("DELETE FROM stations WHERE round_id=? AND call=?", (rid, call))
+                self.db.commit()
+                return None
+            grid, via, digi, note = "", "", "", ""
+            status = "called"
+            for r in rows:
+                g = (r["msg_grid"] or r["grid"] or "").strip()
+                if g:
+                    grid = g
+                via = via or (r["via"] or "")
+                digi = digi or (r["digi"] or "")
+                if r["kind"] == "u":
+                    status = "confirmed"
+                else:
+                    note = cnnet_note(r["text"] or "", call) or note
+            acked_ts, confirmed_ts = "", ""
+            if status == "confirmed":
+                first_u = [r["ts"] for r in rows if r["kind"] == "u"]
+                confirmed_ts = first_u[0] if first_u else rows[-1]["ts"]
+                acked_ts = confirmed_ts
+            else:
+                rnd = self.db.execute("SELECT opened FROM rounds WHERE id=?", (rid,)).fetchone()
+                sent = self.db.execute(
+                    "SELECT MIN(created) AS t FROM outbox WHERE dst=? AND sent<>'' AND created>=?",
+                    (call, (rnd["opened"] or "") if rnd else "")).fetchone()
+                if sent and sent["t"]:
+                    status, acked_ts = "acked", sent["t"]
+            at = bj_at(rows[0]["ts"])
+            first_ts, last_ts = rows[0]["ts"], rows[-1]["ts"]
+            old = self.db.execute("SELECT 1 FROM stations WHERE round_id=? AND call=?",
+                                  (rid, call)).fetchone()
+            if old:
+                self.db.execute(
+                    "UPDATE stations SET grid=?, via=?, digi=?, at=?, status=?, packets=?, first_ts=?,"
+                    " last_ts=?, note=?, acked_ts=?, confirmed_ts=? WHERE round_id=? AND call=?",
+                    (grid, via, digi, at, status, len(rows), first_ts, last_ts, note,
+                     acked_ts, confirmed_ts, rid, call))
+            else:
+                self.db.execute(
+                    "INSERT INTO stations (round_id,call,grid,via,digi,at,status,packets,first_ts,last_ts,"
+                    " note,acked_ts,confirmed_ts) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (rid, call, grid, via, digi, at, status, len(rows), first_ts, last_ts, note,
+                     acked_ts, confirmed_ts))
+            self.db.commit()
+        return {"call": call, "status": status, "packets": len(rows)}
+
+    def delete_round(self, date):
+        """把一轮连同它的名单与报文一起删掉。
+
+        删错了一轮就得连根拔掉：只删 rounds 那一行，名单与流水还挂在那个 id 上，
+        数字看着不对劲又找不回来。删不存在的日期返回 None。
+        """
+        row = self.round_by_date(date)
+        if not row:
+            return None
+        rid = row["id"]
+        with self.lock:
+            n_st = self.db.execute("SELECT COUNT(*) AS n FROM stations WHERE round_id=?",
+                                   (rid,)).fetchone()["n"]
+            n_pk = self.db.execute("SELECT COUNT(*) AS n FROM packets WHERE round_id=?",
+                                   (rid,)).fetchone()["n"]
+            self.db.execute("DELETE FROM stations WHERE round_id=?", (rid,))
+            self.db.execute("DELETE FROM packets WHERE round_id=?", (rid,))
+            self.db.execute("DELETE FROM rounds WHERE id=?", (rid,))
+            self.db.commit()
+        return {"date": date, "stations": n_st, "packets": n_pk}
+
     def packets(self, limit=200, kind=None):
         sql = "SELECT * FROM packets"
         args = []

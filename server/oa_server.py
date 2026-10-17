@@ -918,6 +918,30 @@ class Handler(BaseHTTPRequestHandler):
             ok = self.rt.store.drop_station(date, call)
             self._json({"ok": ok, "stations": self.rt.store.stations(date)})
             return
+        if path == "/api/admin/packet/delete":
+            if not self._need_token():
+                return
+            try:
+                pid = int(body.get("id"))
+            except (TypeError, ValueError):
+                self._json({"ok": False, "error": "没写要删哪一条"})
+                return
+            gone = self.rt.store.delete_packet(pid)
+            if gone is None:
+                self._json({"ok": False, "error": "没有这条报文"})
+                return
+            self._json({"ok": True, "call": gone["call"]})
+            return
+        if path == "/api/admin/round/delete":
+            if not self._need_token():
+                return
+            date = str(body.get("date") or "").strip()
+            gone = self.rt.store.delete_round(date)
+            if gone is None:
+                self._json({"ok": False, "error": "没有这一轮"})
+                return
+            self._json({"ok": True, "deleted": gone})
+            return
         if path == "/api/admin/ack":
             if not self._need_token():
                 return
