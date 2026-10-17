@@ -62,7 +62,6 @@
 .oa-clock b { display: block; font-size: 14px; font-weight: 400; letter-spacing: .04em; color: var(--text-faint); }
 .oa-clock span { display: block; margin-top: 12px; font-family: var(--font-mono); font-size: clamp(34px, 9vw, 84px); line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .oa-clock-note { margin-top: 12px; color: var(--text-faint); font-size: 14.5px; font-variant-numeric: tabular-nums; }
-.oa-sub { margin: 12px 0 0; max-width: 62ch; font-size: 17px; color: var(--text-dim); }
 .oa-op { color: var(--text-dim); }
 .oa-state { margin-top: 10px; font-size: clamp(20px, 3vw, 34px); font-weight: 700; letter-spacing: -.02em; color: var(--hot); }
 .oa-lines { list-style: none; margin: 30px 0 0; padding-left: 18px; max-width: 62ch; border-top: 1px solid var(--line-strong); border-left: 2px solid var(--hot); }
@@ -134,8 +133,7 @@
     <p class="oa-lang"><strong>中文</strong><a href="en/" hreflang="en" lang="en">English</a></p>
     <p class="oa-kicker">APRSNET.CN 独立活动</p>
     <h1 class="oa-title">APRSNETCN OA</h1>
-    <p class="oa-sub" data-oa-subtitle hidden></p>
-    <p class="oa-state">测试轮次</p>
+    <p class="oa-state" data-oa-subtitle>测试轮次</p>
     <ul class="oa-clock" data-oa-clock data-clock-day=" 天" data-clock-days="周日,周一,周二,周三,周四,周五,周六"
         data-clock-label-start="距开始" data-clock-label-end="距结束">
       <li><b data-clock="label">距开始</b><span data-clock="value">—</span></li>
@@ -392,7 +390,7 @@
 </a>
 
 <script src="clock.js?v=1"></script>
-<script src="roster.js?v=28"></script>
+<script src="roster.js?v=29"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>

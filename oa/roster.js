@@ -31,8 +31,9 @@
    活动页没有这些位子，什么也不做。
 
    顶层还有一个 meta：{"subtitleZh": "…", "subtitleEn": "…", "opName": "…"}。这三项只在
-   后台填过才写，页面上的 [data-oa-subtitle] 收副标题（按 <html lang> 选中文还是英文），
-   [data-oa-op] 收主控昵称，写成「 · 昵称」跟在轮值呼号后面。空串就把这几处藏起来。
+   后台填过才写。页面上的 [data-oa-subtitle] 就是标题底下那一行大字（没填时是「测试轮次」），
+   按 <html lang> 取中英哪一条，没填就留着页面自己那句；[data-oa-op] 收主控昵称，写成
+   「 · 昵称」跟在轮值呼号后面，空串就藏起来。
 
    取不到、不是合法 JSON、一轮都没有时页面一动不动，留着 HTML 里写好的那条空状态。
    一律用 textContent 写入，不拼 HTML 字符串。
@@ -418,8 +419,11 @@
     var sub = String((en ? meta.subtitleEn : meta.subtitleZh) || "").trim();
     var op = String(meta.opName || "").trim();
     Array.prototype.forEach.call(document.querySelectorAll("[data-oa-subtitle]"), function (el) {
-      el.textContent = sub;
-      el.hidden = !sub;
+      // 这一位就是标题底下那一行字（「测试轮次」那一行）：后台没填就留着页面自己那句
+      if (!el.hasAttribute("data-oa-sub-fallback")) {
+        el.setAttribute("data-oa-sub-fallback", el.textContent);
+      }
+      el.textContent = sub || el.getAttribute("data-oa-sub-fallback") || "";
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-oa-op]"), function (el) {
       el.textContent = op ? " \u00b7 " + op : "";
