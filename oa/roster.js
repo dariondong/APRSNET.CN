@@ -572,6 +572,7 @@
   };
 
   var paint = function (round) {
+    exportRound = round || null;
     var stations = (round && Array.isArray(round.stations)) ? round.stations : [];
     var frag = document.createDocumentFragment();
     var n = 0;
@@ -651,12 +652,22 @@
     imgBase = url.replace(/roster[^\/]*$/, "");
   }
 
-  /* 按钮与奖状链接共用的那半截查询：选中那一轮 + 页面语言 */
+  /* 导出用哪种语言：先跟着页面走，数据面板上那两个小按钮能改 */
+  var exportLang = chinese ? "zh" : "en";
+  var langBtns = document.querySelectorAll("[data-oa-lang]");
+  var paintLang = function () {
+    Array.prototype.forEach.call(langBtns, function (el) {
+      var on = String(el.getAttribute("data-oa-lang")) === exportLang;
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  };
+
+  /* 按钮与奖状链接共用的那半截查询：选中那一轮 + 导出语言 */
   var imgQuery = function (round) {
     var query = [];
     var date = String((round && round.date) || "").trim();
     if (date) query.push("date=" + encodeURIComponent(date));
-    if (!chinese) query.push("lang=en");
+    if (exportLang === "en") query.push("lang=en");
     return query.join("&");
   };
 
@@ -673,6 +684,21 @@
       if (call) el.setAttribute("href", imgBase + "cert.png?call=" + encodeURIComponent(call) + (query ? "&" + query : ""));
     });
   };
+
+  /* 换了导出语言就把按钮与奖状链接重排一遍；页面上没有这两个小按钮就跳过 */
+  var exportRound = null;
+  if (langBtns.length) {
+    paintLang();
+    Array.prototype.forEach.call(langBtns, function (el) {
+      el.addEventListener("click", function () {
+        var want = String(el.getAttribute("data-oa-lang") || "").trim();
+        if (!want || want === exportLang) return;
+        exportLang = want;
+        paintLang();
+        fillImages(exportRound);
+      });
+    });
+  }
 
   /* 名单会自己变：服务端把 data-roster 指到 /api/roster（绝对路径），隔一会儿再读一次；
      静态站上它是相对路径，读一次就不动了。 */
