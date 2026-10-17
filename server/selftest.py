@@ -441,6 +441,8 @@ def main():
         check("回的那条地址对", rows[0]["line"] == "BG7LZQ-3>APRS::BG5CCC-7 :ACK", True)
         check("确认后面跟一句人话", said(rows[1]["line"]),
               "Got OL51, you are #1 on the roster. https://aprsnet.cn/oa")
+        check("网址那句后面再提一句关键词", said(rows[2]["line"]),
+              "Send U CNNET to confirm.")
         # 那句里的 {url} 换成 OA_SITE_URL；没配就整段不占位，不留一个空尾巴
         rec = {"msg_grid": "OL51"}
         active = rt.store.active_round()
@@ -459,7 +461,7 @@ def main():
         rt.conf["OA_CQ_REPLY"] = oa_server.DEFAULTS["OA_CQ_REPLY"]
         rt.on_line(oa_aprs.parse_line(first))
         check("没编号的同一条不重复确认", len(acks(rt, "BG5CCC-7")), 1)
-        check("排队时不重发那句话", len(rt.store.outbox_for("BG5CCC-7")), 2)
+        check("排队时不重发那两句", len(rt.store.outbox_for("BG5CCC-7")), 3)
 
         def mark_sent_old():
             old = (datetime.now(UTC) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -472,13 +474,13 @@ def main():
             "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG5CCC-7 from OL52{21"))
         check("回过之后再喊一次照样回", len(acks(rt, "BG5CCC-7")), 2)
         check("第二次回的引他这条的编号", said(acks(rt, "BG5CCC-7")[-1]["line"]), "ack21")
-        check("紧跟着不再跟第二句", len(rt.store.outbox_for("BG5CCC-7")), 3)
+        check("紧跟着不再跟第二句", len(rt.store.outbox_for("BG5CCC-7")), 4)
         mark_sent_old()
         rt.on_line(oa_aprs.parse_line("BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET{22"))
         check("回过 U CNNET 只回一句 73",
               said(rt.store.outbox_for("BG5CCC-7")[-1]["line"]), "73 TNX!")
         check("U 那条也回确认", said(rt.store.outbox_for("BG5CCC-7")[-2]["line"]), "ack22")
-        check("那句就是 73", len(rt.store.outbox_for("BG5CCC-7")), 5)
+        check("那句就是 73", len(rt.store.outbox_for("BG5CCC-7")), 6)
 
         # 对话历史：这一台发来的与我们回给的，合成一条时间线
         lines = rt.store.thread("BG5CCC-7")
@@ -492,7 +494,7 @@ def main():
         check("没写呼号就没有对话", rt.store.thread(""), [])
         rt.on_line(oa_aprs.parse_line(
             "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET"))
-        check("再回一次 U 不重复回 73", len(rt.store.outbox_for("BG5CCC-7")), 5)
+        check("再回一次 U 不重复回 73", len(rt.store.outbox_for("BG5CCC-7")), 6)
         mark_sent_old()
         rt.on_line(oa_aprs.parse_line(
             "BG5CCC-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG5CCC-7 from OL53{23"))
@@ -513,6 +515,21 @@ def main():
               rt.maybe_cq_reply(rt.store.active_round(), "BG5CCC-7", rec53), True)
         check("紧接着再来一条不再跟",
               rt.maybe_cq_reply(rt.store.active_round(), "BG5CCC-7", rec53), False)
+        # 提示那句留空就只跟回话那句；配了就是两句一起出去
+        rt.conf["OA_CONFIRM_TEXT"] = ""
+        rt._cq_replied.clear()
+        before = len(rt.store.outbox_for("BG5CCC-7"))
+        check("提示那句留空也照样跟回话",
+              rt.maybe_cq_reply(rt.store.active_round(), "BG5CCC-7", rec53), True)
+        check("提示留空就只多一条",
+              len(rt.store.outbox_for("BG5CCC-7")) - before, 1)
+        rt.conf["OA_CONFIRM_TEXT"] = oa_server.DEFAULTS["OA_CONFIRM_TEXT"]
+        rt._cq_replied.clear()
+        before = len(rt.store.outbox_for("BG5CCC-7"))
+        check("配了提示就两句一起出去",
+              rt.maybe_cq_reply(rt.store.active_round(), "BG5CCC-7", rec53), True)
+        check("两句一起发两条",
+              len(rt.store.outbox_for("BG5CCC-7")) - before, 2)
         rt.store.close()
     finally:
         shutil.rmtree(again_dir, ignore_errors=True)
@@ -546,9 +563,9 @@ def main():
         check("确认那句后面不挂编号", rows[0]["line"].endswith(":ack12"), True)
         check("确认不带自己的编号", rows[0]["msgid"], "")
         check("跟的那句带自己的编号", bool(rows[1]["msgid"]), True)
-        check("确认那句不占号", rt.store.get_setting("msg_seq") or "0", "1")
+        check("确认那句不占号", rt.store.get_setting("msg_seq") or "0", "2")
         check("报文表里也存下编号", rt.store.packets()[0]["msgid"], "12")
-        check("回一句确认再跟一句人话", len(rt.store.outbox_for("BG5DDD-3")), 2)
+        check("回一句确认再跟两句人话", len(rt.store.outbox_for("BG5DDD-3")), 3)
         # 走完 U CNNET 会再发一句 73，那句**带**自己的编号：对方的 ack 引的就是它。
         rt.on_line(oa_aprs.parse_line(
             "BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET{13"))
@@ -622,12 +639,15 @@ def main():
         rt.on_line(oa_aprs.parse_line(
             "BG7AAA-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET OL62{31"))
         check("改成对的就回 ACK",
-              said(rt.store.outbox_for("BG7AAA-9")[-2]["line"]), "ack31")
+              said(rt.store.outbox_for("BG7AAA-9")[-3]["line"]), "ack31")
         # 名次取决于前面那几台是哪一秒进名单的，只比句式，不钉死数字
-        said_back = said(rt.store.outbox_for("BG7AAA-9")[-1]["line"])
+        said_back = said(rt.store.outbox_for("BG7AAA-9")[-2]["line"])
         check("ACK 后面跟一句人话",
               said_back.startswith("Got OL62, you are #") and
               said_back.endswith(" on the roster. https://aprsnet.cn/oa"), True)
+        check("网址后面跟着关键词那句",
+              said(rt.store.outbox_for("BG7AAA-9")[-1]["line"]),
+              "Send U CNNET to confirm.")
         rt.on_line(oa_aprs.parse_line(
             "BG6BBB-5>APRS,TCPIP*,qAC,T2X::BD9ZZZ   :你好"))
         check("发给别人的不回", rt.store.outbox_for("BG6BBB-5"), [])

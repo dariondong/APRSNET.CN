@@ -48,6 +48,7 @@ DEFAULTS = {
     "OA_AUTO_ACK": "1",
     "OA_ACK_TEXT": "ACK",
     "OA_CQ_REPLY": "Got {grid}, you are #{rank} on the roster. {url}",
+    "OA_CONFIRM_TEXT": "Send U CNNET to confirm.",
     "OA_TNX_TEXT": "73 TNX!",
     "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <CALL> <GRID>",
     "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET",
@@ -548,8 +549,19 @@ class Runtime(object):
             text = " ".join(text.split())
         return text.strip()
 
+    def confirm_text(self):
+        """网址那句之后再补一句：回哪个关键词才算签到完。留空或写 off 就不发。"""
+        text = (self.conf.get("OA_CONFIRM_TEXT") or "").strip()
+        if text.lower() in ("-", "0", "off", "no"):
+            return ""
+        return text
+
     def maybe_cq_reply(self, active, call, record):
-        """跟的那句话：同一台短时间里只跟一句，手机把同一条重发两遍也只回一次。"""
+        """跟的那两句话：同一台短时间里只跟一遍，手机把同一条重发两遍也只回一次。
+
+        第一句是回话（网格、名次、站点地址），第二句是叫他回哪个关键词才算签到完。
+        两句都挂在这个节流后面：跟了第一句就一定跟第二句，重发的那条两句都不跟。
+        """
         now = time.time()
         if now - self._cq_replied.get(call, 0.0) < 30.0:
             return False
@@ -558,6 +570,9 @@ class Runtime(object):
             return False
         self._cq_replied[call] = now
         self.send_msg(call, text, date=active["date"])
+        hint = self.confirm_text()
+        if hint:
+            self.send_msg(call, hint, date=active["date"])
         return True
 
     def maybe_auto_tnx(self, record, rid):
