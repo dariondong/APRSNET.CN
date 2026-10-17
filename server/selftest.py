@@ -140,6 +140,11 @@ def main():
         check("主控待命那句不算喊到", duty_beat["kind"], "other")
         check("主控自己喊到认得出", records[7]["kind"], "cq")
 
+        # 页面写着「也可以不发 CQ，直接发 CNNET 你的信息」
+        silent = oa_aprs.parse_line("BG8ZZZ>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CNNET BG7XXX OL62")
+        check("不发 CQ 也认成喊到", silent["kind"], "cq")
+        check("不发 CQ 也读出网格", silent["msg_grid"], "OL62")
+
         roster = store.roster()
         check("只有一轮", len(roster["rounds"]), 1)
         rnd = roster["rounds"][0]
@@ -165,7 +170,15 @@ def main():
               bool(utc_first) and utc_first != by_call["BG7XXX-9"].get("first"), True)
         check("参与时间与第一次一致时也给 UTC",
               bool(by_call["BG7XXX-9"].get("atUtc")), True)
-        check("名单里带这台报的那句话", by_call["BG7XXX-9"].get("msg"), "OL62")
+        check("只报呼号与网格时没有自己那句话", by_call["BG7XXX-9"].get("msg"), "")
+        check("签到后面那句自己的话", oa_store.cnnet_note("CQ CNNET BG6TA from ON80 周末在山上"),
+              "周末在山上")
+        check("只写呼号与网格就没有自己的话",
+              oa_store.cnnet_note("CQ CNNET BG6TA from ON80", "BG6TA"), "")
+        check("U 那条后面的话也算", oa_store.cnnet_note("U CNNET 73", "BG6TA"), "73")
+        check("不写 from 也认", oa_store.cnnet_note("CNNET BG6TA ON80 信号好", "BG6TA"), "信号好")
+        check("没有前缀的整句留着",
+              oa_store.cnnet_note("CQ CNNET 我是 BG6TA，周末在山上", "BG6TA"), "我是 BG6TA，周末在山上")
         check("网格从报文里读", by_call["BG7XXX-9"]["grid"], "OL62")
         check("信息里没写网格的不进名单", "BG8ZZZ" in live, False)
         check("没写网格的标成 incomplete", results[-1].get("incomplete"), True)

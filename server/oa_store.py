@@ -146,12 +146,35 @@ def utc_at(text):
     return dt.strftime("%m-%d %H:%M") if dt else ""
 
 
-_CNNET_HEAD = re.compile(r"^\s*(?:CQ|U)\s+CNNET\b[ \t]*", re.I)
+_CNNET_HEAD = re.compile(r"^\s*(?:(?:CQ|U)\s+)?CNNET\b[ \t]*", re.I)
+# 自己那句话前面的呼号、网格与 from 这类连接词，都不算话
+_CALL_SHAPE = re.compile(r"^[A-Z]{1,3}[0-9][A-Z]{0,4}(?:-\d{1,2})?$")
+_GRID_SHAPE = re.compile(r"^[A-R]{2}[0-9]{2}(?:[A-X]{2})?$")
+_FILLER = ("FROM", "DE", "@", "AT")
 
 
 def cnnet_tail(text):
     """签到那两行（CQ CNNET / U CNNET）后面跟的那句话，没有就是空串。"""
     return _CNNET_HEAD.sub("", str(text or "")).strip()
+
+
+def cnnet_note(text, src=""):
+    """签到那行里属于用户自己的那句话：开头的呼号、网格与 from 这类词都不算。
+
+    「CQ CNNET BG7XXX from OL62 周末在山上」→「周末在山上」；只写呼号与网格就是空串。
+    只看开头三个词，免得把正句吃进去。
+    """
+    words = cnnet_tail(text).split()
+    head = (src or "").strip().upper().split("-")[0]
+    cut = 0
+    while cut < len(words) and cut < 3:
+        word = words[cut].strip(",.;:\uff0c\u3002\u3001").upper()
+        if (word in _FILLER or bool(_GRID_SHAPE.match(word)) or bool(_CALL_SHAPE.match(word))
+                or (head and word.split("-")[0] == head)):
+            cut += 1
+            continue
+        break
+    return " ".join(words[cut:]).strip()
 
 
 def bj_now_date():
@@ -424,14 +447,14 @@ class Store(object):
                 rows = self.db.execute(
                     "SELECT * FROM stations WHERE round_id=? ORDER BY first_ts ASC, call ASC",
                     (rnd["id"],)).fetchall()
-                # 每台报的那句话：签到那两行的前缀去掉，留最后一回非空的（手写名单里没有就是空）
+                # 每台自己那句话：签到那两行去掉前缀、再去掉呼号与网格，留最后一回非空的
                 msgs = {}
                 for msg_row in self.db.execute(
                         "SELECT src, text FROM packets WHERE round_id=? AND kind IN ('cq','u')"
                         " ORDER BY ts ASC", (rnd["id"],)):
-                    tail = cnnet_tail(msg_row["text"])
-                    if tail:
-                        msgs[msg_row["src"]] = tail
+                    note = cnnet_note(msg_row["text"], msg_row["src"])
+                    if note:
+                        msgs[msg_row["src"]] = note
             for row in rows:
                 first = bj_at(row["first_ts"])
                 stations.append({

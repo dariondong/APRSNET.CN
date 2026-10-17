@@ -2,7 +2,8 @@
 """APRSNETCN OA 后端：APRS-IS 报文的解析与接收。
 
 APRS-IS 推来的一行是 SRC>DEST,PATH:info。这里把它拆成呼号、路径、位置、网格和文字，
-再从文字里认出 CQ CNNET 与 U CNNET。只用标准库，不装任何东西。
+再从文字里认出 CQ CNNET 与 U CNNET，页面写的不发 CQ 的 CNNET 同样算喊到。
+只用标准库，不装任何东西。
 
 接收用 pass -1，只收不发。要发 ACK 得另给 OA_TX_PASSCODE，默认不发。
 """
@@ -15,7 +16,8 @@ from datetime import datetime, timezone
 UTC = timezone.utc
 
 _LINE = re.compile(r"^([^>]{1,32})>([^,:]{1,32})(?:,([^:]*))?:(.*)$", re.S)
-_CNNET = re.compile(r"^\s*(CQ|U)\s+CNNET\b", re.I)
+# 喊到可以带 CQ，也可以直接发 CNNET；U CNNET 是确认
+_CNNET = re.compile(r"^\s*(?:(CQ|U)\s+)?CNNET\b", re.I)
 _ACK = re.compile(r"^ACK", re.I)
 _LAT = re.compile(r"^[0-9]{4}\.[0-9]{2}[NS]$")
 _LON = re.compile(r"^[0-9]{5}\.[0-9]{2}[EW]$")
@@ -163,7 +165,8 @@ def parse_info(src, info):
     text = text.strip()
     hit = _CNNET.search(text)
     if hit:
-        kind = "cq" if hit.group(1).upper() == "CQ" else "u"
+        head = (hit.group(1) or "CQ").upper()
+        kind = "cq" if head == "CQ" else "u"
     elif _ACK.match(text):
         kind = "ack"
     return kind, text, msgto, lat, lon
