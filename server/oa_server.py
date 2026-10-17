@@ -49,7 +49,7 @@ DEFAULTS = {
     "OA_TNX_TEXT": "73 TNX!",
     "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <CALL> <GRID>",
     "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET",
-    "OA_ACK_MAX_PER_MINUTE": "12",
+    "OA_ACK_MAX_PER_MINUTE": "30",
     "OA_ROUND_DUTY": "",
     "OA_TEST_NOTE": "",
     "OA_TEST_NOTE_EN": "",
@@ -164,10 +164,11 @@ class Runtime(object):
         self._auto_round = flag(conf.get("OA_AUTO_ROUND"))
         self._auto_set = self.store.get_setting("auto")
         self.ack_retry = as_int(conf.get("OA_ACK_RETRY"), 3)
-        self.ack_per_minute = as_int(conf.get("OA_ACK_MAX_PER_MINUTE"), 12)
+        self.ack_per_minute = as_int(conf.get("OA_ACK_MAX_PER_MINUTE"), 30)
         self._sendq = queue.Queue()
         self._sent_at = []
         self._send_lock = threading.Lock()
+        self._sender = None
         self._msg_lock = threading.Lock()
         self._stop = threading.Event()
 
@@ -267,15 +268,33 @@ class Runtime(object):
     def can_send(self):
         return bool(self.conf["OA_TX_PASSCODE"])
 
-    def rate_ok(self):
-        """一分钟内最多发这么多条，免得哪一阵子热闹起来往外刷。"""
-        now = time.time()
-        with self._send_lock:
-            self._sent_at = [t for t in self._sent_at if now - t < 60.0]
-            if len(self._sent_at) >= self.ack_per_minute:
-                return False
-            self._sent_at.append(now)
-            return True
+    def take_send_slot(self):
+        """等一个发送名额：有名额就立刻发，满了就等到腾出名额，不丢这条。
+
+        一分钟 ack_per_minute 条是上限，也是这一分钟里能连着发出去的量：
+        报文一块来的时候前面那一批不停顿地回，超过上限的那几条隔几秒就轮到。
+        """
+        while not self._stop.is_set():
+            now = time.time()
+            with self._send_lock:
+                self._sent_at = [t for t in self._sent_at if now - t < 60.0]
+                if len(self._sent_at) < self.ack_per_minute:
+                    self._sent_at.append(now)
+                    return True
+                wait = 60.0 - (now - self._sent_at[0])
+            self._stop.wait(max(0.2, min(wait + 0.05, 2.0)))
+        return False
+
+    def sender_link(self, duty):
+        """当前这一轮的主控那条只发连接；换了主控呼号就换一条。"""
+        if self._sender is not None and self._sender.login == duty:
+            return self._sender
+        if self._sender is not None:
+            self._sender.close()
+        self._sender = oa_aprs.SenderLink(
+            self.conf["OA_APRS_HOST"], self.conf["OA_APRS_PORT"],
+            login=duty, passcode=self.conf["OA_TX_PASSCODE"])
+        return self._sender
 
     def queue_send(self, src, dst, line, date="", msgid=""):
         """排队发一条。没配口令就只记进发件箱，主控自己发。"""
@@ -298,17 +317,19 @@ class Runtime(object):
                          % ("开" if self.auto_mode else "关", "开" if self.auto_ack_on else "关"))
 
     def _send_loop(self):
+        try:                                  # 先把发送那条连接登好，第一条 ACK 不用等握手
+            self.sender_link(self.duty_call()).warm()
+        except Exception as exc:
+            sys.stderr.write("先连发送连接没成：%s\n" % exc)
         while not self._stop.is_set():
             try:
                 job = self._sendq.get(timeout=1)
             except queue.Empty:
                 continue
-            if not self.rate_ok():
-                self.store.mark_sent(job["id"], "一分钟里发得太多了，这条没发")
-                continue
+            if not self.take_send_slot():
+                return
             try:
-                oa_aprs.send_once(self.conf["OA_APRS_HOST"], self.conf["OA_APRS_PORT"],
-                                  self.duty_call(), self.conf["OA_TX_PASSCODE"], job["line"])
+                self.sender_link(self.duty_call()).send(job["line"])
                 self.store.mark_sent(job["id"], "")
                 if job["date"] and job["dst"] and self.is_ack_line(job["line"]):
                     self.store.mark_acked_station(job["date"], job["dst"])
@@ -481,7 +502,7 @@ class Runtime(object):
         self.send_msg(src, tnx, date=active["date"])
 
     def retry_pending_acks(self):
-        """全自动时补漏：没回成的 ACK（当时被限速、或者发失败）过一分钟再试，
+        """全自动时补漏：没发出去的 ACK（连不上、服务器不收）过一分钟再试，
 
         一台一轮最多补 OA_ACK_RETRY 次。还在排队等发的不重复入队。
         """
@@ -588,6 +609,8 @@ class Runtime(object):
         self._stop.set()
         if self.link:
             self.link.stop()
+        if self._sender is not None:                 # 只发那条连接也收掉
+            self._sender.close()
 
 
 class Handler(BaseHTTPRequestHandler):

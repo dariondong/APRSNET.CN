@@ -8,6 +8,7 @@ APRS-IS 推来的一行是 SRC>DEST,PATH:info。这里把它拆成呼号、路�
 接收用 pass -1，只收不发。要发 ACK 得另给 OA_TX_PASSCODE，默认不发。
 """
 import re
+import select
 import socket
 import threading
 import time
@@ -23,6 +24,9 @@ _ACK = re.compile(r"^ACK", re.I)
 # 不是一句「ACK」文字。编号本身最多 5 位字母数字。
 _ACK_ID = re.compile(r"^(ack|rej)\s*([A-Za-z0-9]{1,5})$", re.I)
 _MSG_ID = re.compile(r"^[A-Za-z0-9]{1,5}$")
+# 登录回的那句 `# logresp CALL verified, server X`；`unverified` 里也含 verified，
+# 按整词认，不然口令错了也当成登进去了。
+_VERIFIED = re.compile(r"\bverified\b")
 _LAT = re.compile(r"^[0-9]{4}\.[0-9]{2}[NS]$")
 _LON = re.compile(r"^[0-9]{5}\.[0-9]{2}[EW]$")
 _ALIAS = re.compile(r"^(WIDE|RELAY|TRACE|GATE|SGATE|RFONLY|NOGATE)\d*", re.I)
@@ -332,7 +336,10 @@ class AprsIsLink(threading.Thread):
 
 
 def send_once(host, port, login, passcode, line, timeout=12):
-    """发一条报文：连上去、登录、等 logresp、发、走。返回服务器那句 logresp。"""
+    """发一条报文：连上去、登录、等 logresp、发、走。返回服务器那句 logresp。
+
+    服务端已经改成 SenderLink 那条长连接了（一条一条连太慢），这里留着给单条手发。
+    """
     if not passcode:
         raise RuntimeError("没有报文口令（OA_TX_PASSCODE 空着），不发")
     sock = _connect(host, port, timeout=timeout)
@@ -357,7 +364,7 @@ def send_once(host, port, login, passcode, line, timeout=12):
                     banner = head
             if banner:
                 break
-        if "verified" not in banner:
+        if not _VERIFIED.search(banner):
             raise RuntimeError("登录没被认：%s" % (banner or "（没回话）"))
         sock.sendall((line.rstrip("\r\n") + "\r\n").encode("utf-8"))
         time.sleep(0.6)
@@ -367,3 +374,104 @@ def send_once(host, port, login, passcode, line, timeout=12):
             sock.close()
         except OSError:
             pass
+
+
+class SenderLink(object):
+    """一条只发的 APRS-IS 连接：登录一次，之后每条就一次 write。
+
+    以前每发一条都走 send_once，连上、登录、等 logresp、再睡 0.6 秒；
+    报文连着进来时 ACK 只能一条一条往外挤。连接留着，发一条就是一次 write，
+    对端掉了就在这条上重连一次再发。
+
+    login 换了呼号（换了一轮的轮值台）就整个换一条，不要在旧连接上冒名发。
+    """
+
+    def __init__(self, host, port=14580, login="", passcode="", timeout=12):
+        self.host = host
+        self.port = int(port)
+        self.login = login
+        self.passcode = passcode or ""
+        self.timeout = timeout
+        self.banner = ""
+        self._sock = None
+
+    def close(self):
+        sock, self._sock = self._sock, None
+        if sock is not None:
+            try:
+                sock.close()
+            except OSError:
+                pass
+
+    def _alive(self):
+        """对端还挂着吗。读到空字节就是 FIN，这条不能再发了。
+
+        服务器会定时推 `#` 开头的保活，顺手把它们从缓冲区读掉，免得越堆越多。
+        """
+        sock = self._sock
+        if sock is None:
+            return False
+        try:
+            while True:
+                ready, _, _ = select.select([sock], [], [], 0)
+                if not ready:
+                    return True
+                if not sock.recv(4096):
+                    return False
+        except (OSError, ValueError):
+            return False
+
+    def _login(self):
+        if not self.passcode:
+            raise RuntimeError("没有报文口令（OA_TX_PASSCODE 空着），不发")
+        sock = _connect(self.host, self.port, timeout=self.timeout)
+        sock.settimeout(self.timeout)
+        sock.sendall(("user %s pass %s vers aprsnetcn-oa 0.1\r\n"
+                      % (self.login, self.passcode)).encode("utf-8"))
+        buf = b""
+        banner = ""
+        deadline = time.time() + 6
+        while time.time() < deadline and not banner:
+            try:
+                chunk = sock.recv(4096)
+            except socket.timeout:
+                continue
+            if not chunk:
+                break
+            buf = buf + chunk
+            while b"\n" in buf:
+                head, buf = buf.split(b"\n", 1)
+                head = head.decode("utf-8", "replace").strip()
+                if head.startswith("# logresp"):
+                    banner = head
+        if not _VERIFIED.search(banner):
+            try:
+                sock.close()
+            except OSError:
+                pass
+            raise RuntimeError("登录没被认：%s" % (banner or "（没回话）"))
+        self._sock = sock
+        self.banner = banner
+        return banner
+
+    def warm(self):
+        """先把连接登好：第一条报文就不用等握手。"""
+        if not self._alive():
+            self.close()
+            self._login()
+        return self.banner
+
+    def send(self, line):
+        """发一行，返回服务器那句 logresp。连接不在或已经断了，重连一次再发。"""
+        try:
+            return self._write(line)
+        except (OSError, IOError):
+            self.close()
+            return self._write(line)
+
+    def _write(self, line):
+        if not self._alive():
+            self.close()
+            self._login()
+        self._sock.sendall((line.rstrip("\r\n") + "\r\n").encode("utf-8"))
+        return self.banner
