@@ -176,8 +176,13 @@ def parse_info(src, info):
         msgto = info[1:10].strip()
         tail = info[11:]
         body, sep, tail_id = tail.rpartition("{")
-        if sep and _MSG_ID.match(tail_id.strip()):
-            msgid = tail_id.strip()
+        tail_id = tail_id.strip()
+        # `{12_` 结尾那个下划线是「不用回确认」，编号本身照样记下来 ——
+        # 不清掉它，整个编号都认不出，回出去的确认就只剩一句没有编号的 ACK。
+        if tail_id.endswith("_"):
+            tail_id = tail_id[:-1]
+        if sep and _MSG_ID.match(tail_id):
+            msgid = tail_id
             tail = body
         text = tail.split("{", 1)[0]
     text = text.strip()

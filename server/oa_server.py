@@ -377,6 +377,16 @@ class Runtime(object):
         body = text if not msgid else "%s{%s" % (text, msgid)
         return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), body)
 
+    def ack_line(self, call, text, duty=""):
+        """确认那一行：`:ADDRESSEE:ack<编号`，编号后面**不再挂自己的消息编号**。
+
+        按 APRS101，确认就是「ack + 对方那条报文末尾的编号」，冒号后面整段都是
+        确认。挂上自己的 `{编号` 虽然不违反「编号可选」，但收端只要按「冒号后整段
+        = ack+编号」对号，这条确认就对不上，界面上那条消息永远显示不出「已送达」。
+        别的台发的确认也是这么写的（`...::BG7LZQ-3 :ack40`）。
+        """
+        return "%s>APRS::%s:%s" % (duty or self.duty_call(), call.ljust(9), text)
+
     def next_msgid(self):
         """下一条报文的编号：两位数字轮着用，对方的 `ack<编号>` 引的就是它。"""
         with self._msg_lock:
@@ -385,12 +395,19 @@ class Runtime(object):
             self.store.set_setting("msg_seq", cur)
         return "%02d" % cur
 
-    def send_msg(self, call, text, date="", duty="", msgid=""):
-        """发一句给某台：带上本条的消息编号，记进发件箱。"""
+    def send_msg(self, call, text, date="", duty="", msgid="", with_id=True):
+        """发一句给某台，记进发件箱。
+
+        `with_id=False` 是给确认用的：确认那句不挂自己的消息编号（见 ack_line）。
+        """
         duty = (duty or self.duty_call()).strip().upper()
         call = (call or "").strip().upper()
-        msgid = msgid or self.next_msgid()
-        line = self.msg_line(call, text, duty, msgid)
+        if with_id:
+            msgid = msgid or self.next_msgid()
+            line = self.msg_line(call, text, duty, msgid)
+        else:
+            msgid = ""
+            line = self.ack_line(call, text, duty)
         oid = self.queue_send(duty, call, line, date=date, msgid=msgid)
         return oid, line
 
@@ -478,7 +495,8 @@ class Runtime(object):
             return
         if not self.ack_pending(active, src):
             return
-        self.send_msg(src, self.ack_text(record.get("msgid") or ""), date=active["date"])
+        self.send_msg(src, self.ack_text(record.get("msgid") or ""),
+                      date=active["date"], with_id=False)
 
     def maybe_auto_tnx(self, record, rid):
         """一台走完 U CNNET 回一句 73：一台一轮一份。"""
@@ -493,7 +511,8 @@ class Runtime(object):
             return
         # U 那条带了编号的，先回一份 ack：那是对他最后一条的确认
         if record.get("msgid"):
-            self.send_msg(src, self.ack_text(record["msgid"]), date=active["date"])
+            self.send_msg(src, self.ack_text(record["msgid"]),
+                          date=active["date"], with_id=False)
         tnx = self.conf.get("OA_TNX_TEXT") or "73 TNX!"
         mark = tnx[:8]
         for row in self.store.outbox_for(src, active["opened"] or ""):
@@ -529,7 +548,7 @@ class Runtime(object):
                 if gap is not None and gap < 60.0:
                     continue                                # 一分钟里只补一次
             self.send_msg(call, self.ack_text(self.store.last_checkin_msgid(active["id"], call)),
-                          date=active["date"])
+                          date=active["date"], with_id=False)
             done = done + 1
         if done:
             sys.stderr.write("补回 ACK %d 条\n" % done)
@@ -848,7 +867,9 @@ class Handler(BaseHTTPRequestHandler):
             if not call or not duty:
                 self._fail(400, "缺呼号：回谁、以谁的名义回")
                 return
-            oid, line = self.rt.send_msg(call, text, date=date, duty=duty)
+            is_ack = bool(re.match(r"^(ack|rej)[A-Za-z0-9]{1,5}$", text, re.I))
+            oid, line = self.rt.send_msg(call, text, date=date, duty=duty,
+                                         with_id=not is_ack)
             if not self.rt.can_send():
                 self.rt.store.set_station(date, call, status="acked", create=False)
             self._json({"ok": True, "queued": self.rt.can_send(), "line": line, "id": oid})

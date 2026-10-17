@@ -318,7 +318,8 @@ def main():
         check("打开了", again.auto_mode, True)
         check("只补没回上 ACK 的那台", again.retry_pending_acks(), 1)
         check("补回那条的写法", said(again.store.outbox_for("BG1AAA")[0]["line"]), "ACK")
-        check("回的那条带消息编号", again.store.outbox_for("BG1AAA")[0]["line"].endswith("{01"), True)
+        check("回的那条不挂编号（标准 ack）",
+              again.store.outbox_for("BG1AAA")[0]["line"].endswith(":ACK"), True)
         check("排着队的不重复入队", again.retry_pending_acks(), 0)
 
         def fail_last():
@@ -360,7 +361,7 @@ def main():
         rows = rt.store.outbox_for("BG5CCC-7")
         check("第一次喊到回一条", len(rows), 1)
         check("第一次回的写法", said(rows[0]["line"]), "ACK")
-        check("回的那条地址对", rows[0]["line"].startswith("BG7LZQ-3>APRS::BG5CCC-7 :ACK{"), True)
+        check("回的那条地址对", rows[0]["line"] == "BG7LZQ-3>APRS::BG5CCC-7 :ACK", True)
         rt.on_line(oa_aprs.parse_line(first))
         check("还排着队的不重复入队", len(rt.store.outbox_for("BG5CCC-7")), 1)
 
@@ -401,6 +402,9 @@ def main():
     try:
         rec = oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET OL62{12")
         check("报文末尾的编号读出来", rec["msgid"], "12")
+        check("`{12_` 这种不用回确认的也读出编号",
+              oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET OL62{12_")["msgid"],
+              "12")
         check("没写编号就是空串",
               oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET OL62")["msgid"], "")
         acked_rec = oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :ack9383")
@@ -418,15 +422,25 @@ def main():
             "BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET OL62{12"))
         rows = rt.store.outbox_for("BG5DDD-3")
         check("回的确认引对方那条的编号", said(rows[0]["line"]), "ack12")
-        check("自己发的那条也有编号", rows[0]["msgid"], "01")
-        check("自己发的编号接着往下排", rt.store.get_setting("msg_seq"), "1")
+        # 标准写法：冒号后面整段就是 `ack<编号>`，不再挂自己的消息编号。
+        check("确认那句后面不挂编号", rows[0]["line"].endswith(":ack12"), True)
+        check("确认不带自己的编号", rows[0]["msgid"], "")
+        check("确认不占自己的号", rt.store.get_setting("msg_seq") or "0", "0")
         check("报文表里也存下编号", rt.store.packets()[0]["msgid"], "12")
-        rt.on_line(oa_aprs.parse_line(
-            "BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :ack%s" % rows[0]["msgid"]))
-        check("对方 ack 回来记下投递", bool(rt.store.outbox_for("BG5DDD-3")[0]["acked"]), True)
         check("确认那一句不再回话", len(rt.store.outbox_for("BG5DDD-3")), 1)
+        # 走完 U CNNET 会再发一句 73，那句**带**自己的编号：对方的 ack 引的就是它。
+        rt.on_line(oa_aprs.parse_line(
+            "BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET{13"))
+        rows = rt.store.outbox_for("BG5DDD-3")
+        numbered = [r for r in rows if r["msgid"]]
+        check("73 那句带自己的编号", len(numbered), 1)
+        rt.on_line(oa_aprs.parse_line(
+            "BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :ack%s" % numbered[0]["msgid"]))
+        after = [r for r in rt.store.outbox_for("BG5DDD-3")
+                 if r["msgid"] == numbered[0]["msgid"]]
+        check("对方 ack 回来记下投递", bool(after[0]["acked"]), True)
         rt.on_line(oa_aprs.parse_line("BG5DDD-3>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :ack99"))
-        check("没那编号的 ack 不动别的", len(rt.store.outbox_for("BG5DDD-3")), 1)
+        check("没那编号的 ack 不动别的", len(rt.store.outbox_for("BG5DDD-3")), len(rows))
         # 名单状态：ACK 只把「只喊到」抬上来，已经确认的不往回掉
         rt.store.set_station(today, "BG1OLD-1", status="called")
         rt.store.mark_acked_station(today, "BG1OLD-1")
