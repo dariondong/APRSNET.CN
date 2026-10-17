@@ -34,6 +34,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /api/roster` | 名单，与静态 `roster.json` 同格式 |
 | `GET /api/board.png` | 签到表那张 PNG，`?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文 |
 | `GET /api/points.png` | 签到点那张 PNG，参数同上 |
+| `GET /api/cert.png` | 一台一份的参与证书 PNG，`?call=BG7LZQ-2` 必写，`?date=` 与 `?lang=` 同上 |
 | `GET /api/health` | 连接状态、收到多少行、当轮、报文数 |
 | `GET /admin` | 主控台（要口令） |
 | `GET /api/admin/state` | 主控台读的一切：状态、轮次、本轮数字、名单、流水 |
@@ -57,6 +58,11 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 签到表一台一行，列是呼号、网格、路径、状态、时间；签到点把每台的网格中心标在带刻度的方框里，
 认不出网格的不画点。两张图的名底都写着哪一轮、轮值呼号与落款时间，页面上的按钮自己带着
 `?date=` 与 `?lang=en`，点了就是当前选中那一轮。
+
+名单里每一台还有自己那份参与证书：`/api/cert.png?call=BG7LZQ-2`。图上是呼号、哪一轮、
+网格 / 路径 / 时间，脚上一个编号（呼号与轮次算出来的八位十六进制，同一台同一轮永远一样）。
+呼号先按整个找，找不到再按去掉 SSID 的呼号找，只有唯一一台时才认；没带呼号回 400，
+这一轮里没这台回 404。
 
 - 出图要 Pillow，没装回 503，页面别的照常；
 - 中文字体先找 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`，找不到就退回 Pillow 自带的位图字；

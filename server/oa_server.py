@@ -121,6 +121,21 @@ def as_int(value, default):
         return default
 
 
+def pick_station(row, want):
+    """名单里找那一台：先按整个呼号找，找不到再按去掉 SSID 的呼号找，只有一台时才认。"""
+    want = (want or "").strip().upper()
+    if not want:
+        return None
+    stations = row.get("stations") or []
+    for st in stations:
+        if (st.get("call") or "").strip().upper() == want:
+            return st
+    base = want.split("-")[0]
+    near = [st for st in stations
+            if (st.get("call") or "").strip().upper().split("-")[0] == base]
+    return near[0] if len(near) == 1 else None
+
+
 class Runtime(object):
     def __init__(self, conf):
         self.conf = conf
@@ -566,6 +581,9 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/api/board.png", "/api/points.png"):
             self._image("board" if path.startswith("/api/board") else "points", query)
             return
+        if path == "/api/cert.png":
+            self._cert(query)
+            return
         if path == "/api/health":
             self._json(self.rt.health())
             return
@@ -723,18 +741,11 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---- 文件 ----
 
-    def _image(self, what, query):
-        """签到表 / 签到点的 PNG。数据面板上那两个下载按钮点到这里。
+    def _round_of(self, query):
+        """要哪一轮：`?date=2026-10-17` 指定，不给就取最新一轮；顺带定页面语言。
 
-        ?date=2026-10-17 指定哪一轮，不给就是最新一轮；?lang=en 要英文。
-        名单读不出来就画一张空表；没装 Pillow 回 503。
+        返回 (lang, date, row)；没有这一轮时 row 是 None。
         """
-        try:
-            import oa_image
-        except ImportError:
-            self._fail(503, "服务端没装 Pillow，画不了图")
-            return
-        steps = {"board": oa_image.render_board, "points": oa_image.render_points}
         lang = (query.get("lang") or ["zh"])[0].strip().lower()
         lang = "en" if lang.startswith("en") else "zh"
         date = (query.get("date") or [""])[0].strip()
@@ -743,22 +754,77 @@ class Handler(BaseHTTPRequestHandler):
             rounds = self.rt.store.roster().get("rounds") or []
         except Exception as exc:                   # 库有毛病也得回一张看得懂的图
             sys.stderr.write("名单读不出来：%s\n" % exc)
-        row = None
         for rnd in rounds:
             if not date or str(rnd.get("date")) == date:
-                row = rnd
-                break
-        if row is None:
-            row = {"date": date, "call": "", "stations": []}
+                return lang, date, rnd
+        return lang, date, None
+
+    def _note(self, lang):
+        """副标题后面那句小字（红）；英文单独一份，空着就沿用中文那句。"""
         note = self.rt.conf.get("OA_TEST_NOTE") or ""
         if lang == "en":
             note = self.rt.conf.get("OA_TEST_NOTE_EN") or note
+        return note
+
+    def _oa_image(self):
+        """拿画图那份模块；没装 Pillow 就回 503 并给 None。"""
         try:
-            body = steps[what](row, note=note, lang=lang)
+            import oa_image
+        except ImportError:
+            self._fail(503, "服务端没装 Pillow，画不了图")
+            return None
+        return oa_image
+
+    def _image(self, what, query):
+        """签到表 / 签到点的 PNG。数据面板上那两个下载按钮点到这里。
+
+        ?date=2026-10-17 指定哪一轮，不给就是最新一轮；?lang=en 要英文。
+        名单读不出来就画一张空表；没装 Pillow 回 503。
+        """
+        oa_image = self._oa_image()
+        if oa_image is None:
+            return
+        steps = {"board": oa_image.render_board, "points": oa_image.render_points}
+        lang, date, row = self._round_of(query)
+        if row is None:
+            row = {"date": date, "call": "", "stations": []}
+        try:
+            body = steps[what](row, note=self._note(lang), lang=lang)
         except Exception as exc:
             self._fail(500, "画不出来：%s" % exc)
             return
         name = "aprsnetcn-oa-%s-%s.png" % (row.get("date") or "empty", what)
+        self._send(200, body, "image/png", {
+            "Content-Disposition": 'attachment; filename="%s"' % name,
+        })
+
+    def _cert(self, query):
+        """一台一份的参与证书 PNG：?call=BG7LZQ-2&date=2026-10-17&lang=en。
+
+        呼号先按整个找；找不到再按去掉 SSID 的找，只有唯一一台时才认。
+        没有这一轮、或者这一轮里没有这台，回 404；没带呼号回 400。
+        """
+        oa_image = self._oa_image()
+        if oa_image is None:
+            return
+        want = (query.get("call") or [""])[0].strip()
+        if not want:
+            self._fail(400, "缺呼号：?call=BG7LZQ-2")
+            return
+        lang, date, row = self._round_of(query)
+        if row is None:
+            self._fail(404, "没有 %s 这一轮的名单" % (date or "最新"))
+            return
+        station = pick_station(row, want)
+        if station is None:
+            self._fail(404, "这一轮没有 %s 这一台" % want)
+            return
+        try:
+            body = oa_image.render_cert(row, station, note=self._note(lang), lang=lang)
+        except Exception as exc:
+            self._fail(500, "画不出来：%s" % exc)
+            return
+        name = "aprsnetcn-oa-%s-%s.png" % (station.get("call") or want, row.get("date") or "empty")
         self._send(200, body, "image/png", {
             "Content-Disposition": 'attachment; filename="%s"' % name,
         })

@@ -13,6 +13,7 @@ import sqlite3
 import sys
 import tempfile
 import threading
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -422,6 +423,15 @@ def main():
               oa_image.serial_of("BG7LZQ-2", "2026-10-18") !=
               oa_image.serial_of("BG7LZQ-2", "2026-10-17"), True)
 
+    # 名单里找一台：整串优先，去掉 SSID 只有唯一一台时才认
+    two = {"stations": [{"call": "BG7LZQ-2"}, {"call": "BG7LZQ-3"}]}
+    check("整串找得到那一台", oa_server.pick_station(two, "bg7lzq-3"), {"call": "BG7LZQ-3"})
+    check("同一个基呼号有两台就不猜", oa_server.pick_station(two, "BG7LZQ"), None)
+    check("只有一台时去掉 SSID 也认",
+          oa_server.pick_station({"stations": [{"call": "BG7LZQ-2"}]}, "BG7LZQ"),
+          {"call": "BG7LZQ-2"})
+    check("名单里没这台给 None", oa_server.pick_station(two, "N0CALL"), None)
+
     img_dir = tempfile.mkdtemp(prefix="oa-selftest-image-")
     try:
         conf = dict(oa_server.DEFAULTS)
@@ -452,6 +462,22 @@ def main():
                           "aprsnetcn-oa-" in disp and "-%s.png" % what in disp, True)
                 except Exception as exc:
                     check("%s.png 拿得到" % what, "出错：%s" % exc, "拿得到")
+            cert = urllib.request.urlopen("%s/api/cert.png?call=BG7XXX-9" % base, timeout=10)
+            check("奖状回 200", cert.status, 200)
+            check("奖状是 PNG", cert.read()[:8], b"\x89PNG\r\n\x1a\n")
+            check("奖状文件名带呼号与轮次",
+                  "aprsnetcn-oa-BG7XXX-9-" in (cert.headers.get("Content-Disposition") or ""), True)
+            for query, want in (("?call=N0CALL", 404), ("?call=BG6BBB-7", 404), ("", 400)):
+                try:
+                    res = urllib.request.urlopen("%s/api/cert.png%s" % (base, query), timeout=10)
+                    code = res.status
+                except urllib.error.HTTPError as exc:
+                    code = exc.code
+                check("奖状 %s 回 %d" % (query or "（没带呼号）", want), code, want)
+            loose = urllib.request.urlopen("%s/api/cert.png?call=BG7XXX" % base, timeout=10)
+            check("只写呼号也认（去掉 SSID）", loose.status, 200)
+            check("去掉 SSID 找到的是名单里的那台",
+                  "aprsnetcn-oa-BG7XXX-9-" in (loose.headers.get("Content-Disposition") or ""), True)
             page = urllib.request.urlopen("%s/data" % base, timeout=10).read().decode("utf-8")
             check("页面里名单指本机", 'data-roster="/api/roster"' in page, True)
             check("页面里下载按钮指本机", 'data-image-base="/api/"' in page, True)
