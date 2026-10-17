@@ -240,11 +240,12 @@ def render_board(row, note="", lang="zh"):
 
 GRID4 = re.compile(r"^([A-R]{2}[0-9]{2})")
 
-CELL_W = 88                                   # 格网上一个格子的宽与高
-CELL_H = 46
-AXIS_W = 34
-AXIS_H = 28
-FIELD_GAP = 34
+WIDE = 1944                                    # 世界地图那张比别的图宽，一格 9×5
+CELL_W = 10
+CELL_H = 5
+MAP_W = CELL_W * 180
+MAP_H = CELL_H * 180
+FAINT = (228, 225, 218)
 
 
 def grid_cell(grid):
@@ -254,6 +255,19 @@ def grid_cell(grid):
         return ""
     hit = GRID4.match(text)
     return hit.group(1) if hit else text
+
+
+def grid_square(code):
+    """4 位网格在世界网格上的位置：(经度序号, 纬度序号)，都是 0..179。认不出返回 None。"""
+    text = grid_cell(code)                      # 6 位的也认：先收成 4 位那一格
+    if len(text) != 4 or not text[2:].isdigit():
+        return None
+    field = text[:2]
+    if len(field) != 2 or not ("A" <= field[0] <= "R" and "A" <= field[1] <= "R"):
+        return None
+    lon = (ord(field[0]) - 65) * 10 + int(text[2])
+    lat = (ord(field[1]) - 65) * 10 + int(text[3])
+    return (lon, lat)
 
 
 def grid_groups(row):
@@ -267,86 +281,61 @@ def grid_groups(row):
     return sorted(groups.items(), key=lambda item: (item[0] == "—", item[0]))
 
 
-def grid_fields(groups):
-    """按 field 分成一张张格网：[(OL, {(经度位, 纬度位): [呼号…]}), …]。"""
-    order = {}
-    out = []
-    for grid, calls in groups:
-        if len(grid) == 4 and grid[:2].isalpha() and grid[2:].isdigit():
-            field = grid[:2]
-            if field not in order:
-                order[field] = {}
-                out.append((field, order[field]))
-            order[field].setdefault((int(grid[2]), int(grid[3])), []).extend(calls)
-    return out
-
-
-def _chart(draw, x, y, field, cells):
-    """一张 field 的 10×10 格网：100 个格子全画出来，有签到的填红。返回这张图的底边。"""
-    name = font(28)
+def _world_map(draw, x, y, lit):
+    """世界网格地图：180×180 个 4 位格子全画出来，有签到的填红。返回地图底边。"""
     label = font(20)
-    code_face = font(21)
-    draw.text((x, y), field, font=name, fill=INK)
-    top = y + 44
-    for lat in range(9, -1, -1):                    # 纬度位从 9 排到 0，上北下南
-        for lon in range(0, 10):                    # 经度位从 0 排到 9，向右为东
-            cx = x + AXIS_W + lon * CELL_W
-            cy = top + (9 - lat) * CELL_H
-            code = "%s%d%d" % (field, lon, lat)
-            lit = cells.get((lon, lat))
-            box = [cx, cy, cx + CELL_W - 2, cy + CELL_H - 2]
-            if lit:
-                draw.rectangle(box, fill=HOT)
-                fill = (255, 255, 255)
-            else:
-                draw.rectangle(box, outline=LINE, width=1)
-                fill = GREY
-            words = draw.textbbox((0, 0), code, font=code_face)
-            draw.text((cx + (CELL_W - 2 - (words[2] - words[0])) / 2.0 - words[0],
-                       cy + (CELL_H - 2 - (words[3] - words[1])) / 2.0 - words[1]),
-                      code, font=code_face, fill=fill)
-        draw.text((x + AXIS_W - 10 - draw.textlength(str(lat), font=label),
-                   top + (9 - lat) * CELL_H + 12), str(lat), font=label, fill=GREY)
-    base = top + 10 * CELL_H
-    for lon in range(0, 10):
-        cx = x + AXIS_W + lon * CELL_W
-        draw.text((cx + (CELL_W - 2 - draw.textlength(str(lon), font=label)) / 2.0, base + 6),
-                  str(lon), font=label, fill=GREY)
-    return base + AXIS_H
+    for i in range(0, 181):                     # 细的格子线
+        gx = x + i * CELL_W
+        gy = y + i * CELL_H
+        line = LINE if i % 10 == 0 else FAINT   # 每 10 格是 field 的界，画深一点
+        draw.line([gx, y, gx, y + MAP_H], fill=line, width=1)
+        draw.line([x, gy, x + MAP_W, gy], fill=line, width=1)
+    for i in range(0, 18):                      # 上下左右标上 field 的字母
+        text = chr(65 + i)
+        cx = x + i * CELL_W * 10 + (CELL_W * 10 - draw.textlength(text, font=label)) / 2.0
+        draw.text((cx, y - 28), text, font=label, fill=GREY)
+        draw.text((x - 12 - draw.textlength(text, font=label),
+                   y + i * CELL_H * 10 + CELL_H * 5 - 12), text, font=label, fill=GREY)
+    for square in lit:                           # 有签到的格子：点亮的范围画大一点，缩到页面上也看得见
+        lon, lat = square
+        x0 = max(x, x + (lon - 1) * CELL_W)
+        x1 = min(x + MAP_W - 1, x + (lon + 2) * CELL_W - 1)
+        y0 = max(y, y + (179 - lat - 1) * CELL_H)
+        y1 = min(y + MAP_H - 1, y + (179 - lat + 2) * CELL_H - 1)
+        draw.rectangle([x0, y0, x1, y1], fill=HOT)
+    draw.rectangle([x, y, x + MAP_W, y + MAP_H], outline=INK, width=2)
+    return y + MAP_H
 
 
 def render_grid(row, note="", lang="zh"):
-    """网格表：一 field 一张 10×10 的格网，格子全画出来，有签到的填红；下面跟着呼号。"""
+    """网格图：一张世界网格地图，180×180 个 4 位格子全在，有签到的点亮；下面跟着呼号。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
     groups = grid_groups(row)
-    fields = grid_fields(groups)
     probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
     small = font(24)
     legend = []
+    lit = []
     for grid, calls in groups:
-        lines = _wrap(probe, " · ".join(calls), small, WIDTH - PAD * 2 - 150) or [""]
+        lines = _wrap(probe, " · ".join(calls), small, WIDE - PAD * 2 - 150) or [""]
         legend.append((grid, lines))
+        square = grid_square(grid)
+        if square is not None:
+            lit.append(square)
 
     top = 218
-    legend_h = 0
-    if legend:
-        legend_h = 46 + sum(44 + 34 * (len(lines) - 1) for _, lines in legend)
-    chart_h = (44 + 10 * CELL_H + AXIS_H + FIELD_GAP) * len(fields) - FIELD_GAP if fields else 0
-    height = max(560, top + chart_h + (34 if fields and legend else 0) + legend_h + 110)
-    image = Image.new("RGB", (WIDTH, height), PAPER)
+    map_top = top + 30
+    legend_h = 46 + sum(44 + 34 * (len(lines) - 1) for _, lines in legend) if legend else 0
+    height = max(560, map_top + MAP_H + 46 + legend_h + 110)
+    image = Image.new("RGB", (WIDE, height), PAPER)
     draw = ImageDraw.Draw(image)
     _head(draw, words["grid"], _subtitle(row, note, words), note)
+    _world_map(draw, PAD, map_top, lit)
 
-    y = top
-    for field, cells in fields:
-        y = _chart(draw, PAD, y, field, cells) + FIELD_GAP
-    if fields:
-        y += 34 - FIELD_GAP
-
-    if not groups:
-        draw.text((PAD, top + 78), words["empty"], font=font(27), fill=GREY)
-    elif legend:
+    y = map_top + MAP_H + 46
+    if not legend:
+        draw.text((PAD, y), words["empty"], font=font(27), fill=GREY)
+    else:
         draw.text((PAD, y), words["lit"], font=font(24), fill=GREY)
         y += 46
         for grid, lines in legend:

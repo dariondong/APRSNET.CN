@@ -434,10 +434,9 @@ def main():
             ("\u2014", ["BA4IZZ", "BH4HGA-9"])])
         check("网格只算前 4 位，后两位并进同一格", oa_image.grid_cell("ol62cQ"), "OL62")
         check("认不出的网格原样留着", oa_image.grid_cell("  x "), "X")
-        check("按 field 分成一张张格网",
-              oa_image.grid_fields(grouped), [
-                  ("OL", {(6, 2): ["BG7LZQ-2", "BG7LZQ-3"]}),
-                  ("ON", {(8, 0): ["BG6TA"]})])
+        check("4 位网格在世界地图上的位置", oa_image.grid_square("OL62"), (146, 112))
+        check("格子小写、带后两位也认", oa_image.grid_square("ol62cq"), (146, 112))
+        check("认不出的网格没有位置", oa_image.grid_square("\u2014"), None)
         grid = oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
             {"call": "BG7LZQ-2", "grid": "OL62"}, {"call": "BG6TA", "grid": "ON80"}]})
         check("网格表画得出 PNG", grid[:8], b"\x89PNG\r\n\x1a\n")
