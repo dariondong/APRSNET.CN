@@ -1,0 +1,42 @@
+  <section class="section" id="decode-position">
+    <div class="section-head">
+      <h2>位置有三种写法</h2>
+      <p>同一个坐标，报文里可以写成三种样子。解码结果会告诉你碰上的是哪一种。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>非压缩</b>
+          数字直接写。<code>2330.00N/11345.00E&gt;</code> 就是北纬 23 度 30 分、东经 113 度 45 分。数字位留空表示位置模糊，取格子的中心。
+        </li>
+        <li>
+          <b>压缩</b>
+          十三个字符定下全部坐标，纬度经度各四个字符按 91 进制折算。省带宽，LoRa 和小型追踪器常用。
+        </li>
+        <li>
+          <b>Mic-E</b>
+          纬度数字拆进目标呼号的六个字符里，经度在冒号后面。看报文时目标字段像乱码，里面装的正是坐标。
+        </li>
+      </ul>
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="packet.html#fields">
+            <span class="lr-main">
+              <b>报文里每一段是什么</b>
+              <span>位置包的字段逐个说明，包括符号表和附加字段的位置。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="symbols.html">
+            <span class="lr-main">
+              <b>符号对照表</b>
+              <span>解码结果里那两个字符合起来是哪个图标，主表和替补表分开列。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>

@@ -1,0 +1,29 @@
+  <section class="section" id="decode-input">
+    <div class="section-head">
+      <h2>贴一行报文</h2>
+      <p>从日志或终端里整行复制过来，形如 <code>呼号&gt;目标,路径:内容</code>。</p>
+    </div>
+    <div class="section-body">
+      <form class="idq" id="dcForm" novalidate>
+        <label class="idq-label" for="dcInput">报文</label>
+        <p class="idq-hint">大小写不影响结果。报文里有看不见的控制字符也照原样解，别先手工删。</p>
+        <div class="dc-row">
+          <textarea class="dc-input" id="dcInput" name="dcInput" rows="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BG7LZQ-9&gt;APRS:!2330.00N/11345.00E&gt;APRSLocus 移动台"></textarea>
+        </div>
+        <div class="idq-row">
+          <button class="btn btn-primary idq-btn" type="submit">解码</button>
+          <button class="idq-clear" type="reset">清空</button>
+        </div>
+        <div class="idq-out" id="dcOut" role="status" aria-live="polite"></div>
+      </form>
+      <p class="dc-samples-label">先点一条样例看看。</p>
+      <div class="dc-samples">
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APRS,WIDE1-1,WIDE2-1:!2330.00N/11345.00E&gt;APRSLocus 移动台">非压缩位置</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APLRG1,WIDE1-1:=L9L^{L:/z# !GLoRa APRS Remote DIGI">压缩位置</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APCLEY:/100452z2647.57S/02749.70E&gt;151/052/A=004801 37C 1Mv">带时间戳</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;UTPX60:`-6G HQ&gt;/]&quot;5H}145.500MHz Adam=">Mic-E</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APRS,TCPIP*::BG7LZQ   :CQ CNNET BG7LZQ OL62{12">消息</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APRS,WIDE1-1:T#005,073,255,000,123,456,11110000">遥测</button>
+      </div>
+    </div>
+  </section>

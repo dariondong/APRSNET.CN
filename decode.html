@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APRS 报文解码 — 一行报文逐项拆开看</title>
+<meta name="description" content="在浏览器里拆一行 APRS 报文：源呼号与目标、路径与 q 标记、三种位置编码（非压缩、压缩、Mic-E）、符号、航向速度、海拔与气象读数，附报文类型对照表。">
+<meta name="keywords" content="APRS 报文解码,APRS 解码,APRS 报文解析,APRS 位置解码,Mic-E,压缩位置,APRS 符号,APRS 报文格式,APRS 工具,网格">
+<meta name="author" content="BG7LZQ (Darion)">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="msvalidate.01" content="A10C9AF6F0DAC9E3BF451E4DC575DC4E" />
+<meta name="theme-color" content="#f2f0ea">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="APRSNET.CN">
+<meta property="og:title" content="APRS 报文解码 — 一行报文逐项拆开看">
+<meta property="og:description" content="一行 APRS 报文贴进来，呼号、路径、位置和读数逐项拆开。">
+<meta property="og:url" content="https://aprsnet.cn/decode.html">
+<meta property="og:image" content="https://aprsnet.cn/assets/icon.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="APRSNET.CN">
+<meta property="og:locale" content="zh_CN">
+<link rel="canonical" href="https://aprsnet.cn/decode.html">
+<link rel="icon" type="image/png" href="assets/favicon.png?v=5">
+<link rel="apple-touch-icon" href="assets/icon.png?v=5">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="APRS 报文解码 — 一行报文逐项拆开看">
+<meta name="twitter:description" content="一行 APRS 报文贴进来，呼号、路径、位置和读数逐项拆开。">
+<meta name="twitter:image" content="https://aprsnet.cn/assets/icon.png">
+<link rel="stylesheet" href="style.css?v=35">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"APRS 报文解码 — 一行报文逐项拆开看","url":"https://aprsnet.cn/decode.html","inLanguage":"zh-CN","description":"在浏览器里拆一行 APRS 报文：源呼号与目标、路径与 q 标记、三种位置编码（非压缩、压缩、Mic-E）、符号、航向速度、海拔与气象读数，附报文类型对照表。","isPartOf":{"@type":"WebSite","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"publisher":{"@type":"Organization","name":"APRSNET.CN","url":"https://aprsnet.cn/"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"}</script>
+<script>
+/* 主题：localStorage 优先，没存过就用浅色（默认皮肤 = 混凝土白）。
+   必须在首帧前执行，否则会闪一下深底。 */
+(function () {
+  try {
+    var t = localStorage.getItem('theme');
+    if (t !== 'dark' && t !== 'light') t = 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', t === 'dark' ? '#0b0e11' : '#f2f0ea');
+  } catch (e) {}
+})();
+</script>
+<style>
+/* 报文是一整行带标点的字符，输入框要照原样显示：不转大写、不加字距，能换行 */
+.dc-input {
+  width: 100%; padding: 14px 16px;
+  border: 1px solid var(--line-strong); background: var(--surface-1); color: var(--text);
+  font-family: var(--font-mono); font-size: 15px; line-height: 1.6;
+  text-transform: none; resize: vertical;
+}
+.dc-input:focus { border-color: var(--hot); outline: none; }
+.dc-samples-label { margin-top: 22px; color: var(--text-faint); font-size: 14.5px; }
+.dc-samples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+/* 解码结果：一行一项，左边字段名右边内容，窄屏换成上下两行 */
+.dc-fields { margin: 20px 0 0; border-top: 1px solid var(--line-strong); max-width: 760px; }
+.dc-field {
+  display: grid; grid-template-columns: minmax(0, 168px) minmax(0, 1fr); column-gap: 28px;
+  padding: 11px 0; border-bottom: 1px solid var(--line);
+}
+.dc-k { color: var(--text-faint); font-size: 13.5px; }
+.dc-v { color: var(--text); font-size: 16px; overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .dc-field { grid-template-columns: minmax(0, 1fr); row-gap: 2px; }
+  .dc-k { font-size: 13px; }
+}
+</style>
+</head>
+
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="read-bar" id="readBar" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./"><img class="brand-mark" src="assets/icon.png?v=5" alt="APRSNET.CN" width="64" height="64"></a>
+    <nav class="nav-links" id="navLinks" aria-label="页面导航">
+      <a href="./">认识</a>
+      <a href="guide.html">上手</a>
+      <a href="packet.html">报文</a>
+      <a href="tocall.html">查询</a>
+      <a href="faq.html">问答</a>
+      <a href="docs.html">文档</a>
+      <a href="tools.html" class="active">工具</a>
+      <a href="oa/">APRSNETCN OA</a>
+      <a href="links.html">友链</a>
+      <a href="about.html">关于</a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换深色模式" title="切换深色模式">
+        <svg class="ico ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="ico ico-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1V21a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM3.5 12a1 1 0 0 1 1-1H6a1 1 0 0 1 0 2H4.5a1 1 0 0 1-1-1zm15 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H19.5a1 1 0 0 1-1-1zM6.3 6.3a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm9 9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4zm1.4-9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0zm-9 9a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0z"/></svg>
+      </button>
+      <a class="nav-brand-aside" href="about.html" aria-label="关于本站">
+        <img src="assets/icon.png?v=5" alt="" width="64" height="64">
+        <span>信标不止，回响不息。</span>
+      </a>
+    </nav>
+    <button class="nav-burger" id="navBurger" type="button" aria-label="菜单" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="section-head">
+      <h1>报文解码</h1>
+      <p>一行报文贴进来，当场拆成字段。解码在自己浏览器里做，不连服务器。</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="decode-input">
+    <div class="section-head">
+      <h2>贴一行报文</h2>
+      <p>从日志或终端里整行复制过来，形如 <code>呼号&gt;目标,路径:内容</code>。</p>
+    </div>
+    <div class="section-body">
+      <form class="idq" id="dcForm" novalidate>
+        <label class="idq-label" for="dcInput">报文</label>
+        <p class="idq-hint">大小写不影响结果。报文里有看不见的控制字符也照原样解，别先手工删。</p>
+        <div class="dc-row">
+          <textarea class="dc-input" id="dcInput" name="dcInput" rows="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BG7LZQ-9&gt;APRS:!2330.00N/11345.00E&gt;APRSLocus 移动台"></textarea>
+        </div>
+        <div class="idq-row">
+          <button class="btn btn-primary idq-btn" type="submit">解码</button>
+          <button class="idq-clear" type="reset">清空</button>
+        </div>
+        <div class="idq-out" id="dcOut" role="status" aria-live="polite"></div>
+      </form>
+      <p class="dc-samples-label">先点一条样例看看。</p>
+      <div class="dc-samples">
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APRS,WIDE1-1,WIDE2-1:!2330.00N/11345.00E&gt;APRSLocus 移动台">非压缩位置</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APLRG1,WIDE1-1:=L9L^{L:/z# !GLoRa APRS Remote DIGI">压缩位置</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APCLEY:/100452z2647.57S/02749.70E&gt;151/052/A=004801 37C 1Mv">带时间戳</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;UTPX60:`-6G HQ&gt;/]&quot;5H}145.500MHz Adam=">Mic-E</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APRS,TCPIP*::BG7LZQ   :CQ CNNET BG7LZQ OL62{12">消息</button>
+        <button class="tlq-chip" type="button" data-dc-sample="BG7LZQ-9&gt;APRS,WIDE1-1:T#005,073,255,000,123,456,11110000">遥测</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="decode-types">
+    <div class="section-head">
+      <h2>第一个字符定类型</h2>
+      <p>冒号后面那一段的头一个字符，说明这一包是什么。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b><code>!</code> <code>=</code></b>
+          不带时间戳的位置。带 <code>=</code> 的台站能收发消息，带 <code>!</code> 的只发不收。
+        </li>
+        <li>
+          <b><code>/</code> <code>@</code></b>
+          带时间戳的位置，时间在位置前面。带 <code>@</code> 的能收发消息。
+        </li>
+        <li>
+          <b><code>'</code> <code>`</code></b>
+          Mic-E 编码。纬度和南北朝向藏在目标呼号里，经度在后面。
+        </li>
+        <li>
+          <b><code>:</code></b>
+          消息。收件人占 9 个字符，不够的补空格，正文从第 11 个字符起。
+        </li>
+        <li>
+          <b><code>&gt;</code></b>
+          状态。台站在说自己现在什么样，没有位置。
+        </li>
+        <li>
+          <b><code>T</code></b>
+          遥测。五个模拟量加八位数字量，按发送端自己的定义解释。
+        </li>
+        <li>
+          <b><code>_</code></b>
+          气象，不带位置。后面那串字母里是风向风速和各种读数。
+        </li>
+        <li>
+          <b><code>$</code></b>
+          原始 GPS，整句 NMEA 原样转发，本站只把它摆出来。
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section alt" id="decode-position">
+    <div class="section-head">
+      <h2>位置有三种写法</h2>
+      <p>同一个坐标，报文里可以写成三种样子。解码结果会告诉你碰上的是哪一种。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b>非压缩</b>
+          数字直接写。<code>2330.00N/11345.00E&gt;</code> 就是北纬 23 度 30 分、东经 113 度 45 分。数字位留空表示位置模糊，取格子的中心。
+        </li>
+        <li>
+          <b>压缩</b>
+          十三个字符定下全部坐标，纬度经度各四个字符按 91 进制折算。省带宽，LoRa 和小型追踪器常用。
+        </li>
+        <li>
+          <b>Mic-E</b>
+          纬度数字拆进目标呼号的六个字符里，经度在冒号后面。看报文时目标字段像乱码，里面装的正是坐标。
+        </li>
+      </ul>
+      <ul class="link-list">
+        <li>
+          <a class="link-row" href="packet.html#fields">
+            <span class="lr-main">
+              <b>报文里每一段是什么</b>
+              <span>位置包的字段逐个说明，包括符号表和附加字段的位置。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+        <li>
+          <a class="link-row" href="symbols.html">
+            <span class="lr-main">
+              <b>符号对照表</b>
+              <span>解码结果里那两个字符合起来是哪个图标，主表和替补表分开列。</span>
+            </span>
+            <span class="lr-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <b><span class="wm-aprs">APRS</span><span class="wm-net">NET</span><span class="wm-cn">.CN</span></b>
+      <span>信标不止，回响不息。</span>
+    </div>
+    <nav class="footer-index" aria-label="站内目录">
+      <div class="footer-group">
+        <b>认识与上手</b>
+        <ul>
+          <li><a href="index.html">认识 APRS</a></li>
+          <li><a href="guide.html">上手与设备</a></li>
+          <li><a href="tutorial.html">从零上手教程</a></li>
+          <li><a href="packet.html">报文与字段</a></li>
+          <li><a href="symbols.html">APRS 符号表</a></li>
+          <li><a href="tocall.html">官方 TOCALL 查询</a></li>
+          <li><a href="faq.html">常见问题</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>文档</b>
+        <ul>
+          <li><a href="docs.html">规范与文档</a></li>
+          <li><a href="aprsis.html">APRS-IS 文档（中文）</a></li>
+          <li><a href="aprsnetcn.html">APRSNETCN SERVER</a></li>
+          <li><a href="filter.html">APRS-IS 过滤器</a></li>
+          <li><a href="igate.html">iGate 细则</a></li>
+          <li><a href="qconstruct.html">q 构造</a></li>
+          <li><a href="protocol.html">APRSNET CN CONNECT（草案）</a></li>
+        </ul>
+      </div>
+      <div class="footer-group">
+        <b>本站</b>
+        <ul>
+          <li><a href="tools.html">工具与链接</a></li>
+          <li><a href="passcode.html">passcode 计算器</a></li>
+          <li><a href="decode.html" aria-current="page">报文解码</a></li>
+          <li><a href="links.html">友链</a></li>
+          <li><a href="about.html">关于本站</a></li>
+          <li><a href="https://github.com/dariondong/APRSNET.CN" target="_blank" rel="noopener">源码仓库</a></li>
+          <li><a href="https://github.com/dariondong/APRSNET.CN/issues" target="_blank" rel="noopener">提个 issue</a></li>
+        </ul>
+      </div>
+    </nav>
+    <p class="footer-note">本站由业余无线电爱好者维护，与任何厂商、组织和项目都没有隶属关系。请遵守当地无线电管理法规，只在获得许可的频率上发射。</p>
+    <p class="footer-edit">发现写错的、漏掉的？<a href="https://github.com/dariondong/APRSNET.CN/edit/main/decode.html" target="_blank" rel="noopener">在 GitHub 上改这一页</a>。</p>
+    <p class="footer-copy">© <span id="year">2026</span> BG7LZQ (Darion)</p>
+  </div>
+</footer>
+
+<a class="backtop" id="backTop" href="#main" aria-label="回到顶部">
+  <svg class="backtop-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="17"/><circle class="ring-fg" id="ringFg" cx="20" cy="20" r="17"/></svg>
+  <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
+</a>
+
+<script src="decode.js?v=1"></script>
+<script src="main.js?v=13"></script>
+</body>
+</html>

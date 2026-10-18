@@ -29,7 +29,8 @@ PARTS = HERE / "parts"
 
 CSS_V = "35"        # style.css?v=
 MAIN_V = "13"       # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12", "passcode.js": "2"}  # 页内脚本的缓存键
+SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12", "passcode.js": "2",
+            "decode.js": "1"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
 
 SITE = "https://aprsnet.cn/"
@@ -243,6 +244,44 @@ PAGES = [
         scripts=("passcode.js",),
     ),
     dict(
+        file="decode.html", nav="", nav_active="tools.html", h1="报文解码",
+        lead="一行报文贴进来，当场拆成字段。解码在自己浏览器里做，不连服务器。",
+        title="APRS 报文解码 — 一行报文逐项拆开看",
+        desc="在浏览器里拆一行 APRS 报文：源呼号与目标、路径与 q 标记、三种位置编码（非压缩、压缩、Mic-E）、符号、航向速度、海拔与气象读数，附报文类型对照表。",
+        og="一行 APRS 报文贴进来，呼号、路径、位置和读数逐项拆开。",
+        keywords="APRS 报文解码,APRS 解码,APRS 报文解析,APRS 位置解码,Mic-E,压缩位置,"
+                 "APRS 符号,APRS 报文格式,APRS 工具,网格",
+        blocks=["decode-input", "decode-types", "decode-position"],
+        scripts=("decode.js",),
+        extra_head=('<style>\n'
+                    "/* 报文是一整行带标点的字符，输入框要照原样显示：不转大写、不加字距，能换行 */\n"
+                    ".dc-input {\n"
+                    "  width: 100%; padding: 14px 16px;\n"
+                    "  border: 1px solid var(--line-strong); background: var(--surface-1); "
+                    "color: var(--text);\n"
+                    "  font-family: var(--font-mono); font-size: 15px; line-height: 1.6;\n"
+                    "  text-transform: none; resize: vertical;\n"
+                    "}\n"
+                    ".dc-input:focus { border-color: var(--hot); outline: none; }\n"
+                    ".dc-samples-label { margin-top: 22px; color: var(--text-faint); font-size: 14.5px; }\n"
+                    ".dc-samples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }\n"
+                    "/* 解码结果：一行一项，左边字段名右边内容，窄屏换成上下两行 */\n"
+                    ".dc-fields { margin: 20px 0 0; border-top: 1px solid var(--line-strong); "
+                    "max-width: 760px; }\n"
+                    ".dc-field {\n"
+                    "  display: grid; grid-template-columns: minmax(0, 168px) minmax(0, 1fr); "
+                    "column-gap: 28px;\n"
+                    "  padding: 11px 0; border-bottom: 1px solid var(--line);\n"
+                    "}\n"
+                    ".dc-k { color: var(--text-faint); font-size: 13.5px; }\n"
+                    ".dc-v { color: var(--text); font-size: 16px; overflow-wrap: anywhere; }\n"
+                    "@media (max-width: 560px) {\n"
+                    "  .dc-field { grid-template-columns: minmax(0, 1fr); row-gap: 2px; }\n"
+                    "  .dc-k { font-size: 13px; }\n"
+                    "}\n"
+                    "</style>\n"),
+    ),
+    dict(
         file="links.html", nav="友链", h1="友链",
         lead="同一条电波上的站，互相留个门牌。",
         title="友链 — APRS 相关的项目与站点",
@@ -294,7 +333,7 @@ FOOT_MAP = (
                     "packet.html", "symbols.html", "tocall.html", "faq.html")),
     ("文档", ("docs.html", "aprsis.html", "aprsnetcn.html", "filter.html",
               "igate.html", "qconstruct.html", "protocol.html")),
-    ("本站", ("tools.html", "passcode.html", "links.html", "about.html")),
+    ("本站", ("tools.html", "passcode.html", "decode.html", "links.html", "about.html")),
 )
 # 页脚里每页那一行的短名
 PAGE_SHORT = {
@@ -307,6 +346,7 @@ PAGE_SHORT = {
     "filter.html": "APRS-IS 过滤器", "igate.html": "iGate 细则",
     "qconstruct.html": "q 构造", "protocol.html": "APRSNET CN CONNECT（草案）",
     "tools.html": "工具与链接", "passcode.html": "passcode 计算器",
+    "decode.html": "报文解码",
     "links.html": "友链", "about.html": "关于本站",
 }
 

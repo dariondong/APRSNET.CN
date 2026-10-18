@@ -1,0 +1,42 @@
+  <section class="section" id="decode-types">
+    <div class="section-head">
+      <h2>第一个字符定类型</h2>
+      <p>冒号后面那一段的头一个字符，说明这一包是什么。</p>
+    </div>
+    <div class="section-body">
+      <ul class="fact-list">
+        <li>
+          <b><code>!</code> <code>=</code></b>
+          不带时间戳的位置。带 <code>=</code> 的台站能收发消息，带 <code>!</code> 的只发不收。
+        </li>
+        <li>
+          <b><code>/</code> <code>@</code></b>
+          带时间戳的位置，时间在位置前面。带 <code>@</code> 的能收发消息。
+        </li>
+        <li>
+          <b><code>'</code> <code>`</code></b>
+          Mic-E 编码。纬度和南北朝向藏在目标呼号里，经度在后面。
+        </li>
+        <li>
+          <b><code>:</code></b>
+          消息。收件人占 9 个字符，不够的补空格，正文从第 11 个字符起。
+        </li>
+        <li>
+          <b><code>&gt;</code></b>
+          状态。台站在说自己现在什么样，没有位置。
+        </li>
+        <li>
+          <b><code>T</code></b>
+          遥测。五个模拟量加八位数字量，按发送端自己的定义解释。
+        </li>
+        <li>
+          <b><code>_</code></b>
+          气象，不带位置。后面那串字母里是风向风速和各种读数。
+        </li>
+        <li>
+          <b><code>$</code></b>
+          原始 GPS，整句 NMEA 原样转发，本站只把它摆出来。
+        </li>
+      </ul>
+    </div>
+  </section>
