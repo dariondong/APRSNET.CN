@@ -2,7 +2,7 @@
    来源：https://github.com/aprsorg/aprs-deviceid （tocalls.yaml）
    许可：CC BY-SA 2.0，署名见页面本区块的小字
    重生成：python3 .scratch/cn_gen_tocalls.py tocalls.yaml .
-   共 417 条；键里带 ? 的表示该位可变，按 [0-9A-Z] 匹配。 */
+   共 423 条；键里带 ? 的表示该位可变，按 [0-9A-Z] 匹配。 */
 window.APRS_TOCALLS = {
 "AP1WWX": "T-238+ TAPR · 气象站",
 "AP3VSS": "Active APRS tracker Artur Schreiber, SP3VSS · 手机应用 · Android",
@@ -19,6 +19,7 @@ window.APRS_TOCALLS = {
 "APALH*": "Retevis",
 "APALH1": "Ailunce H1 Retevis · 手台",
 "APALHA": "Ailunce HA2 Retevis · 手台",
+"APALOC": "APRSlocus Darion, BG7LZQ · 桌面软件 · Multiple",
 "APAM??": "AltOS Altus Metrum · 追踪器",
 "APANC?": "APRS Net Central John Rokicki, KC1VMZ · 网络服务",
 "APAND?": "APRSdroid Open Source · 手机应用 · Android",
@@ -42,6 +43,7 @@ window.APRS_TOCALLS = {
 "APBPQ?": "BPQ32 John Wiseman, G8BPQ · 桌面软件 · Windows",
 "APBSD?": "HamBSD hambsd.org",
 "APBT*": "BTECH",
+"APBT50": "UV-50 PRO Mobile BTECH · 车台 / 固定台",
 "APBT62": "DMR 6x2 BTECH · 手台",
 "APBT72": "DA 7X2 BTECH · 手台",
 "APBTUV": "UV-PRO BTECH · 手台",
@@ -151,6 +153,7 @@ window.APRS_TOCALLS = {
 "APKEYn": "ESP8266 APRS 9W2KEY · 追踪器 · embedded",
 "APKHTW": "Tempest Weather Bridge Kip, W3SN · 气象站 · embedded",
 "APKJH?": "TD-H9 BLE KISS VA3KJH · 手机应用 · Android",
+"APKPPR": "KP4PRA TNC Open Source, KP3M · 后台程序 · Linux/Unix",
 "APKRAM": "Ham Tracker kramstuff.com · 手机应用 · ios",
 "APKTY1": "KISSTTY Kirby Frugia, W7TTY · 桌面软件 · Multiple",
 "APKVPA": "kv4p HT (Android) kv4p HT open source project · 手机应用 · Android",
@@ -163,6 +166,8 @@ window.APRS_TOCALLS = {
 "APLDL1": "LoRa Digipeater ORARI Lokal KTS, Handiko Gesang, YB1SDL · 中继 · embedded",
 "APLDM?": "LoRa Meteostation David, OK2DDS · 气象站",
 "APLER?": "TROY LoRa Tracker/iGate Ercan, TA3OER · embedded",
+"APLEST": "ESP32 LoRa Tracker Eawan, 9M2SES · 追踪器 · embedded",
+"APLESW": "ESP32 LoRa Weather Station Eawan, 9M2SES · 气象站 · embedded",
 "APLETK": "T-Echo DL5TKL · 追踪器 · embedded",
 "APLFG?": "LoRa WX station Gabor, HG3FUG · 气象站 · embedded",
 "APLFL?": "LoRa/APRS Balloon Damian, SQ2CPA · 追踪器 · embedded",
@@ -381,6 +386,7 @@ window.APRS_TOCALLS = {
 "APUAGP": "Python APRS UI YF9UAG · 桌面软件 · Windows",
 "APUDR?": "UDR NW Digital Radio",
 "APURSX": "UPRSx Rich Beckwith, WN0X · 桌面软件 · Windows",
+"APVCTR": "APRS Vector SP3LSN · 手机应用 · Multiple",
 "APVE??": "EchoLink",
 "APVM??": "DRCC-DVM Digital Radio China Club · 网关",
 "APVOX?": "VoxLink Joel Calado, CS7BLE · 手机应用 · Android",

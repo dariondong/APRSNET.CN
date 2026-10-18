@@ -29,7 +29,7 @@ PARTS = HERE / "parts"
 
 CSS_V = "35"        # style.css?v=
 MAIN_V = "13"       # main.js?v=
-SCRIPT_V = {"tocalls.js": "1", "hero-field.js": "12", "passcode.js": "2",
+SCRIPT_V = {"tocalls.js": "2", "hero-field.js": "12", "passcode.js": "2",
             "decode.js": "1"}  # 页内脚本的缓存键
 ICON_V = "5"        # 图标的缓存键：favicon.png / icon.png 换色后递增（浏览器对 favicon 缓存很钝）
 
