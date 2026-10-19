@@ -22,12 +22,14 @@ table{width:100%;border-collapse:collapse;background:var(--card);border:1px soli
 .scroll.tall{max-height:62vh}
 .scroll table{border:0;background:none}
 .scroll th{position:sticky;top:0;background:var(--card);box-shadow:0 1px 0 var(--line)}
-details.fold{margin:24px 0 0;border-top:1px solid var(--line);padding-top:10px}
-details.fold>summary{cursor:pointer;font-size:15px;font-weight:600;letter-spacing:.04em;list-style:none;display:flex;justify-content:space-between;align-items:baseline;padding:2px 0}
-details.fold>summary::-webkit-details-marker{display:none}
-details.fold>summary::after{content:"展开";font-size:12px;font-weight:400;color:var(--grey)}
-details.fold[open]>summary{margin-bottom:8px}
-details.fold[open]>summary::after{content:"收起"}
+.tabs{display:flex;flex-wrap:wrap;margin:18px 0 0;border-bottom:1px solid var(--line)}
+.tabs button{border:1px solid var(--line);border-bottom:0;background:var(--card);color:var(--grey);padding:6px 13px;margin:0 -1px -1px 0;font-size:13px;letter-spacing:.02em}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{background:var(--bg);color:var(--text);font-weight:600;box-shadow:inset 0 2px 0 var(--hot)}
+.tabs button.has{color:var(--hot)}
+.tabs button.has.on{color:var(--text)}
+.pane{display:none;padding:14px 0 0}
+.pane.on{display:block}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-weight:600;color:var(--grey);font-size:12px}
 tr:last-child td{border-bottom:0}
@@ -73,9 +75,19 @@ a{color:inherit}
   <div id="err"></div>
   <div id="msg" class="msg"></div>
 
-  <details class="fold" open>
-    <summary>轮次</summary>
-  <p class="note">一圈一行。在收的那一轮收新报文，收完的行只当档案看。看哪一轮由这张表定，下面的名单、流水与导出都跟着它。</p>
+  <nav class="tabs" id="tabs" role="tablist">
+    <button type="button" role="tab" data-pane="rounds" data-label="轮次" aria-selected="true">轮次</button>
+    <button type="button" role="tab" data-pane="todo" data-label="待办" aria-selected="false">待办</button>
+    <button type="button" role="tab" data-pane="stations" data-label="名单" aria-selected="false">名单</button>
+    <button type="button" role="tab" data-pane="packets" data-label="流水" aria-selected="false">流水</button>
+    <button type="button" role="tab" data-pane="add" data-label="加台" aria-selected="false">加台</button>
+    <button type="button" role="tab" data-pane="meta" data-label="页面文字" aria-selected="false">页面文字</button>
+    <button type="button" role="tab" data-pane="thread" data-label="对话" aria-selected="false">对话</button>
+    <button type="button" role="tab" data-pane="outbox" data-label="发件箱" aria-selected="false">发件箱</button>
+  </nav>
+
+  <section class="pane on" id="pane-rounds" role="tabpanel">
+  <p class="note">一圈一行。在收的那一轮收新报文，收完的行只当档案看。看哪一轮由这张表定，名单、流水与导出都跟着它。</p>
   <form class="row" id="roundForm">
     <div><label>日期</label><input type="date" id="roundDate"></div>
     <div><label>轮值呼号</label><input type="text" id="dutyCall"></div>
@@ -87,24 +99,36 @@ a{color:inherit}
     <div><a href="#" id="csvStBtn"><button type="button">名单 CSV</button></a></div>
     <div><a href="#" id="csvPktBtn"><button type="button">报文 CSV</button></a></div>
   </form>
+  </section>
 
-  </details>
-
-  <h2>待办</h2>
+  <section class="pane" id="pane-todo" role="tabpanel">
   <p class="note" id="todoNote">回了 ACK 还在等对方回 U，和只喊到还没回的，都列在这里。</p>
   <div id="todo"></div>
+  </section>
 
-  <h2>本轮名单</h2>
+  <section class="pane" id="pane-stations" role="tabpanel">
   <div id="stations" class="scroll tall"></div>
+  </section>
 
-  <details class="fold">
-    <summary>报到流水（最近 30 条）</summary>
+  <section class="pane" id="pane-packets" role="tabpanel">
   <p class="note">CQ 是喊到，U 是确认。加入本轮会把这一台补进名单，回 ACK 是回复它。更多在「报文 CSV」里。</p>
   <div id="packets" class="scroll"></div>
+  </section>
 
-  </details>
-  <details class="fold">
-    <summary>页面上那几行字</summary>
+  <section class="pane" id="pane-add" role="tabpanel">
+  <form class="row" id="stForm">
+    <div><label>呼号</label><input type="text" id="stCall" placeholder="BG7XXX-9"></div>
+    <div><label>网格</label><input type="text" id="stGrid" placeholder="OL62"></div>
+    <div><label>路径</label><select id="stVia"><option value="rf">射频</option><option value="is">网络</option><option value="">空着</option></select></div>
+    <div><label>中继（逗号隔开）</label><input type="text" id="stDigi" placeholder="BG7LZQ-1"></div>
+    <div><label>时间（MM-DD HH:MM）</label><input type="text" id="stAt" placeholder="10-17 15:04"></div>
+    <div><label>状态</label><select id="stStatus"><option value="confirmed">已确认</option><option value="acked">已回 ACK</option><option value="called">只喊到</option></select></div>
+    <div><button type="submit">写进名单</button></div>
+  </form>
+  <p class="hint" id="txHint"></p>
+  </section>
+
+  <section class="pane" id="pane-meta" role="tabpanel">
   <p class="note">活动编号只收数字字母，页面上写在活动名称前面，长这样：#261017 测试轮次。签到表、奖状、名单里都带着这串编号，靠它就能找回这一场。解释标题是副标题底下一行小的字，中英两页各取各的；主控昵称跟在轮值呼号后面，留空就不显示。</p>
   <form class="row" id="metaForm">
     <div><label>活动编号</label><input type="text" id="actCode" placeholder="261017"></div>
@@ -118,10 +142,9 @@ a{color:inherit}
   <p class="note" id="metaPreview">页面上显示：—</p>
   <p class="note">改过的每一行都记在这儿。点「填回去」就装进上面的框，再点「写到页面上」就换回去了。</p>
   <div id="metaLog" class="scroll"></div>
+  </section>
 
-  </details>
-  <details class="fold" id="foldThread">
-    <summary>对话历史</summary>
+  <section class="pane" id="pane-thread" role="tabpanel">
   <p class="note">某一台发来的、我们回给的，按时间排在一起。流水与名单那行右端的「对话」也到这里。</p>
   <form class="row" id="threadForm">
     <div><label>呼号</label><input type="text" id="threadCall" placeholder="BG7XXX-9"></div>
@@ -129,27 +152,12 @@ a{color:inherit}
     <div><button type="button" id="threadClose">收起</button></div>
   </form>
   <div id="thread"></div>
+  </section>
 
-  </details>
-  <details class="fold">
-    <summary>发件箱</summary>
+  <section class="pane" id="pane-outbox" role="tabpanel">
   <p class="note">回出去的 ACK 都记在这里。发失败的那条会带一句原因。</p>
   <div id="outbox" class="scroll"></div>
-
-  </details>
-  <details class="fold" id="foldAdd">
-    <summary>手动加一台</summary>
-  <form class="row" id="stForm">
-    <div><label>呼号</label><input type="text" id="stCall" placeholder="BG7XXX-9"></div>
-    <div><label>网格</label><input type="text" id="stGrid" placeholder="OL62"></div>
-    <div><label>路径</label><select id="stVia"><option value="rf">射频</option><option value="is">网络</option><option value="">空着</option></select></div>
-    <div><label>中继（逗号隔开）</label><input type="text" id="stDigi" placeholder="BG7LZQ-1"></div>
-    <div><label>时间（MM-DD HH:MM）</label><input type="text" id="stAt" placeholder="10-17 15:04"></div>
-    <div><label>状态</label><select id="stStatus"><option value="confirmed">已确认</option><option value="acked">已回 ACK</option><option value="called">只喊到</option></select></div>
-    <div><button type="submit">写进名单</button></div>
-  </form>
-  <p class="hint" id="txHint"></p>
-  </details>
+  </section>
 </div>
 <script>
 (function () {
@@ -168,12 +176,51 @@ a{color:inherit}
     try { localStorage.setItem("oa_token", token); } catch (e) {}
   }
 
-  var state = { date: "", round: "", archive: "", auto: false, routes: [], thread: "" };
+  var state = { date: "", round: "", archive: "", auto: false, routes: [], thread: "", tab: "rounds" };
   var dutyShown = "";
   var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
   // 写名单、删台、回 ACK 都认「现在看的那一轮」：没在「看哪一轮」里挑过就是当轮
   var curDate = function () { return state.date || state.round || ""; };
+
+  // 标签页：一页一块，刷新回到上次那一页；标签上的数字是待办条数
+  var TAB_KEY = "oa_tab";
+  var tabs = [].slice.call(document.querySelectorAll("#tabs button"));
+  var panes = [].slice.call(document.querySelectorAll(".pane"));
+  var tabPaint = function () {
+    tabs.forEach(function (b) {
+      var name = b.getAttribute("data-pane");
+      var label = b.getAttribute("data-label") || b.textContent;
+      var n = parseInt(b.getAttribute("data-count") || "0", 10) || 0;
+      b.textContent = n > 0 ? label + " " + n : label;
+      b.className = (name === state.tab ? "on" : "") + (n > 0 ? " has" : "");
+      b.setAttribute("aria-selected", name === state.tab ? "true" : "false");
+    });
+    panes.forEach(function (p) {
+      p.className = "pane" + (p.id === "pane-" + state.tab ? " on" : "");
+    });
+  };
+  var showTab = function (name, save) {
+    var found = false;
+    tabs.forEach(function (b) {
+      if (b.getAttribute("data-pane") === name) found = true;
+    });
+    if (!found) return;
+    state.tab = name;
+    if (save !== false) {
+      try { localStorage.setItem(TAB_KEY, name); } catch (e) {}
+    }
+    tabPaint();
+  };
+  var setTabCount = function (name, n) {
+    tabs.forEach(function (b) {
+      if (b.getAttribute("data-pane") === name) b.setAttribute("data-count", String(n || 0));
+    });
+    tabPaint();
+  };
+  tabs.forEach(function (b) {
+    b.addEventListener("click", function () { showTab(b.getAttribute("data-pane")); });
+  });
 
   var showErr = function (msg) {
     var box = $("err");
@@ -309,6 +356,7 @@ a{color:inherit}
     var waiting = (stations || []).filter(function (s) {
       return state.auto ? s.status === "called" : s.status !== "confirmed";
     });
+    setTabCount("todo", round ? waiting.length : 0);
     if (!round || !waiting.length) {
       var p = document.createElement("div");
       p.className = "empty";
@@ -814,8 +862,7 @@ a{color:inherit}
       return;
     }
     $("threadCall").value = call;
-    var fold = $("foldThread");
-    if (fold) fold.open = true;
+    showTab("thread");
     api("/api/admin/thread?call=" + encodeURIComponent(call)).then(function (d) {
       if (state.thread !== call) return;
       if (d && d.error) showErr(d.error);
@@ -873,9 +920,8 @@ a{color:inherit}
         $("stDigi").value = s.digi || "";
         $("stAt").value = s.at || "";
         $("stStatus").value = s.status || "called";
-        // 表单在本页最下面兼在折叠块里：先展开、再把人带过去，不然按了像没反应
-        var fold = $("foldAdd");
-        if (fold) fold.open = true;
+        // 表单在「加台」那一页：先切过去，不然按了像没反应
+        showTab("add");
         $("stForm").scrollIntoView({ behavior: "smooth", block: "center" });
         say("已填到「手动加一台」，改完按「写进名单」。");
         try { $("stGrid").focus({ preventScroll: true }); } catch (e) {}
@@ -1056,6 +1102,12 @@ a{color:inherit}
     $("threadCall").value = "";
     openThread("");
   });
+
+  try {
+    showTab(localStorage.getItem(TAB_KEY) || "rounds", false);
+  } catch (e) {
+    showTab("rounds", false);
+  }
 
   refresh();
   setInterval(function () {
