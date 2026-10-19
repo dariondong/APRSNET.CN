@@ -265,7 +265,7 @@ class Store(object):
         if data_dir and not os.path.isdir(data_dir):
             os.makedirs(data_dir)
         self.path = os.path.join(data_dir or ".", "oa.db")
-        self.lock = threading.RLock()      # 可重入：add_packet 里还会回调 round_id_for
+        self.lock = threading.RLock()      # 可重入：add_packet 里还会回调 active_round
         self.db = sqlite3.connect(self.path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         with self.lock:
@@ -367,12 +367,6 @@ class Store(object):
 
     # ---- 报文 ----
 
-    def round_id_for(self, ts):
-        row = self.active_round()
-        if row:
-            return row["id"]
-        return self.ensure_round(round_date_of(ts))
-
     def add_packet(self, record):
         """一条报文进库；喊到与回复顺带并进当轮名单。
 
@@ -394,21 +388,26 @@ class Store(object):
             pid = cur.lastrowid
             rid = None
             if record.get("kind") in ("cq", "u"):
-                rid = self.round_id_for(ts)
-                self.db.execute("UPDATE packets SET round_id=? WHERE id=?", (rid, pid))
-                call = record.get("src", "")
-                known = call and self.db.execute(
-                    "SELECT 1 FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
-                if known or record.get("msg_grid") or record.get("grid"):
-                    echo = self.is_echo(rid, call, record.get("kind"), record.get("text") or "",
-                                        record.get("msgid") or "", ts, pid)
-                    if not echo:        # 同一条又收一遍：名单不动，报文数也不多算一条
-                        self._touch(rid, call, ts, record,
-                                    "confirmed" if record.get("kind") == "u" else "called")
-                else:
-                    incomplete = True
+                # 只并进正在收的那一轮。没有轮次在收的时候，签到就只是一条报文：
+                # 不新开一轮，名单上一个字都不动。
+                active = self.active_round()
+                if active:
+                    rid = active["id"]
+                    self.db.execute("UPDATE packets SET round_id=? WHERE id=?", (rid, pid))
+                    call = record.get("src", "")
+                    known = call and self.db.execute(
+                        "SELECT 1 FROM stations WHERE round_id=? AND call=?", (rid, call)).fetchone()
+                    if known or record.get("msg_grid") or record.get("grid"):
+                        echo = self.is_echo(rid, call, record.get("kind"), record.get("text") or "",
+                                            record.get("msgid") or "", ts, pid)
+                        if not echo:    # 同一条又收一遍：名单不动，报文数也不多算一条
+                            self._touch(rid, call, ts, record,
+                                        "confirmed" if record.get("kind") == "u" else "called")
+                    else:
+                        incomplete = True
             self.db.commit()
-        return {"id": pid, "round_id": rid, "incomplete": incomplete}
+        return {"id": pid, "round_id": rid, "incomplete": incomplete,
+                "no_round": rid is None and record.get("kind") in ("cq", "u")}
 
     def is_echo(self, rid, call, kind, text, msgid, ts, pid):
         """这一条是不是同一台同一条报文从另一条链路又收了一遍。

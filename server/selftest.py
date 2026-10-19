@@ -110,6 +110,9 @@ def main():
     work = tempfile.mkdtemp(prefix="oa-selftest-")
     try:
         store = oa_store.Store(work, default_duty="BG7LZQ-2")
+        # 下面这些报文都是签到：先开当轮，签到才并得进去。没开轮时只留报文，
+        # 不新开一轮，名单上一个字都不动。
+        store.open_round(oa_store.round_date_of(oa_aprs.now_iso()), "BG7LZQ-2")
         records = []
         results = []
         for line in LINES:
@@ -235,7 +238,8 @@ def main():
         check("主控自己的 ACK 不进名单", "BG7LZQ-2" in live, False)
         check("参与时间写法", by_call["BG7XXX-9"]["at"][:2], rnd["date"][5:7])
         check("BH4AAA 走网络", by_call["BH4AAA"]["via"], "is")
-        check("名单更新日期", rnd["updated"], rnd["date"])
+        check("名单更新日期", rnd["updated"],
+              oa_store.bj_date(max(r["ts"] for r in records if r["kind"] in ("cq", "u"))))
         check("名单里带状态", by_call["BG7XXX-9"].get("status"), "confirmed")
         check("名单里带报文数", by_call["BG7XXX-9"].get("packets"), 2)
         check("名单里带首次与最后一次时间",
@@ -326,6 +330,12 @@ def main():
             record = oa_aprs.parse_line(line)
             if record:
                 store.add_packet(record)
+        check("删掉那一轮以后重收，不会自己又长出一轮", store.rounds(), [])
+        store.open_round(rnd["date"], "BG7LZQ-2")
+        for line in LINES:
+            record = oa_aprs.parse_line(line)
+            if record:
+                store.add_packet(record)
         check("重新收一份回来还是三台", len(store.stations(rnd["date"])), 3)
 
         # 改一条报文：按新的一句重解析，名单跟着重算
@@ -350,6 +360,7 @@ def main():
         # 已经签过到的那一台再签一次：还是同一行，这一次的网格与那句话盖掉前一次的
         again = oa_store.Store(os.path.join(work, "again"), default_duty="BG7LZQ-2")
         try:
+            again.open_round(oa_store.round_date_of(oa_aprs.now_iso()), "BG7LZQ-2")
             for line in ("BG6TA>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET BG6TA OL62 周末在山上{21",
                          "BG6TA>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET BG6TA PM01 改到城里了{22"):
                 again.add_packet(oa_aprs.parse_line(line))
@@ -418,6 +429,29 @@ def main():
         via_store.close()
     finally:
         shutil.rmtree(via_dir, ignore_errors=True)
+
+    # 没有轮次在收的时候收到的签到：报文留下，不新开一轮，名单上不加人
+    idle_dir = tempfile.mkdtemp(prefix="oa-selftest-idle-")
+    try:
+        idle = oa_store.Store(idle_dir, default_duty="BG7LZQ-2")
+        idle_cq = oa_aprs.parse_line(
+            "BH0IDL>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET OL62")
+        idle_res = idle.add_packet(idle_cq)
+        check("没开轮时收到签到不新开一轮", idle.rounds(), [])
+        check("没开轮时名单是空的", idle.stations(oa_store.round_date_of(idle_cq["ts"])), [])
+        check("没开轮时那条报文还留着",
+              idle.db.execute("SELECT COUNT(*) AS n FROM packets").fetchone()["n"], 1)
+        check("没开轮时告诉调用方 no_round", idle_res.get("no_round"), True)
+        idle_day = oa_store.round_date_of(idle_cq["ts"])
+        idle.open_round(idle_day, "BG7LZQ-2")
+        idle_res = idle.add_packet(idle_cq)
+        check("开了轮，签到并进当轮", idle_res.get("round_id"),
+              idle.round_by_date(idle_day)["id"])
+        check("开了轮，名单上多一台", len(idle.stations(idle_day)), 1)
+        check("开了轮就不再算 no_round", idle_res.get("no_round"), False)
+        idle.close()
+    finally:
+        shutil.rmtree(idle_dir, ignore_errors=True)
 
     # 老库补列：建库时还没有 acked_ts / confirmed_ts，打开时应自己补上
     old = tempfile.mkdtemp(prefix="oa-selftest-old-")
@@ -890,6 +924,7 @@ def main():
         conf["OA_SITE_ROOT"] = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         conf["OA_ADMIN_TOKEN"] = "selftest-token"
         rt = oa_server.Runtime(conf)
+        rt.store.open_round(oa_store.round_date_of(oa_aprs.now_iso()), "BG7LZQ-2")
         rt.store.add_packet(oa_aprs.parse_line(LINES[0]))
         rounds = rt.store.roster()["rounds"]
         check("名单里有一轮", len(rounds), 1)
