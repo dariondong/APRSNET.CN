@@ -52,6 +52,8 @@ DEFAULTS = {
     "OA_TNX_TEXT": "73 TNX!",
     "OA_BAD_TEXT": "INVALID CHECKIN, RESEND: CQ CNNET <CALL> <GRID>",
     "OA_HELP_TEXT": "APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET",
+    "OA_CLOSED_TEXT": "APRSNETCN OA: not in activity time now, check in Saturday.",
+    "OA_CLOSED_EVERY": "1800",
     "OA_ACK_MAX_PER_MINUTE": "30",
     "OA_ROUND_DUTY": "",
     "OA_TEST_NOTE": "",
@@ -178,6 +180,8 @@ class Runtime(object):
         self._sender = None
         self._msg_lock = threading.Lock()
         self._cq_replied = {}                       # 呼号 → 上一句回话的时间
+        self._closed_sent = {}                      # 呼号 → 上一次回「没在活动时间内」的时间
+        self.closed_every = as_int(conf.get("OA_CLOSED_EVERY"), 1800)
         self._stop = threading.Event()
 
     # ---- 全自动 ----
@@ -260,6 +264,11 @@ class Runtime(object):
                 if record.get("ack_id"):
                     self.store.mark_acked((record.get("src") or "").strip().upper(),
                                           record["ack_id"])
+                return
+            # 没在开轮的时候：只回一句不在活动时间内，ack 与那几句提示都不发
+            if not self.store.active_round():
+                if kind in ("cq", "u") or self.to_duty(record):
+                    self.note_closed(record)
                 return
             # 每一条发给本台的报文都先回一条机器 ack：喊到、回 U、普通一句话都一样
             if kind in ("cq", "u") or self.to_duty(record):
@@ -428,6 +437,27 @@ class Runtime(object):
         """这条是不是发给轮值呼号的（看报文里那个收件人）。"""
         duty = self.duty_call()
         return bool(duty) and (record.get("msgto") or "").strip().upper() == duty
+
+    def note_closed(self, record):
+        """没在开轮的时候收到的签到：只回一句现在不在活动时间内。
+
+        这时候那名就加不了人，回个 ack 反而像签上了。同一台半小时只回一条。
+        """
+        if not self.auto_ack_on or not self.can_send():
+            return False
+        duty = self.duty_call()
+        src = (record.get("src") or "").strip().upper()
+        if not src or not duty or src == duty:
+            return False
+        text = (self.conf.get("OA_CLOSED_TEXT") or "").strip()
+        if not text or text.lower() in ("-", "0", "off", "no"):
+            return False                                  # 不想要这一句就把那一项留空
+        now = time.time()
+        if now - self._closed_sent.get(src, 0.0) < self.closed_every:
+            return False
+        self._closed_sent[src] = now
+        self.send_msg(src, text)
+        return True
 
     def note_hint(self, record, text):
         """给对台回一条提示，让他知道该发什么。

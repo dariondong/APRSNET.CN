@@ -1062,6 +1062,36 @@ def main():
     finally:
         shutil.rmtree(img_dir, ignore_errors=True)
 
+    # 没在活动时间内（没开轮）收到的签到：只回一句不在活动时间内，不回到名单
+    closed_dir = tempfile.mkdtemp(prefix="oa-selftest-closed-")
+    try:
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = closed_dir
+        conf["OA_ROUND_DUTY"] = "BG7LZQ-3"
+        conf["OA_TX_PASSCODE"] = "-1"
+        conf["OA_AUTO"] = "1"
+        conf["OA_AUTO_ACK"] = "1"
+        rt = oa_server.Runtime(conf)
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG6ZZZ-9 OL62{31"))
+        rows = rt.store.outbox_for("BG6ZZZ-9")
+        check("没开轮时回一句不在活动时间内", said(rows[-1]["line"]), conf["OA_CLOSED_TEXT"])
+        check("没开轮时不回 ack", any("ack31" in (r["line"] or "") for r in rows), False)
+        check("没开轮时只回这一句", len(rows), 1)
+        check("没开轮时名单不加人", rt.store.stations(oa_store.bj_now_date()), [])
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-9>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :U CNNET{32"))
+        check("同一台半小时只回一条", len(rt.store.outbox_for("BG6ZZZ-9")), 1)
+        check("没开轮时报文照收进流水", len(rt.store.packets(limit=10)), 2)
+        rt.conf["OA_CLOSED_TEXT"] = ""
+        rt._closed_sent.clear()
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-8>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG6ZZZ-8 OL62{33"))
+        check("那一句留空就不回", rt.store.outbox_for("BG6ZZZ-8"), [])
+        rt.store.close()
+    finally:
+        shutil.rmtree(closed_dir, ignore_errors=True)
+
     print("\n%d 项，过了 %d 项" % (len(CHECKS), sum(1 for c in CHECKS if c)))
     return 0 if all(CHECKS) else 1
 
