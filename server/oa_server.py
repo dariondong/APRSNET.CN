@@ -181,6 +181,8 @@ class Runtime(object):
         self._msg_lock = threading.Lock()
         self._cq_replied = {}                       # 呼号 → 上一句回话的时间
         self._closed_sent = {}                      # 呼号 → (上一次回的时间, 回的那句话)
+        # 发报那条连接现在怎么样：管理页顶上要看得见，不然登录没认也像在正常发
+        self._tx_state = {"login": "", "state": "off", "error": "", "at": ""}
         self.closed_every = as_int(conf.get("OA_CLOSED_EVERY"), 1800)
         self._stop = threading.Event()
 
@@ -340,9 +342,14 @@ class Runtime(object):
                          % ("开" if self.auto_mode else "关", "开" if self.auto_ack_on else "关"))
 
     def _send_loop(self):
+        duty = self.duty_call()
         try:                                  # 先把发送那条连接登好，第一条 ACK 不用等握手
-            self.sender_link(self.duty_call()).warm()
+            self.sender_link(duty).warm()
+            self._tx_state = {"login": duty, "state": "ok", "error": "",
+                              "at": oa_aprs.now_iso()}
         except Exception as exc:
+            self._tx_state = {"login": duty, "state": "fail", "error": str(exc)[:200],
+                              "at": oa_aprs.now_iso()}
             sys.stderr.write("先连发送连接没成：%s\n" % exc)
         while not self._stop.is_set():
             try:
@@ -354,11 +361,15 @@ class Runtime(object):
             try:
                 self.sender_link(self.duty_call()).send(job["line"])
                 self.store.mark_sent(job["id"], "")
+                self._tx_state = {"login": self.duty_call(), "state": "ok", "error": "",
+                                  "at": oa_aprs.now_iso()}
                 if job["date"] and job["dst"] and self.is_ack_line(job["line"]):
                     self.store.mark_acked_station(job["date"], job["dst"])
                 sys.stderr.write("发出：%s\n" % job["line"][:110])
             except Exception as exc:
                 self.store.mark_sent(job["id"], str(exc)[:200])
+                self._tx_state = {"login": self.duty_call(), "state": "fail",
+                                  "error": str(exc)[:200], "at": oa_aprs.now_iso()}
                 sys.stderr.write("发不出去：%s\n" % exc)
 
     # ---- 自动开轮收轮 ----
@@ -733,6 +744,7 @@ class Runtime(object):
             "filter": self.duty_filter(),
             "rounds": len(self.store.rounds()),
             "tx": self.can_send(),
+            "tx_link": self._tx_state,
             "auto": self.auto_mode,
             "auto_ack": self.auto_ack_on and self.can_send(),
             "ack_per_minute": self.ack_per_minute,

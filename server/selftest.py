@@ -13,6 +13,7 @@ import sqlite3
 import sys
 import tempfile
 import threading
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -1114,6 +1115,30 @@ def main():
         rt.store.close()
     finally:
         shutil.rmtree(closed_dir, ignore_errors=True)
+
+    # 发报那条连接登不上时，管理页顶上要看得见：health 里带着发报状态
+    tx_dir = tempfile.mkdtemp(prefix="oa-selftest-tx-")
+    try:
+        conf = dict(oa_server.DEFAULTS)
+        conf["OA_DATA_DIR"] = tx_dir
+        conf["OA_ROUND_DUTY"] = "BH6RIZ-6"
+        conf["OA_TX_PASSCODE"] = "23736"
+        rt = oa_server.Runtime(conf)
+        check("没开那条件时发报状态是没开", rt.health()["tx_link"]["state"], "off")
+        rt.conf["OA_APRS_HOST"] = "127.0.0.1"      # 连不上：当场看它把状态记成什么
+        rt.conf["OA_APRS_PORT"] = "1"
+        rt.start_sender()
+        for _ in range(60):
+            time.sleep(0.1)
+            if rt._tx_state["state"] != "off":
+                break
+        check("登不上就记成发不出去", rt._tx_state["state"], "fail")
+        check("失败原因写进状态里", bool(rt._tx_state["error"]), True)
+        check("状态里带着用哪个呼号登的", rt.health()["tx_link"]["login"], "BH6RIZ-6")
+        rt.stop()
+        rt.store.close()
+    finally:
+        shutil.rmtree(tx_dir, ignore_errors=True)
 
     print("\n%d 项，过了 %d 项" % (len(CHECKS), sum(1 for c in CHECKS if c)))
     return 0 if all(CHECKS) else 1

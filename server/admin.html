@@ -430,6 +430,14 @@ a{color:inherit}
     add("发 ACK", (h && h.tx) ? "能发" : "只记不发");
     add("全自动", (h && h.auto) ? "开" : "关", (h && h.auto) ? "ok" : "");
     if (h && h.tx) add("自动回 ACK", h.auto_ack ? "开" : "关");
+    // 发报那条连接自己登不上：顶上直接说，不要等发件箱里一堆发不出去才看出来
+    var tx = h && h.tx_link;
+    if (tx && tx.state === "ok") add("发报", "登录好了", "ok");
+    if (tx && tx.state === "fail") {
+      add("发报", "发不出去", "bad");
+      var why = String(tx.error || "").slice(0, 80);
+      if (why) add("原因", why, "bad");
+    }
     if (aprs.error) add("错误", aprs.error, "bad");
     $("auto").checked = !!(h && h.auto);
     $("txHint").textContent = (h && h.tx)
