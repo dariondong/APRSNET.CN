@@ -179,12 +179,14 @@ a{color:inherit}
     try { localStorage.setItem("oa_token", token); } catch (e) {}
   }
 
-  var state = { date: "", round: "", archive: "", auto: false, routes: [], thread: "", tab: "rounds" };
+  var state = { date: "", round: "", newest: "", archive: "", auto: false, routes: [], thread: "", tab: "rounds" };
   var dutyShown = "";
   var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
   // 写名单、删台、回 ACK 都认「现在看的那一轮」：没在「看哪一轮」里挑过就是当轮
   var curDate = function () { return state.date || state.round || ""; };
+  // 页面文字总得落到某一轮上：手上没选就用最新那一轮，不往全局那套里写
+  var textDate = function () { return state.date || state.round || state.newest || ""; };
 
   // 标签页：一页一块，刷新回到上次那一页；标签上的数字是待办条数
   var TAB_KEY = "oa_tab";
@@ -296,6 +298,7 @@ a{color:inherit}
       if (!data || !data.ok) return;
       state.routes = (data.packets || []).slice(0, 200);
       state.round = (data.round && data.round.date) || "";
+      state.newest = ((data.rounds || [])[0] || {}).date || "";
       state.archive = (data.health && data.health.archive_dir) || "";
       state.auto = !!(data.health && data.health.auto);
       lastSync = Date.now();
@@ -457,8 +460,8 @@ a{color:inherit}
     }
     var forWhom = $("metaFor");
     if (forWhom) {
-      forWhom.textContent = curDate()
-        ? "改的是 " + curDate() + " 这一轮。"
+      forWhom.textContent = textDate()
+        ? "改的是 " + textDate() + " 这一轮。"
         : "还没有开过一轮，先到「轮次」开一轮。";
     }
   };
@@ -1091,7 +1094,7 @@ a{color:inherit}
   $("metaForm").addEventListener("submit", function (e) {
     e.preventDefault();
     api("/api/admin/settings", "POST", {
-      date: curDate(),
+      date: textDate(),
       activity_code: $("actCode").value,
       activity_name_zh: $("nameZh").value,
       activity_name_en: $("nameEn").value,

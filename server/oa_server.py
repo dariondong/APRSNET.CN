@@ -820,12 +820,17 @@ class Handler(BaseHTTPRequestHandler):
                 return
             active = self.rt.store.active_round()
             date = (query.get("date") or [""])[0] or (active["date"] if active else oa_store.bj_now_date())
+            # 今天还没开轮、手上也没选的时候，页面文字落到最新那一轮上
+            meta_date = date
+            if not self.rt.store.round_by_date(date):
+                newest = self.rt.store.rounds()
+                meta_date = newest[0]["date"] if newest else date
             self._json({
                 "ok": True,
                 "health": self.rt.health(),
                 "round": self.rt.store.round_by_date(date),
                 "rounds": self.rt.store.rounds(),
-                "meta": self.rt.store.round_text(date),
+                "meta": self.rt.store.round_text(meta_date),
                 "metaLog": self.rt.store.meta_history(24),
                 "stats": self.rt.store.round_stats(date),
                 "stations": self.rt.store.stations(date),
