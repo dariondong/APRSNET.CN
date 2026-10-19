@@ -178,6 +178,7 @@ class Runtime(object):
         self._sent_at = []
         self._send_lock = threading.Lock()
         self._sender = None
+        self._sender_started = False
         self._msg_lock = threading.Lock()
         self._cq_replied = {}                       # 呼号 → 上一句回话的时间
         self._closed_sent = {}                      # 呼号 → (上一次回的时间, 回的那句话)
@@ -291,7 +292,55 @@ class Runtime(object):
     # ---- 发报文 ----
 
     def can_send(self):
-        return bool(self.conf["OA_TX_PASSCODE"])
+        return bool(self.tx_passcode)
+
+    @property
+    def tx_passcode(self):
+        """发报用的口令：主控台上填的优先，没填过就看环境变量。
+
+        这条口令要跟当轮发出的呼号对得上，不然登录会被判 unverified。
+        填 `-` 就是不用口令，只记不发。
+        """
+        try:
+            val = (self.store.get_setting("tx_passcode") or "").strip()
+        except Exception:
+            val = ""
+        if val.lower() in ("-", "off", "no"):
+            return ""
+        return val or (self.conf.get("OA_TX_PASSCODE") or "").strip()
+
+    def set_tx_passcode(self, value):
+        """换发报口令：存进库，丢掉旧的那条连接，再把新的登一次看看行不行。"""
+        self.store.set_setting("tx_passcode", str(value or "").strip())
+        if self._sender is not None:
+            try:
+                self._sender.close()
+            except Exception:
+                pass
+            self._sender = None
+        self._tx_state = {"login": "", "state": "off", "error": "", "at": ""}
+        if not self.can_send():
+            return ""
+        if not self._sender_started:
+            self.start_sender()
+            return self.tx_passcode
+
+        def probe():
+            try:
+                duty = self.duty_call()
+                self.sender_link(duty).warm()
+                self._tx_state = {"login": duty, "state": "ok", "error": "",
+                                  "at": oa_aprs.now_iso()}
+                sys.stderr.write("发报口令换了，登进去了\n")
+            except Exception as exc:
+                self._tx_state = {"login": self.duty_call(), "state": "fail",
+                                  "error": str(exc)[:200], "at": oa_aprs.now_iso()}
+                sys.stderr.write("发报口令换了，还是登不上：%s\n" % exc)
+
+        thread = threading.Thread(target=probe, name="oa-tx-probe")
+        thread.daemon = True
+        thread.start()
+        return self.tx_passcode
 
     def take_send_slot(self):
         """等一个发送名额：有名额就立刻发，满了就等到腾出名额，不丢这条。
@@ -318,7 +367,7 @@ class Runtime(object):
             self._sender.close()
         self._sender = oa_aprs.SenderLink(
             self.conf["OA_APRS_HOST"], self.conf["OA_APRS_PORT"],
-            login=duty, passcode=self.conf["OA_TX_PASSCODE"])
+            login=duty, passcode=self.tx_passcode)
         return self._sender
 
     def queue_send(self, src, dst, line, date="", msgid=""):
@@ -333,8 +382,9 @@ class Runtime(object):
 
     def start_sender(self):
         if not self.can_send():
-            sys.stderr.write("没有 OA_TX_PASSCODE，只收不发\n")
+            sys.stderr.write("没有发报口令，只收不发\n")
             return
+        self._sender_started = True
         thread = threading.Thread(target=self._send_loop, name="oa-send")
         thread.daemon = True
         thread.start()
@@ -744,6 +794,7 @@ class Runtime(object):
             "filter": self.duty_filter(),
             "rounds": len(self.store.rounds()),
             "tx": self.can_send(),
+            "tx_set": bool(self.tx_passcode),
             "tx_link": self._tx_state,
             "auto": self.auto_mode,
             "auto_ack": self.auto_ack_on and self.can_send(),
@@ -1078,6 +1129,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if "auto" in body:
                 self.rt.set_auto_mode(bool(body.get("auto")))
+            if "tx_passcode" in body:
+                self.rt.set_tx_passcode(body.get("tx_passcode"))
             # 页面上那几行字：带到哪一轮就写哪一轮，不带的写全局那套（新开轮时当底子用）
             date = str(body.get("date") or "").strip()
             vals = dict((key, body.get(key)) for key in oa_store.Store.META_KEYS if key in body)
@@ -1089,7 +1142,8 @@ class Handler(BaseHTTPRequestHandler):
                 for key, value in vals.items():
                     self.rt.store.set_setting(key, str(value or "").strip())
                 meta = self.rt.store.meta()
-            self._json({"ok": True, "flags": self.rt.flags(), "meta": meta})
+            self._json({"ok": True, "flags": self.rt.flags(), "meta": meta,
+                        "tx_set": bool(self.rt.tx_passcode)})
             return
         if path == "/api/admin/archive":
             if not self._need_token():

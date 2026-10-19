@@ -1135,6 +1135,17 @@ def main():
         check("登不上就记成发不出去", rt._tx_state["state"], "fail")
         check("失败原因写进状态里", bool(rt._tx_state["error"]), True)
         check("状态里带着用哪个呼号登的", rt.health()["tx_link"]["login"], "BH6RIZ-6")
+        # 主控台上能把发报口令换掉：换的就是当轮那个呼号的
+        check("没填过时用环境变量那串", rt.tx_passcode, "23736")
+        rt.store.set_setting("tx_passcode", "20130")
+        check("管理台填的盖过环境变量", rt.tx_passcode, "20130")
+        check("填了口令就能发", rt.can_send(), True)
+        check("health 里说已设口令", rt.health()["tx_set"], True)
+        rt.store.set_setting("tx_passcode", "-")
+        check("填 - 就是只记不发", rt.tx_passcode, "")
+        check("只记不发时 tx 是假", rt.can_send(), False)
+        rt.store.set_setting("tx_passcode", "")
+        check("清空就回到环境变量那串", rt.tx_passcode, "23736")
         rt.stop()
         rt.store.close()
     finally:

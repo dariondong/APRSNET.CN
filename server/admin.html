@@ -84,6 +84,7 @@ a{color:inherit}
     <button type="button" role="tab" data-pane="meta" data-label="页面文字" aria-selected="false">页面文字</button>
     <button type="button" role="tab" data-pane="thread" data-label="对话" aria-selected="false">对话</button>
     <button type="button" role="tab" data-pane="outbox" data-label="发件箱" aria-selected="false">发件箱</button>
+    <button type="button" role="tab" data-pane="set" data-label="设置" aria-selected="false">设置</button>
   </nav>
 
   <section class="pane on" id="pane-rounds" role="tabpanel">
@@ -160,6 +161,15 @@ a{color:inherit}
   <section class="pane" id="pane-outbox" role="tabpanel">
   <p class="note">回出去的 ACK 都记在这里。发失败的那条会带一句原因。</p>
   <div id="outbox" class="scroll"></div>
+  </section>
+
+  <section class="pane" id="pane-set" role="tabpanel">
+  <p class="note">发报那条连接用当轮的轮值呼号登录，口令得是那个呼号的。同一台的 SSID 不算，按主呼号算。填进去马上就登一次，成不成写在下面。</p>
+  <form class="row" id="txForm">
+    <div><label>发报口令</label><input type="text" id="txPass" placeholder="留空就不改"></div>
+    <div><button type="submit">换这个口令</button></div>
+  </form>
+  <p class="note" id="txState">发报：—</p>
   </section>
 </div>
 <script>
@@ -407,6 +417,25 @@ a{color:inherit}
     box.appendChild(table);
   };
 
+  // 「设置」那一页：发报口令，以及它现在到底登没登上
+  var paintTx = function (h) {
+    var box = $("txState");
+    if (!box) return;
+    var tx = (h && h.tx_link) || {};
+    var who = tx.login || "轮值呼号";
+    var line = "";
+    if (!(h && h.tx_set)) {
+      line = "发报：没口令，报文只记进发件箱，不往空中发。";
+    } else if (tx.state === "ok") {
+      line = "发报：用 " + who + " 登进去了。" + (tx.at ? "登上的时间 " + tx.at : "");
+    } else if (tx.state === "fail") {
+      line = "发报：用 " + who + " 没登上。原因 " + (tx.error || "没写");
+    } else {
+      line = "发报：口令有了，还没试登录。发一条报文就可以看出成不成。";
+    }
+    box.textContent = line;
+  };
+
   var paintBar = function (h, round) {
     var bar = $("bar");
     bar.textContent = "";
@@ -432,12 +461,14 @@ a{color:inherit}
     if (h && h.tx) add("自动回 ACK", h.auto_ack ? "开" : "关");
     // 发报那条连接自己登不上：顶上直接说，不要等发件箱里一堆发不出去才看出来
     var tx = h && h.tx_link;
+    if (h && h.tx_set === false) add("发报", "没口令，只记不发", "bad");
     if (tx && tx.state === "ok") add("发报", "登录好了", "ok");
     if (tx && tx.state === "fail") {
       add("发报", "发不出去", "bad");
       var why = String(tx.error || "").slice(0, 80);
       if (why) add("原因", why, "bad");
     }
+    paintTx(h);
     if (aprs.error) add("错误", aprs.error, "bad");
     $("auto").checked = !!(h && h.auto);
     $("txHint").textContent = (h && h.tx)
@@ -1025,6 +1056,25 @@ a{color:inherit}
         refresh();
       });
   };
+
+  $("txForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var val = $("txPass").value.trim();
+    if (!val) { say("框里没写东西，没动。", true); return; }
+    api("/api/admin/settings", "POST", { tx_passcode: val }).then(function (d) {
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "换不动。";
+        showErr(why);
+        say(why, true);
+        return;
+      }
+      showErr("");
+      $("txPass").value = "";
+      say("口令换好了，正在用轮值呼号登一次，几秒后看下面那行。");
+      setTimeout(refresh, 1500);
+      setTimeout(refresh, 4000);
+    });
+  });
 
   $("roundForm").addEventListener("submit", function (e) {
     e.preventDefault();
