@@ -79,7 +79,12 @@ CREATE TABLE IF NOT EXISTS rounds (
   opened TEXT NOT NULL DEFAULT '',
   closed TEXT NOT NULL DEFAULT '',
   note   TEXT NOT NULL DEFAULT '',
-  code   TEXT NOT NULL DEFAULT ''
+  code   TEXT NOT NULL DEFAULT '',
+  name_zh    TEXT NOT NULL DEFAULT '',
+  name_en    TEXT NOT NULL DEFAULT '',
+  explain_zh TEXT NOT NULL DEFAULT '',
+  explain_en TEXT NOT NULL DEFAULT '',
+  op_name    TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS stations (
@@ -121,7 +126,8 @@ CREATE TABLE IF NOT EXISTS meta_log (
   id    INTEGER PRIMARY KEY AUTOINCREMENT,
   key   TEXT NOT NULL,
   value TEXT NOT NULL DEFAULT '',
-  ts    TEXT NOT NULL DEFAULT ''
+  ts    TEXT NOT NULL DEFAULT '',
+  round_date TEXT NOT NULL DEFAULT ''
 );
 """
 
@@ -298,15 +304,23 @@ class Store(object):
                 self._put_setting("activity_code", code)
                 self._put_setting("activity_name_zh", name_zh)
                 self._put_setting("activity_name_en", name_en or name_zh)
-        # 每一轮记下当时的活动编号：以后换了编号，老几轮还认得自己属于哪一场
+        # 每一轮记下当时的那套页面文字：编号、名称两语、解释两语、主控昵称。
+        # 换了下周的编号与名称，老几轮还认得自己属于哪一场。
         rcols = set(row["name"] for row in self.db.execute("PRAGMA table_info(rounds)"))
-        if "code" not in rcols:
-            self.db.execute("ALTER TABLE rounds ADD COLUMN code TEXT NOT NULL DEFAULT ''")
-        now_code = self.db.execute(
-            "SELECT value FROM settings WHERE key='activity_code'").fetchone()
-        now_code = clean_code(now_code["value"]) if now_code else ""
-        if now_code:
-            self.db.execute("UPDATE rounds SET code=? WHERE code='' OR code IS NULL", (now_code,))
+        for name in ("code", "name_zh", "name_en", "explain_zh", "explain_en", "op_name"):
+            if name not in rcols:
+                self.db.execute("ALTER TABLE rounds ADD COLUMN %s TEXT NOT NULL DEFAULT ''" % name)
+        mcols = set(row["name"] for row in self.db.execute("PRAGMA table_info(meta_log)"))
+        if "round_date" not in mcols:
+            self.db.execute("ALTER TABLE meta_log ADD COLUMN round_date TEXT NOT NULL DEFAULT ''")
+        # 老几轮没存过这套字：拿当前那套回填一次，以后每轮各写各的
+        now = dict((r["key"], r["value"]) for r in
+                   self.db.execute("SELECT key, value FROM settings").fetchall())
+        for col, key in self.TEXT_COLS:
+            value = clean_code(now.get(key) or "") if key == "activity_code" else (now.get(key) or "").strip()
+            if value:
+                self.db.execute("UPDATE rounds SET %s=? WHERE %s='' OR %s IS NULL" % (col, col, col),
+                                (value,))
 
     def close(self):
         with self.lock:
@@ -334,21 +348,29 @@ class Store(object):
             row = self.db.execute("SELECT * FROM rounds WHERE active=1 ORDER BY date DESC").fetchone()
             return dict(row) if row else None
 
-    def ensure_round(self, date, duty=None):
+    def ensure_round(self, date, duty=None, text=None):
         with self.lock:
             row = self.db.execute("SELECT * FROM rounds WHERE date=?", (date,)).fetchone()
             if row:
                 return row["id"]
+        seed = self._seed_text()
+        for key, value in (text or {}).items():
+            if key in seed and str(value or "").strip():
+                seed[key] = str(value or "").strip()
+        seed["activity_code"] = clean_code(seed.get("activity_code") or "")
+        with self.lock:
             cur = self.db.execute(
-                "INSERT INTO rounds (date, duty, opened, code) VALUES (?,?,?,?)",
+                "INSERT INTO rounds (date, duty, opened, code, name_zh, name_en, explain_zh,"
+                " explain_en, op_name) VALUES (?,?,?,?,?,?,?,?,?)",
                 (date, self.default_duty if duty is None else duty, now_iso(),
-                 clean_code(self.get_setting("activity_code"))))
+                 seed["activity_code"], seed["activity_name_zh"], seed["activity_name_en"],
+                 seed["explain_zh"], seed["explain_en"], seed["op_name"]))
             self.db.commit()
             return cur.lastrowid
 
-    def open_round(self, date, duty=""):
+    def open_round(self, date, duty="", text=None):
         """把这一轮设成在收的：收到的新报文都并进它。"""
-        rid = self.ensure_round(date)
+        rid = self.ensure_round(date, text=text)
         with self.lock:
             self.db.execute("UPDATE rounds SET active=0 WHERE active=1")
             self.db.execute("UPDATE rounds SET active=1, closed='', opened=COALESCE(NULLIF(opened,''),?) WHERE id=?",
@@ -751,9 +773,11 @@ class Store(object):
 
     def roster(self):
         """导出页面上读的那份 JSON。rounds 新的在前，与 pages 上的写法一致。"""
-        meta = self.meta()
+        rounds = self.rounds()
+        # 顶上的 meta 是最新那一轮的字；每一轮自己也带一份，翻回旧轮看到的还是当时那套
+        meta = self.round_text(rounds[0]["date"]) if rounds else self.meta()
         out = []
-        for rnd in self.rounds():
+        for rnd in rounds:
             stations = []
             last = ""
             with self.lock:
@@ -796,6 +820,7 @@ class Store(object):
                 "call": rnd["duty"],
                 # 这一轮开的时候记下的编号；老库里还没记的就用当前这一场的
                 "code": (rnd.get("code") or "") or meta["code"],
+                "meta": self.round_text(rnd["date"]),
                 "stations": stations,
             })
         return {"updated": (out[0]["updated"] or None) if out else None,
@@ -883,8 +908,7 @@ class Store(object):
             os.makedirs(out_dir)
         stations = self.stations(date)
         packets = self.round_packets(date)
-        head = self.meta()
-        head["code"] = (row["code"] or "") or head["code"]   # 归档用这一轮当时的编号
+        head = self.round_text(date)                                  # 归档用这一轮当时那套字
         data = {
             "activity": head,
             "code": head["code"],
@@ -1040,6 +1064,81 @@ class Store(object):
     META_KEYS = ("activity_code", "activity_name_zh", "activity_name_en",
                  "explain_zh", "explain_en", "op_name")
 
+    # 每一轮自己那一套字：轮次表的列名 → 操作台上那几个框的名字
+    TEXT_COLS = (("code", "activity_code"), ("name_zh", "activity_name_zh"),
+                 ("name_en", "activity_name_en"), ("explain_zh", "explain_zh"),
+                 ("explain_en", "explain_en"), ("op_name", "op_name"))
+
+    def _seed_text(self):
+        """新开一轮时抄一份：上一轮写过的那套优先，没写过就用全局那套。"""
+        with self.lock:
+            row = self.db.execute("SELECT * FROM rounds ORDER BY date DESC LIMIT 1").fetchone()
+        src = dict(row) if row else {}
+        st = self.settings()
+        out = {}
+        for col, key in self.TEXT_COLS:
+            if key == "activity_code":
+                # 编号每周换一个：新开轮看全局那套，不从上一轮抳下来
+                out[key] = (st.get(key) or "").strip() or (src.get(col) or "").strip()
+            else:
+                out[key] = (src.get(col) or "").strip() or (st.get(key) or "").strip()
+        return out
+
+    def round_text(self, date):
+        """这一轮的页面文字：编号、名称两语、解释两语、主控昵称。
+
+        存在轮次表自己那几列里，换一轮就是另一套。老几轮没写过的列沿用全局那套。
+        """
+        row = self.round_by_date(date) if date else None
+        row = row or {}
+        st = self.settings()
+
+        def pick(col, key):
+            got = (row.get(col) or "").strip()
+            return got or (st.get(key) or "").strip()
+
+        code = clean_code(pick("code", "activity_code"))
+        name_zh = pick("name_zh", "activity_name_zh")
+        name_en = pick("name_en", "activity_name_en") or name_zh
+        return {
+            "code": code,
+            "nameZh": name_zh,
+            "nameEn": name_en,
+            "subtitleZh": headline(code, name_zh),
+            "subtitleEn": headline(code, name_en),
+            "explainZh": pick("explain_zh", "explain_zh"),
+            "explainEn": pick("explain_en", "explain_en"),
+            "opName": pick("op_name", "op_name"),
+        }
+
+    def set_round_text(self, date, values):
+        """写这一轮的页面文字，写进去的只有这一轮。没有这一轮就回 None。"""
+        row = self.round_by_date(date)
+        if not row:
+            return None
+        sets, args, logs = [], [], []
+        for col, key in self.TEXT_COLS:
+            if key not in values:
+                continue
+            value = str(values.get(key) or "").strip()
+            if key == "activity_code":
+                value = clean_code(value)
+            sets.append("%s=?" % col)
+            args.append(value)
+            if value and value != (row.get(col) or "").strip():
+                logs.append((key, value))
+        if not sets:
+            return self.round_text(date)
+        args.append(row["id"])
+        with self.lock:
+            self.db.execute("UPDATE rounds SET %s WHERE id=?" % ", ".join(sets), args)
+            for key, value in logs:
+                self.db.execute(
+                    "INSERT INTO meta_log (key,value,ts,round_date) VALUES (?,?,?,?)",
+                    (key, value, now_iso(), date))
+            self.db.commit()
+        return self.round_text(date)
+
     def meta(self):
         """活动页抬头那几行字：副标题（编号 + 名称）、解释标题、主控昵称。
 
@@ -1066,7 +1165,7 @@ class Store(object):
         """这几行字改过的旧样，新的在前，操作台上点一句就能填回去。"""
         with self.lock:
             rows = self.db.execute(
-                "SELECT id, key, value, ts FROM meta_log ORDER BY id DESC LIMIT ?",
+                "SELECT id, key, value, ts, round_date FROM meta_log ORDER BY id DESC LIMIT ?",
                 (int(limit),)).fetchall()
         return [dict(r) for r in rows]
 

@@ -825,7 +825,7 @@ class Handler(BaseHTTPRequestHandler):
                 "health": self.rt.health(),
                 "round": self.rt.store.round_by_date(date),
                 "rounds": self.rt.store.rounds(),
-                "meta": self.rt.store.meta(),
+                "meta": self.rt.store.round_text(date),
                 "metaLog": self.rt.store.meta_history(24),
                 "stats": self.rt.store.round_stats(date),
                 "stations": self.rt.store.stations(date),
@@ -890,8 +890,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._fail(400, "日期要写成 2026-10-17")
                 return
             duty = str(body.get("duty") or "").strip().upper()
-            rid = self.rt.store.open_round(date, duty)
-            self._json({"ok": True, "round": self.rt.store.round_by_date(date), "id": rid})
+            text = dict((key, body.get(key)) for key in oa_store.Store.META_KEYS
+                        if str(body.get(key) or "").strip())
+            rid = self.rt.store.open_round(date, duty, text=text)
+            self._json({"ok": True, "round": self.rt.store.round_by_date(date), "id": rid,
+                        "meta": self.rt.store.round_text(date)})
             return
         if path == "/api/admin/close":
             if not self._need_token():
@@ -1016,12 +1019,18 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if "auto" in body:
                 self.rt.set_auto_mode(bool(body.get("auto")))
-            # 页面上那两行字：副标题（中 / 英）与主控昵称，空串就是抹掉
-            for key in oa_store.Store.META_KEYS:
-                if key in body:
-                    self.rt.store.set_setting(key, str(body.get(key) or "").strip())
-            self._json({"ok": True, "flags": self.rt.flags(),
-                        "meta": self.rt.store.meta()})
+            # 页面上那几行字：带到哪一轮就写哪一轮，不带的写全局那套（新开轮时当底子用）
+            date = str(body.get("date") or "").strip()
+            vals = dict((key, body.get(key)) for key in oa_store.Store.META_KEYS if key in body)
+            if date and self.rt.store.round_by_date(date):
+                if vals:
+                    self.rt.store.set_round_text(date, vals)
+                meta = self.rt.store.round_text(date)
+            else:
+                for key, value in vals.items():
+                    self.rt.store.set_setting(key, str(value or "").strip())
+                meta = self.rt.store.meta()
+            self._json({"ok": True, "flags": self.rt.flags(), "meta": meta})
             return
         if path == "/api/admin/archive":
             if not self._need_token():
@@ -1059,9 +1068,12 @@ class Handler(BaseHTTPRequestHandler):
             note = self.rt.conf.get("OA_TEST_NOTE_EN") or note
         return note
 
-    def _meta_text(self, lang):
-        """页面上那两行字：副标题与解释标题，按语言取，英文空着就沿用中文那句。"""
-        meta = self.rt.store.meta()
+    def _meta_text(self, lang, date=None):
+        """页面上那两行字：副标题与解释标题，按语言取，英文空着就沿用中文那句。
+
+        带哪一轮就取哪一轮自己那套，不带就用最新那一轮。
+        """
+        meta = self.rt.store.round_text(date) if date else self.rt.store.meta()
         if lang == "en":
             sub = meta.get("subtitleEn") or meta.get("subtitleZh") or ""
             exp = meta.get("explainEn") or meta.get("explainZh") or ""
@@ -1093,7 +1105,7 @@ class Handler(BaseHTTPRequestHandler):
             row = {"date": date, "call": "", "stations": []}
         try:
             body = steps[what](row, note=self._note(lang), lang=lang,
-                               meta=self._meta_text(lang))
+                               meta=self._meta_text(lang, row.get("date")))
         except Exception as exc:
             self._fail(500, "画不出来：%s" % exc)
             return
@@ -1125,7 +1137,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             body = oa_image.render_cert(row, station, note=self._note(lang), lang=lang,
-                                        meta=self._meta_text(lang))
+                                        meta=self._meta_text(lang, row.get("date")))
         except Exception as exc:
             self._fail(500, "画不出来：%s" % exc)
             return

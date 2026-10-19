@@ -202,6 +202,30 @@ def main():
         check("新开的一轮记下当时的编号", coded.round_by_date("2026-10-24")["code"], "261024")
         check("换了编号也不改写老那轮", coded.round_by_date("2026-10-17")["code"], "261017")
         coded.close()
+        # 页面文字每轮一套：写哪一轮就是哪一轮，另一轮不动
+        tdir = os.path.join(tempfile.mkdtemp(), "texts")
+        texts = oa_store.Store(tdir)
+        texts.ensure_round("2026-10-17", "BG0TST",
+                           text={"activity_code": "261017", "activity_name_zh": "第一场",
+                                 "explain_zh": "第一次"})
+        texts.ensure_round("2026-10-24", "BG0TST",
+                           text={"activity_code": "261024", "activity_name_zh": "第二场",
+                                 "explain_en": "Second"})
+        check("这一轮写的是自己那套", texts.round_text("2026-10-24")["subtitleZh"], "#261024 第二场")
+        check("上一轮还是上一轮的", texts.round_text("2026-10-17")["subtitleZh"], "#261017 第一场")
+        check("英文名空着沿用中文", texts.round_text("2026-10-24")["nameEn"], "第二场")
+        texts.set_round_text("2026-10-24", {"explain_zh": "第二次"})
+        check("写解释不碰名称", texts.round_text("2026-10-24")["subtitleZh"], "#261024 第二场")
+        check("写解释只改这一轮", texts.round_text("2026-10-17")["explainZh"], "第一次")
+        check("写解释的这一轮换了", texts.round_text("2026-10-24")["explainZh"], "第二次")
+        hist = [r for r in texts.meta_history(10) if r["key"] == "explain_zh"]
+        check("改页面文字记下哪一轮", hist[0]["round_date"], "2026-10-24")
+        two = texts.roster()
+        check("名单每轮带自己那份字", [x["meta"]["subtitleZh"] for x in two["rounds"]],
+              ["#261024 第二场", "#261017 第一场"])
+        check("名单顶上那套是最新一轮", two["meta"]["subtitleZh"], "#261024 第二场")
+        check("没这一轮就写不进去", texts.set_round_text("2026-11-01", {"op_name": "谁"}), None)
+        texts.close()
         store.set_setting("op_name", "")
         check("抹掉就是不显示", store.meta()["opName"], "")
         # 改过的每一行都记一条，新的在前；抹成空、动开关都不记
