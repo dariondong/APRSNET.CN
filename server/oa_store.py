@@ -315,9 +315,14 @@ class Store(object):
     # ---- 轮次 ----
 
     def rounds(self):
+        """每一轮一行，带台站数与签到条数：主控台那张表直接用这两个数。"""
         with self.lock:
             return [dict(r) for r in self.db.execute(
-                "SELECT * FROM rounds ORDER BY date DESC").fetchall()]
+                "SELECT r.*,"
+                " (SELECT COUNT(*) FROM stations s WHERE s.round_id=r.id) AS stations,"
+                " (SELECT COUNT(*) FROM packets p WHERE p.round_id=r.id AND p.kind IN ('cq','u'))"
+                " AS checkins"
+                " FROM rounds r ORDER BY r.date DESC").fetchall()]
 
     def round_by_date(self, date):
         with self.lock:

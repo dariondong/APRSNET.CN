@@ -230,6 +230,11 @@ def main():
         check("轮值呼号写进名单", rnd["call"], "BG7LZQ-2")
         calls = sorted([s["call"] for s in rnd["stations"]])
         check("名单里三台", calls, ["BG6BBB-7", "BG7XXX-9", "BH4AAA"])
+        # 主控台那张轮次表直接用这两个数：台站数与签到条数
+        row = [r for r in store.rounds() if r["date"] == rnd["date"]][0]
+        check("轮次那一行带台站数", row["stations"], 3)
+        check("轮次那一行带签到数", row["checkins"],
+              len([p for p in store.packets(limit=50) if p["kind"] in ("cq", "u")]))
         check("主控自己不在名单里", store.stations(rnd["date"]) and
               any(s["call"] == "BG7LZQ-2" for s in store.stations(rnd["date"])), False)
         by_call = dict((s["call"], s) for s in rnd["stations"])

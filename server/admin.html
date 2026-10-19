@@ -31,6 +31,10 @@ details.fold[open]>summary::after{content:"收起"}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-weight:600;color:var(--grey);font-size:12px}
 tr:last-child td{border-bottom:0}
+tr.on td{font-weight:600}
+tr.on td:first-child{box-shadow:inset 3px 0 0 var(--hot)}
+td.ops{white-space:nowrap}
+td.ops button{margin-right:4px}
 td.mono,th.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
 td.pkt-edit input{min-width:320px;width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:2px 4px}
 .k{display:inline-block;padding:0 5px;border:1px solid var(--line);font-size:11px}
@@ -82,16 +86,16 @@ a{color:inherit}
   <div id="packets" class="scroll"></div>
 
   </details>
-  <details class="fold">
+  <details class="fold" open>
     <summary>轮次</summary>
+  <p class="note">一圈一行。在收的那一轮收新报文，收完的行只当档案看。看哪一轮由这张表定，下面的名单、流水与导出都跟着它。</p>
   <form class="row" id="roundForm">
-    <div><label>本轮日期</label><input type="date" id="roundDate"></div>
-    <div><label>轮值呼号</label><input type="text" id="dutyCall" placeholder="BG7LZQ-2"></div>
-    <div><button type="submit">开这一轮</button></div>
-    <div><button type="button" id="closeRound">结束这一轮</button></div>
-    <div><label>看哪一轮</label><select id="roundPick"></select></div>
-    <div><button type="button" id="archBtn">归档本轮</button></div>
-    <div><button type="button" id="delRound" class="hot">删掉这一轮</button></div>
+    <div><label>日期</label><input type="date" id="roundDate"></div>
+    <div><label>轮值呼号</label><input type="text" id="dutyCall"></div>
+    <div><button type="submit">新开这一轮</button></div>
+  </form>
+  <div id="rounds" class="scroll"></div>
+  <form class="row" style="margin-top:8px">
     <div><a href="#" id="exportBtn"><button type="button">roster.json</button></a></div>
     <div><a href="#" id="csvStBtn"><button type="button">名单 CSV</button></a></div>
     <div><a href="#" id="csvPktBtn"><button type="button">报文 CSV</button></a></div>
@@ -164,6 +168,7 @@ a{color:inherit}
   }
 
   var state = { date: "", round: "", archive: "", auto: false, routes: [], thread: "" };
+  var dutyShown = "";
   var lastSync = 0;
   var $ = function (id) { return document.getElementById(id); };
   // 写名单、删台、回 ACK 都认「现在看的那一轮」：没在「看哪一轮」里挑过就是当轮
@@ -462,23 +467,163 @@ a{color:inherit}
     box.appendChild(table);
   };
 
+  // 轮次：一圈一行。看哪一轮由这张表定，下面的名单、流水、导出都跟着它。
+  // 一行只有它现在能做的事：在收的能收，待开的能开，删放在「…」里。
+  var roundWord = function (r) {
+    if (r.active) return "在收";
+    return r.closed ? "已收" : "待开";
+  };
+
+  var nextSaturday = function () {
+    var now = new Date(Date.now() + 8 * 3600 * 1000);       // 北京时间
+    var add = (6 - now.getUTCDay() + 7) % 7;                // 0 是周日
+    now.setUTCDate(now.getUTCDate() + add);
+    return now.toISOString().slice(0, 10);
+  };
+
+  var roundFail = function (d, fallback) {
+    var why = (d && d.error) || fallback;
+    showErr(why);
+    say(why, true);
+  };
+
   var paintRounds = function (rounds, round) {
-    var pick = $("roundPick");
-    pick.textContent = "";
-    (rounds || []).forEach(function (r) {
-      var opt = document.createElement("option");
-      opt.value = r.date;
-      opt.textContent = r.date + (r.active ? "（在收）" : "");
-      pick.appendChild(opt);
-    });
-    if (round) {
-      $("roundDate").value = round.date;
-      $("dutyCall").value = round.duty || "";
-      pick.value = round.date;
-    } else if (!$("roundDate").value) {
-      var today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
-      $("roundDate").value = today;
+    var box = $("rounds");
+    box.textContent = "";
+    var cur = (round && round.date) || "";
+    var rows = rounds || [];
+    if (!rows.length) {
+      var none = document.createElement("p");
+      none.className = "empty";
+      none.textContent = "一轮都还没有。填个周六开一轮，签到才进名单。";
+      box.appendChild(none);
+      return;
     }
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["日期", "状态", "轮值呼号", "台站", "签到", ""].forEach(function (t) {
+      var th = document.createElement("th");
+      th.textContent = t;
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      if (r.date === cur) tr.className = "on";
+      cell(tr, r.date, "mono");
+      var st = cell(tr, "");
+      var word = document.createElement("span");
+      word.className = "k" + (r.active ? " cq" : "");
+      word.textContent = roundWord(r);
+      st.appendChild(word);
+      cell(tr, r.duty || "还没写");
+      cell(tr, r.stations || 0);
+      cell(tr, r.checkins || 0);
+      var ops = cell(tr, "", "ops");
+
+      var look = document.createElement("button");
+      look.type = "button";
+      look.className = "mini";
+      look.textContent = r.date === cur ? "正在看" : "看这一轮";
+      look.disabled = r.date === cur;
+      look.onclick = function () {
+        state.date = r.date;
+        refresh();
+      };
+      ops.appendChild(look);
+
+      if (r.active) {
+        var shut = document.createElement("button");
+        shut.type = "button";
+        shut.className = "mini";
+        shut.textContent = "收轮归档";
+        shut.onclick = function () {
+          api("/api/admin/close", "POST", { date: r.date }).then(function (d) {
+            if (!d || !d.ok) { roundFail(d, "收不起来。"); return; }
+            showErr("");
+            var n = (d.archived || []).length;
+            say(n ? (r.date + " 这轮收好了，" + n + " 份档案写在 " + state.archive)
+                  : (r.date + " 这轮收好了，没有新档案。"));
+            refresh();
+          });
+        };
+        ops.appendChild(shut);
+      } else if (!r.closed) {
+        var open = document.createElement("button");
+        open.type = "button";
+        open.className = "mini";
+        open.textContent = "开始收";
+        open.onclick = function () {
+          api("/api/admin/round", "POST", { date: r.date, duty: r.duty || "" }).then(function (d) {
+            if (!d || !d.ok) { roundFail(d, "开不起来。"); return; }
+            showErr("");
+            state.date = r.date;
+            say(r.date + " 这一轮开始收，轮值呼号 " +
+                ((d.round && d.round.duty) || "还没写") + "。");
+            refresh();
+          });
+        };
+        ops.appendChild(open);
+      }
+
+      var rename = document.createElement("button");
+      rename.type = "button";
+      rename.className = "mini";
+      rename.textContent = "改呼号";
+      rename.onclick = function () {
+        var call = window.prompt(r.date + " 这一轮的轮值呼号", r.duty || "");
+        if (call === null) return;
+        api("/api/admin/duty", "POST", { date: r.date, call: call }).then(function (d) {
+          if (!d || !d.ok) { roundFail(d, "改不动。"); return; }
+          showErr("");
+          say(r.date + " 这一轮的轮值呼号改成 " + ((d.call || "").toUpperCase() || "没写") + "。");
+          refresh();
+        });
+      };
+      // 已经收过的那一轮，档案丢了或要不要重写，就点这一个
+      var rewrite = document.createElement("button");
+      rewrite.type = "button";
+      rewrite.className = "mini";
+      rewrite.textContent = "重写档案";
+      rewrite.hidden = !r.closed;
+      rewrite.onclick = function () {
+        api("/api/admin/archive", "POST", { date: r.date }).then(function (d) {
+          if (!d || !d.ok) { roundFail(d, "归档没写成。"); return; }
+          showErr("");
+          var names = (d.files || []).map(function (p) { return p.split("/").pop(); });
+          say("归档好了：" + names.join(", ") + "，写在 " + d.dir);
+        });
+      };
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "mini hot";
+      del.textContent = "删这一轮";
+      del.onclick = function () {
+        if (!window.confirm("删掉 " + r.date + " 这一轮？名单与报文一起删，找不回来。")) return;
+        api("/api/admin/round/delete", "POST", { date: r.date }).then(function (d) {
+          if (!d || !d.ok) { roundFail(d, "删不掉。"); return; }
+          var gone = d.deleted || {};
+          showErr("");
+          say("删了 " + r.date + " 这一轮，" + (gone.stations || 0) + " 台与 " +
+              (gone.packets || 0) + " 条报文一起走了。");
+          if (state.date === r.date) state.date = "";
+          state.thread = "";
+          refresh();
+        });
+      };
+      moreOps(ops, [rename, rewrite, del], r.date + " 这一轮的其余操作");
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+    // 新开那一栏：呼号只在手上没在打字、而且填的还是上一次那个值的时候才跟着换，
+    // 十秒一刷不能把手里的字盖掉
+    var dutyBox = $("dutyCall");
+    if (dutyBox && document.activeElement !== dutyBox) {
+      var wantDuty = (round && round.duty) || "";
+      if (dutyBox.value === "" || dutyBox.value === dutyShown) dutyBox.value = wantDuty;
+      dutyShown = wantDuty;
+    }
+    if (!$("roundDate").value) $("roundDate").value = nextSaturday();
   };
 
   // 改一条报文的原文：改完按新的一句重解析，名单跟着重算
@@ -815,41 +960,15 @@ a{color:inherit}
   $("roundForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var date = $("roundDate").value;
+    if (!date) { say("先选个日期。", true); return; }
     api("/api/admin/round", "POST", { date: date, duty: $("dutyCall").value }).then(function (d) {
-      if (!d || !d.ok) {
-        var why = (d && d.error) || "开不起来。";
-        showErr(why);
-        say(why, true);
-        return;
-      }
+      if (!d || !d.ok) { roundFail(d, "开不起来。"); return; }
       showErr("");
       state.date = date;
-      say("现在在收的是 " + date + " 这轮，本轮呼号 " +
+      say("新开了 " + date + " 这一轮，现在在收，轮值呼号 " +
           ((d.round && d.round.duty) || "还没写") + "。");
       refresh();
     });
-  });
-
-  $("closeRound").addEventListener("click", function () {
-    var date = $("roundDate").value || curDate();
-    api("/api/admin/close", "POST", { date: date }).then(function (d) {
-      if (!d || !d.ok) {
-        var why = (d && d.error) || "收不起来。";
-        showErr(why);
-        say(why, true);
-        return;
-      }
-      showErr("");
-      var n = (d.archived || []).length;
-      say(n ? (date + " 这轮收好了，" + n + " 份档案写在 " + state.archive)
-            : (date + " 这轮收好了，没有新档案。"));
-      refresh();
-    });
-  });
-
-  $("roundPick").addEventListener("change", function () {
-    state.date = $("roundPick").value;
-    refresh();
   });
 
   $("auto").addEventListener("change", function () {
@@ -890,20 +1009,6 @@ a{color:inherit}
     window.location = exportUrl({ format: "csv", what: "packets" });
   });
 
-  $("archBtn").addEventListener("click", function () {
-    api("/api/admin/archive", "POST", { date: curDate() }).then(function (d) {
-      if (!d || !d.ok) {
-        var why = (d && d.error) || "归档没写成。";
-        showErr(why);
-        say(why, true);
-        return;
-      }
-      showErr("");
-      var names = (d.files || []).map(function (p) { return p.split("/").pop(); });
-      say("归档好了：" + names.join(", ") + "，写在 " + d.dir);
-    });
-  });
-
   $("stForm").addEventListener("submit", function (e) {
     e.preventDefault();
     api("/api/admin/station", "POST", {
@@ -936,30 +1041,6 @@ a{color:inherit}
       }
       showErr("");
       say("页面上的编号、名称、解释标题与主控昵称已经换好，用户刷新就能看到。");
-      refresh();
-    });
-  });
-
-  // 删掉一轮：连名单与报文一起拔，删错一轮靠这个
-  $("delRound").addEventListener("click", function () {
-    var date = $("roundDate").value || curDate();
-    if (!date) return;
-    if (!window.confirm("删掉 " + date + " 这一轮？名单与报文一起删，找不回来。")) return;
-    api("/api/admin/round/delete", "POST", { date: date }).then(function (d) {
-      if (!d || !d.ok) {
-        var why = (d && d.error) || "删不掉。";
-        showErr(why);
-        say(why, true);
-        return;
-      }
-      var gone = d.deleted || {};
-      showErr("");
-      say("删了 " + date + " 这一轮，" + (gone.stations || 0) + " 台与 " +
-          (gone.packets || 0) + " 条报文一起走了。");
-      state.date = "";
-      state.thread = "";
-      $("threadCall").value = "";
-      $("thread").textContent = "";
       refresh();
     });
   });
