@@ -180,7 +180,7 @@ class Runtime(object):
         self._sender = None
         self._msg_lock = threading.Lock()
         self._cq_replied = {}                       # 呼号 → 上一句回话的时间
-        self._closed_sent = {}                      # 呼号 → 上一次回「没在活动时间内」的时间
+        self._closed_sent = {}                      # 呼号 → (上一次回的时间, 回的那句话)
         self.closed_every = as_int(conf.get("OA_CLOSED_EVERY"), 1800)
         self._stop = threading.Event()
 
@@ -265,7 +265,8 @@ class Runtime(object):
                     self.store.mark_acked((record.get("src") or "").strip().upper(),
                                           record["ack_id"])
                 return
-            # 没在开轮的时候：只回一句不在活动时间内，ack 与那几句提示都不发
+            # 没在开轮的时候：签到回一句不在活动时间内，不标准的就把签到格式给他；
+            # ack 与那一对回话都不发
             if not self.store.active_round():
                 if kind in ("cq", "u") or self.to_duty(record):
                     self.note_closed(record)
@@ -438,10 +439,20 @@ class Runtime(object):
         duty = self.duty_call()
         return bool(duty) and (record.get("msgto") or "").strip().upper() == duty
 
-    def note_closed(self, record):
-        """没在开轮的时候收到的签到：只回一句现在不在活动时间内。
+    def closed_text_of(self, record):
+        """关着门时回哪一句：真签到就说不在活动时间内，不标准的把签到格式给他。"""
+        kind = record.get("kind")
+        if kind == "cq" and not (record.get("msg_grid") or record.get("grid") or "").strip():
+            return (self.conf.get("OA_BAD_TEXT") or "").strip()   # 格式不对：告诉他该怎么写
+        if kind in ("cq", "u"):
+            return (self.conf.get("OA_CLOSED_TEXT") or "").strip()  # 真签到：告诉他现在没在收
+        return (self.conf.get("OA_HELP_TEXT") or "").strip()         # 不是签到那两步：给格式
 
-        这时候那名就加不了人，回个 ack 反而像签上了。同一台半小时只回一条。
+    def note_closed(self, record):
+        """没在开轮的时候收到的报文：这一轮加不了人，就回一句话告诉他。
+
+        签到那两步回「现在不在活动时间内」，不标准的就把签到格式发回去。
+        同一台同一句话半小时只回一条，重发不会把天上刷满。
         """
         if not self.auto_ack_on or not self.can_send():
             return False
@@ -449,13 +460,14 @@ class Runtime(object):
         src = (record.get("src") or "").strip().upper()
         if not src or not duty or src == duty:
             return False
-        text = (self.conf.get("OA_CLOSED_TEXT") or "").strip()
+        text = self.closed_text_of(record)
         if not text or text.lower() in ("-", "0", "off", "no"):
-            return False                                  # 不想要这一句就把那一项留空
+            return False                                  # 哪一句不想要就把那一项留空
         now = time.time()
-        if now - self._closed_sent.get(src, 0.0) < self.closed_every:
+        last = self._closed_sent.get(src)
+        if last and last[1] == text and now - last[0] < self.closed_every:
             return False
-        self._closed_sent[src] = now
+        self._closed_sent[src] = (now, text)
         self.send_msg(src, text)
         return True
 

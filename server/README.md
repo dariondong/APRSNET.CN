@@ -102,8 +102,9 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - `OA_HELP_TEXT=APRSNETCN OA: CQ CNNET <CALL> <GRID>, THEN U CNNET`：发给轮值呼号、又不是
   签到那两步时回的那句话，同样一台一轮只回一条；
 - `OA_CLOSED_TEXT=APRSNETCN OA: not in activity time now, check in Saturday.`：没在开轮的时候收到的
-  签到只回这一句，ack 与上面那几句提示都不发，名单也不加人。同一台 30 分钟（`OA_CLOSED_EVERY`，秒）
-  只回一条，留空就不回；
+  签到回这一句，不回到名单，也不回 ack。不标准的报文不走这一句，而是把签到格式发回去
+  （`OA_HELP_TEXT`，签到没写网格的是 `OA_BAD_TEXT`）。同一台同一句 30 分钟（`OA_CLOSED_EVERY`，秒）
+  只回一条，换了一句不受上一条的节流，留空就不回；
 - 发出去的每一条都记在 `outbox` 表，主控台的「发件箱」里看得到，发失败的带原因；
 - 没配口令时，点「回 ACK」只把报文记下来并复制，主控自己发。
 

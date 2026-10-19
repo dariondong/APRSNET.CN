@@ -1088,6 +1088,29 @@ def main():
         rt.on_line(oa_aprs.parse_line(
             "BG6ZZZ-8>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG6ZZZ-8 OL62{33"))
         check("那一句留空就不回", rt.store.outbox_for("BG6ZZZ-8"), [])
+        rt.conf["OA_CLOSED_TEXT"] = oa_server.DEFAULTS["OA_CLOSED_TEXT"]
+        # 不标准的报文：把签到格式发回去，而不是那句不在活动时间内
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-7>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :hello there{34"))
+        check("不是签到那两步就回格式",
+              said(rt.store.outbox_for("BG6ZZZ-7")[-1]["line"]), conf["OA_HELP_TEXT"])
+        check("回格式时不回 ack",
+              any("ack34" in (r["line"] or "") for r in rt.store.outbox_for("BG6ZZZ-7")), False)
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-6>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET{35"))
+        check("签到没写网格就回无效提示",
+              said(rt.store.outbox_for("BG6ZZZ-6")[-1]["line"]), conf["OA_BAD_TEXT"])
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-5>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :BLAH BLAH{36"))
+        check("没发过的那种话也回格式",
+              said(rt.store.outbox_for("BG6ZZZ-5")[-1]["line"]), conf["OA_HELP_TEXT"])
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-5>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :BLAH BLAH{37"))
+        check("同一台同一句照样节流", len(rt.store.outbox_for("BG6ZZZ-5")), 1)
+        rt.on_line(oa_aprs.parse_line(
+            "BG6ZZZ-5>APRS,TCPIP*,qAC,T2X::BG7LZQ-3 :CQ CNNET BG6ZZZ-5 OL62{38"))
+        check("换了那一句就不受上一句的节流",
+              said(rt.store.outbox_for("BG6ZZZ-5")[-1]["line"]), conf["OA_CLOSED_TEXT"])
         rt.store.close()
     finally:
         shutil.rmtree(closed_dir, ignore_errors=True)
