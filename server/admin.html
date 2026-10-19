@@ -87,10 +87,12 @@ a{color:inherit}
   </nav>
 
   <section class="pane on" id="pane-rounds" role="tabpanel">
-  <p class="note">一圈一行。在收的那一轮收新报文，收完的行只当档案看。看哪一轮由这张表定，名单、流水与导出都跟着它。</p>
+  <p class="note">一圈一行。在收的那一轮收新报文，收完的行只当档案看。看哪一轮由这张表定，名单、流水与导出都跟着它。开轮时把编号与名称填上，这一轮的页面就用自己的那套字。</p>
   <form class="row" id="roundForm">
     <div><label>日期</label><input type="date" id="roundDate"></div>
     <div><label>轮值呼号</label><input type="text" id="dutyCall"></div>
+    <div><label>编号</label><input type="text" id="roundCode" placeholder="261024"></div>
+    <div><label>名称（中文）</label><input type="text" id="roundName" placeholder="半间猫窝"></div>
     <div><button type="submit">新开这一轮</button></div>
   </form>
   <div id="rounds" class="scroll"></div>
@@ -129,7 +131,8 @@ a{color:inherit}
   </section>
 
   <section class="pane" id="pane-meta" role="tabpanel">
-  <p class="note">活动编号只收数字字母，页面上写在活动名称前面，长这样：#261017 测试轮次。签到表、奖状、名单里都带着这串编号，靠它就能找回这一场。解释标题是副标题底下一行小的字，中英两页各取各的；主控昵称跟在轮值呼号后面，留空就不显示。</p>
+  <p class="note">这几行字是每一轮自己的一套。写的是哪一轮，看哪一轮就显示哪一轮的；活动编号前面会加上 #，印在签到表、奖状、名单上。解释标题是副标题底下一行小的字，中英两页各取各的；主控昵称跟在轮值呼号后面，留空就不显示。</p>
+  <p class="note" id="metaFor">改的是 — 这一轮。</p>
   <form class="row" id="metaForm">
     <div><label>活动编号</label><input type="text" id="actCode" placeholder="261017"></div>
     <div><label>活动名称（中文页）</label><input type="text" id="nameZh" placeholder="测试轮次"></div>
@@ -140,7 +143,7 @@ a{color:inherit}
     <div><button type="submit">写到页面上</button></div>
   </form>
   <p class="note" id="metaPreview">页面上显示：—</p>
-  <p class="note">改过的每一行都记在这儿。点「填回去」就装进上面的框，再点「写到页面上」就换回去了。</p>
+  <p class="note">改过的每一行都记在这儿，带着是哪一轮的。点「填回去」就装进上面的框，再点「写到页面上」就换回去了。</p>
   <div id="metaLog" class="scroll"></div>
   </section>
 
@@ -452,6 +455,12 @@ a{color:inherit}
       prev.textContent = "页面上显示：" + (meta.subtitleZh || "—") +
         "　／　" + (meta.subtitleEn || "—");
     }
+    var forWhom = $("metaFor");
+    if (forWhom) {
+      forWhom.textContent = curDate()
+        ? "改的是 " + curDate() + " 这一轮。"
+        : "还没有开过一轮，先到「轮次」开一轮。";
+    }
   };
 
   // 这几行字改过的旧样：新的在前，点一下装进对应的框
@@ -480,7 +489,7 @@ a{color:inherit}
     }
     var table = document.createElement("table");
     var head = document.createElement("tr");
-    ["时间", "哪一行", "写的字", ""].forEach(function (t) {
+    ["时间", "哪一轮", "哪一行", "写的字", ""].forEach(function (t) {
       var th = document.createElement("th");
       th.textContent = t;
       head.appendChild(th);
@@ -496,6 +505,7 @@ a{color:inherit}
         return cell;
       };
       td(r.ts || "");
+      td(r.round_date || "全局", "mono");
       td(field ? field[1] : (META_OLD[r.key] || r.key));
       td(r.value || "");
       var last = td("");
@@ -550,7 +560,7 @@ a{color:inherit}
     }
     var table = document.createElement("table");
     var head = document.createElement("tr");
-    ["日期", "状态", "轮值呼号", "台站", "签到", ""].forEach(function (t) {
+    ["日期", "编号", "状态", "轮值呼号", "台站", "签到", ""].forEach(function (t) {
       var th = document.createElement("th");
       th.textContent = t;
       head.appendChild(th);
@@ -560,6 +570,7 @@ a{color:inherit}
       var tr = document.createElement("tr");
       if (r.date === cur) tr.className = "on";
       cell(tr, r.date, "mono");
+      cell(tr, r.code || "—", "mono");
       var st = cell(tr, "");
       var word = document.createElement("span");
       word.className = "k" + (r.active ? " cq" : "");
@@ -1008,10 +1019,17 @@ a{color:inherit}
     e.preventDefault();
     var date = $("roundDate").value;
     if (!date) { say("先选个日期。", true); return; }
-    api("/api/admin/round", "POST", { date: date, duty: $("dutyCall").value }).then(function (d) {
+    api("/api/admin/round", "POST", {
+      date: date,
+      duty: $("dutyCall").value,
+      activity_code: $("roundCode").value,
+      activity_name_zh: $("roundName").value
+    }).then(function (d) {
       if (!d || !d.ok) { roundFail(d, "开不起来。"); return; }
       showErr("");
       state.date = date;
+      $("roundCode").value = "";
+      $("roundName").value = "";
       say("新开了 " + date + " 这一轮，现在在收，轮值呼号 " +
           ((d.round && d.round.duty) || "还没写") + "。");
       refresh();
@@ -1073,6 +1091,7 @@ a{color:inherit}
   $("metaForm").addEventListener("submit", function (e) {
     e.preventDefault();
     api("/api/admin/settings", "POST", {
+      date: curDate(),
       activity_code: $("actCode").value,
       activity_name_zh: $("nameZh").value,
       activity_name_en: $("nameEn").value,
@@ -1087,7 +1106,7 @@ a{color:inherit}
         return;
       }
       showErr("");
-      say("页面上的编号、名称、解释标题与主控昵称已经换好，用户刷新就能看到。");
+      say("这一轮的编号、名称、解释标题与主控昵称已经换好，用户刷新就能看到。");
       refresh();
     });
   });

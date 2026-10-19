@@ -34,7 +34,8 @@
    "explainEn": "…", "opName": "…"}。这几项只在后台填过才写。页面上的 [data-oa-subtitle]
    就是标题底下那一行大字（没填时是「测试轮次」），[data-oa-explain] 是它下面那个小一号的
    解释标题，两个都按 <html lang> 取中英哪一条，没填就留着页面自己那句；[data-oa-op] 收主控
-   昵称，写成「 · 昵称」跟在轮值呼号后面，空串就藏起来。
+   昵称，写成「 · 昵称」跟在轮值呼号后面，空串就藏起来。这些字是每一轮自己的一套：每轮那边
+   也带一份 meta，翻到哪一轮就用哪一轮那份，那轮没有才用顶上的。
 
    取不到、不是合法 JSON、一轮都没有时页面一动不动，留着 HTML 里写好的那条空状态。
    一律用 textContent 写入，不拼 HTML 字符串。
@@ -902,6 +903,9 @@
   var shown = 0;
   var last = [];
   var dates = "";
+  var topMeta = null;
+  /* 每一轮自己那套字，那轮没带才用顶上的 */
+  var metaOf = function (round) { return (round && round.meta) || topMeta; };
 
   var fill = function (rounds) {
     last = rounds;
@@ -923,6 +927,7 @@
     fillStats(rounds);
     fillDuty(rounds[0]);
     paint(rounds[shown] || rounds[0]);
+    fillMeta(metaOf(rounds[shown] || rounds[0]));
   };
 
   var load = function () {
@@ -930,7 +935,8 @@
     fetch(url, { credentials: "omit", cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        fillMeta(data && data.meta);
+        topMeta = (data && data.meta) || null;
+        fillMeta(topMeta);
         var rounds = ((data && data.rounds) || []).filter(function (r) { return r && r.date; });
         if (!rounds.length) return;
         rounds.sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; });
@@ -946,6 +952,7 @@
       var i = parseInt(picker.value, 10);
       shown = (i >= 0 && i < last.length) ? i : 0;
       paint(last[shown] || last[0]);
+      fillMeta(metaOf(last[shown] || last[0]));
     });
   }
 
