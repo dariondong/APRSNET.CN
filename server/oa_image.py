@@ -233,7 +233,7 @@ def _wrap_tight(draw, text, face, width, limit=2):
     return lines
 
 
-def _footer(draw, height, words, extra="", code=""):
+def _footer(draw, height, words, extra="", code="", lift=0):
     """脚注：左边是出处与生成时间，右边是站名加活动编号。
 
     一行装不下就折成两行，右边那段始终贴着最后一行的右端，两段文字都留着。
@@ -246,7 +246,7 @@ def _footer(draw, height, words, extra="", code=""):
         left = left + " · " + extra
     mark = "aprsnet.cn/oa" + ((" · #%s" % code) if code else "")
     mark_w = draw.textlength(mark, font=small)
-    y = height - 62
+    y = height - 62 - lift
     room = WIDTH - PAD * 2 - mark_w - 28
     lines = _fit_lines(draw, left, small, room, 2)
     y0 = y - 34 * (len(lines) - 1)
@@ -255,12 +255,27 @@ def _footer(draw, height, words, extra="", code=""):
     draw.text((WIDTH - PAD - mark_w, y0 + 34 * (len(lines) - 1)), mark, font=small, fill=GREY)
 
 
-def _head(draw, title, plan):
-    """标题、红杠，再把排好的那两行画上去。"""
+def _head(draw, title, plan, style="accent"):
+    """标题、标下那条线，再把排好的那两行画上去。
+
+    style="accent" 是那截红杠（签到表、网格表）；"rule" 是一条通栏细线，
+    红色留给奖状上的这一场与呼号，两张图不至于顶着一堆红。
+    """
     draw.text((PAD, 58), title, font=font(46), fill=INK)
-    draw.rectangle([PAD, 138, PAD + 120, 143], fill=HOT)
+    if style == "rule":
+        draw.line([PAD, 139, WIDTH - PAD, 139], fill=LINE, width=1)
+    else:
+        draw.rectangle([PAD, 138, PAD + 120, 143], fill=HOT)
     for face, text, fill, y in plan:
         draw.text((PAD, y), text, font=face, fill=fill)
+
+
+def _ascent(face):
+    """字体的上沿高度，用来把两行字对齐到同一条基线。取不到就按字号估。"""
+    try:
+        return face.getmetrics()[0]
+    except Exception:
+        return int(getattr(face, "size", 20) * 0.8)
 
 
 def serial_of(call, date=None, at="", grid=""):
@@ -614,56 +629,78 @@ def render_grid(row, note="", lang="zh", meta=None):
 
 
 def render_cert(row, station, note="", lang="zh", meta=None):
-    """一台一张的参与证书：一个大呼号压一根红杠，下面一张规规矩矩的字段表，右上是编号。"""
+    """一台一张的参与证书：细边框里，呼号压着左边那根红线，右上是编号，下面三个字段加一条路径。"""
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
     call = (station.get("call") or "").strip() or "\u2014"
     date = (row.get("date") or "").strip()
-    # 字段表：一行一条，细线隔开。一行装不下就折成两行，整张纸跟着长高，不切字
     facts = (_country(call, lang), station.get("grid") or "\u2014",
              _path_text(station, words), station.get("at") or "")
-    value = font(27)
-    label = font(21)
+    cols = words["cert_cols"]
     probe = ImageDraw.Draw(Image.new("RGB", (8, 8), PAPER))
-    rows = [(name, _fit_lines(probe, text, value, WIDTH - PAD * 2 - 150, 2))
-            for name, text in zip(words["cert_cols"], facts)]
     head, explain = _heads(meta, note)
     plan, y_end = _head_plan(probe, head, explain, WIDTH - PAD * 2)
-    shift = y_end + 42 - 218                          # 抬头长高了，下面的一起往下挪
-    height = 800 + shift + sum(34 * (len(lines) - 1) for _, lines in rows)
+    top = y_end + 42                                  # 抬头下沿，下面从这里开始
+
+    # 呼号是主角：左边立一条 8 px 的红线，字号按这一行收，收到 64 还装不下才切
+    room = WIDTH - PAD * 2 - 44
+    size = 120
+    while size > 64 and probe.textlength(call, font=font(size)) > room:
+        size -= 4
+    big = font(size)
+    ink = probe.textbbox((PAD + 44, top + 6), call, font=big)
+
+    # 一句话说明：日期空着就不写这句
+    face = font(26)
+    sentence = _fit_lines(probe, words["cert_line"] % (call, date), face,
+                          WIDTH - PAD * 2, 2) if date else []
+    s_y = ink[3] + 40
+    after = s_y + 37 * (len(sentence) - 1) + (28 if sentence else 0)
+    rule_y = after + 44
+
+    # 字段：国家 / 网格 / 时间 三格排一行，路径单占一行
+    label = font(20)
+    value = font(30)
+    cell = (WIDTH - PAD * 2 - 40) / 3.0
+    f_y = rule_y + 40
+    p_y = f_y + 100
+    path = _fit_lines(probe, facts[2], value, WIDTH - PAD * 2, 2) or [""]
+    content_end = p_y + 34 + 32 + 37 * (len(path) - 1)
+    height = max(760, content_end + 132)
+
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
-    _head(draw, words["cert"], plan)
+    _head(draw, words["cert"], plan, style="rule")
     draw.text((PAD, y_end), _subtitle(row, "", words), font=font(22), fill=GREY)
 
+    # 编号贴右上，和标题落在同一条基线上
     serial = "%s %s" % (words["serial"], serial_of(call, date, station.get("at"),
                                                   station.get("grid")))
+    title_w = probe.textlength(words["cert"], font=font(46))
+    room = WIDTH - PAD - (PAD + title_w + 40)
     plate = font(21)
-    room = WIDTH - PAD - (PAD + draw.textlength(words["cert"], font=font(46)) + 32)
-    while plate.size > 13 and draw.textlength(serial, font=plate) > room:
-        plate = font(plate.size - 2)                  # 编号放不下就收小字，别压到标题
-    plate_w = draw.textlength(serial, font=plate)
-    draw.text((WIDTH - PAD - plate_w - 16, 68), serial, font=plate, fill=GREY)
+    while plate.size > 13 and probe.textlength(serial, font=plate) > room:
+        plate = font(plate.size - 1)                  # 编号放不下就收小字，别压到标题
+    plate_w = probe.textlength(serial, font=plate)
+    draw.text((WIDTH - PAD - plate_w, 58 + _ascent(font(46)) - _ascent(plate)),
+              serial, font=plate, fill=GREY)
 
-    big = font(96)                                    # 主角就是呼号
-    draw.text((PAD, 246 + shift), call, font=big, fill=INK)
-    call_w = min(draw.textlength(call, font=big), WIDTH - PAD * 2)
-    draw.rectangle([PAD, 384 + shift, PAD + call_w, 388 + shift], fill=HOT)
+    draw.text((PAD + 44, top + 6), call, font=big, fill=INK)
+    draw.rectangle([PAD, ink[1] + 4, PAD + 8, ink[3] - 4], fill=HOT)
+    for i, part in enumerate(sentence):
+        draw.text((PAD, s_y + i * 37), part, font=face, fill=INK)
 
-    face = font(26)
-    if date:
-        draw.text((PAD, 408 + shift), words["cert_line"] % (call, date), font=face, fill=INK)
+    draw.line([PAD, rule_y, WIDTH - PAD, rule_y], fill=INK, width=2)
+    for rank, idx in enumerate((0, 1, 3)):
+        x = PAD + rank * (cell + 20)
+        draw.text((x, f_y), cols[idx], font=label, fill=GREY)
+        draw.text((x, f_y + 34), _clip(draw, facts[idx], value, cell), font=value, fill=INK)
+    draw.text((PAD, p_y), cols[2], font=label, fill=GREY)
+    for i, part in enumerate(path):
+        draw.text((PAD, p_y + 34 + i * 37), part, font=value, fill=INK)
 
-    y = 470 + shift
-    draw.line([PAD, y, WIDTH - PAD, y], fill=INK, width=2)
-    for name, lines in rows:
-        draw.text((PAD, y + 14), name, font=label, fill=GREY)
-        for i, line in enumerate(lines):
-            draw.text((PAD + 150, y + 7 + i * 34), line, font=value, fill=INK)
-        y += 48 + 34 * (len(lines) - 1)
-        draw.line([PAD, y, WIDTH - PAD, y], fill=LINE, width=1)
-
-    _footer(draw, height, words, code=str((meta or {}).get("code") or "").strip())
+    draw.rectangle([36, 36, WIDTH - 38, height - 38], outline=LINE, width=1)
+    _footer(draw, height, words, code=str((meta or {}).get("code") or "").strip(), lift=30)
     return _png(image)
 
 
