@@ -53,6 +53,9 @@
     if (!stateEl || !words) return;
     var now = Date.now();
     var w = windowAt(now);
+    /* windowAt 给的是「刚过去的那个周六」，过了窗口就顺延到下一个，
+       不然周一到周五都还停在上一轮，状态写着「结束了」。 */
+    if (now >= w.end) w = { start: w.start + 7 * DAY, end: w.end + 7 * DAY };
     var key = now < w.start ? "before" : (now <= w.end ? "live" : "over");
     if (key === lastState) return;
     lastState = key;
