@@ -428,6 +428,8 @@ def _png(image):
 
 
 COL_GAP = 26          # 列与列之间的空
+ROW_H = 62            # 一行的常规高度
+ROW_TALL = 88         # 有一格写了两行的那一行自己长高，不挤到下一行
 MSG_MAX = 300         # 「消息」那一列最宽到这里，再宽就折成两行
 MSG_MIN = 170
 BOARD_WIDE = 1260     # 有「消息」那一列时整张表宽一点，不然路径和那句话都只剩省略号
@@ -508,36 +510,46 @@ def render_board(row, note="", lang="zh", meta=None):
     plan, y_end = _head_plan(probe, head, explain, width - PAD * 2)
     facts = _subtitle(row, "", words)
     top = y_end + 42
-    row_h = 62
-    height = max(560, top + 76 + row_h * max(len(stations), 1) + 110)
+    want, xs = board_columns(probe, cols, cells, faces, heads, msg_col, width)
+    # 先把每一行的格排出来：写了两行的行自己长高，第二行不会挤到下一行里
+    row_parts = []
+    for line in cells:
+        parts = []
+        for j, content in enumerate(line):
+            if j == 3:                                  # 路径最长：一行装不下就在本行里折成两行
+                parts.append(_fit_lines(probe, content, faces[j], want[j], 2))
+            elif j == msg_col:                          # 那句话也一样，最多两行，空着就不画
+                parts.append(_note_lines(probe, content, faces[j], want[j], 2))
+            else:
+                parts.append([_clip(probe, content, faces[j], want[j])])
+        row_parts.append(parts)
+    heights = [ROW_TALL if max(len(part) for part in parts) > 1 else ROW_H
+               for parts in row_parts]
+    body_h = sum(heights) if heights else ROW_H
+    height = max(560, top + 76 + body_h + 110)
     image = Image.new("RGB", (width, height), PAPER)
     draw = ImageDraw.Draw(image)
     _head(draw, words["board"], plan)
     draw.text((PAD, y_end), facts, font=font(22), fill=GREY)
 
-    want, xs = board_columns(draw, cols, cells, faces, heads, msg_col, width)
-    clips = list(want)
     for x, name in zip(xs, cols):
         draw.text((x, top), name, font=heads, fill=GREY)
     draw.line([PAD, top + 40, width - PAD, top + 40], fill=INK, width=2)
 
     if not stations:
         draw.text((PAD, top + 78), words["empty"], font=body, fill=GREY)
-    for i, line in enumerate(cells):
-        y = top + 66 + i * row_h
+    y = top + 66
+    for i, parts in enumerate(row_parts):
+        row_h = heights[i]
         if i % 2 == 1:                                  # 隔一行铺一层极淡的底，读起来不串行
-            draw.rectangle([PAD - 12, y - 12, width - PAD + 12, y + 46], fill=(238, 235, 228))
-        for j, cell in enumerate(line):
+            draw.rectangle([PAD - 12, y - 12, width - PAD + 12, y + row_h - 16],
+                           fill=(238, 235, 228))
+        for j, parts_ in enumerate(parts):
             face = faces[j]
             fill = INK if j in (0, 2, 3) else GREY
-            if j == 3:                                  # 路径最长：一行装不下就在本行里折成两行
-                parts = _fit_lines(draw, cell, face, clips[j], 2)
-            elif j == msg_col:                          # 那句话也一样，最多两行，空着就不画
-                parts = _note_lines(draw, cell, face, clips[j], 2)
-            else:
-                parts = [_clip(draw, cell, face, clips[j])]
-            for k, part in enumerate(parts):
+            for k, part in enumerate(parts_):
                 draw.text((xs[j], y + k * 29), part, font=face, fill=fill)
+        y += row_h
     _footer(draw, height, words, words["count"] % len(stations),
             str((meta or {}).get("code") or "").strip(), width=width)
     return _png(image)

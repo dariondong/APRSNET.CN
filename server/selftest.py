@@ -928,6 +928,23 @@ def main():
               oa_image._note_lines(probe, "73 " * 80, oa_image.font(24), 150, 2)[-1].endswith(
                   "\u2026"), True)
         check("那句话名单里叫 msg", oa_image._note_of({"msg": "VY73！"}), "VY73！")
+
+        # 一句话折两行时，那一行自己长高，第二行不挤到下一行去
+        one_row = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
+            {"call": "BG7LZQ-2", "grid": "OL51", "via": "is", "digi": [],
+             "at": "10-17 01:08", "status": "confirmed", "msg": "73"},
+            {"call": "BG6TA", "grid": "ON80", "via": "is", "digi": [],
+             "at": "10-17 02:08", "status": "confirmed", "msg": "73"},
+            {"call": "BD4XUZ-7", "grid": "PM01", "via": "is", "digi": [],
+             "at": "10-17 03:08", "status": "confirmed", "msg": "73"},
+            {"call": "BI7DIJ", "grid": "OL62", "via": "is", "digi": [],
+             "at": "10-17 04:08", "status": "confirmed", "msg": "73"}]}
+        two_row = dict(one_row, stations=[
+            dict(one_row["stations"][0], msg="美好的73从青岛送给大家！周末在山上")] +
+            one_row["stations"][1:])
+        short_h = _Image.open(_BytesIO(oa_image.render_board(one_row))).size[1]
+        tall_h = _Image.open(_BytesIO(oa_image.render_board(two_row))).size[1]
+        check("消息折两行的行自己长高，不挤到下一行", tall_h > short_h, True)
         check("直接读库那份行叫 note", oa_image._note_of({"note": "73"}), "73")
         check("两样都没有就是空", oa_image._note_of({"call": "BG7LZQ-2"}), "")
         cert_meta = oa_image.render_cert(portrait, {"call": "BG7LZQ-2", "grid": "OL62AA"},
