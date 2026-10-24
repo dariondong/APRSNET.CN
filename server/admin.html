@@ -879,7 +879,7 @@ a{color:inherit}
     var kindName = { cq: "喊到", u: "确认", ack: "回 ACK", other: "别的" };
     var table = document.createElement("table");
     var head = document.createElement("tr");
-    ["时间", "方向", "报文", "结果"].forEach(function (label, i) {
+    ["时间", "方向", "报文", "结果", ""].forEach(function (label, i) {
       var th = document.createElement("th");
       th.textContent = label;
       if (i === 2) th.className = "mono";
@@ -891,7 +891,7 @@ a{color:inherit}
       cell(tr, bjTime(ln.at), "mono");
       cell(tr, ln.dir === "out" ? "去 " + (kindName[ln.kind] || ln.kind)
                                  : "来 " + (kindName[ln.kind] || ln.kind || ""));
-      cell(tr, ln.text || "", "mono");
+      var said = cell(tr, ln.text || "", "mono");
       var res = "";
       var bad = "";
       if (ln.dir === "out") {
@@ -902,6 +902,35 @@ a{color:inherit}
         res = "网格 " + ln.grid;
       }
       cell(tr, res, bad);
+      // 它发来的那条可以当场改、当场删：改写按新的一句重解析，名单跟着重算
+      var ops = cell(tr);
+      if (ln.dir === "in" && ln.id) {
+        var fix = document.createElement("button");
+        fix.type = "button";
+        fix.className = "mini";
+        fix.textContent = "改";
+        fix.title = "改这一条的原文，改完按新的一句重解析，名单跟着重算";
+        fix.onclick = function () {
+          editPacket(said, { id: ln.id, raw: ln.raw || ln.text || "", text: ln.text || "" });
+        };
+        var drop = document.createElement("button");
+        drop.type = "button";
+        drop.className = "mini hot";
+        drop.textContent = "删";
+        drop.title = "删掉这一条报文，这一台的名单跟着重算";
+        drop.onclick = function () {
+          if (!window.confirm("删掉 " + call + " 的这条报文？名单跟着重算。")) return;
+          api("/api/admin/packet/delete", "POST", { id: ln.id }).then(function (d) {
+            if (!d || !d.ok) { showErr((d && d.error) || "删不掉。"); return; }
+            showErr("");
+            say("删了 " + call + " 的这条报文，名单已经跟着重算。");
+            openThread(call);
+            refresh();
+          });
+        };
+        ops.appendChild(fix);
+        ops.appendChild(drop);
+      }
       table.appendChild(tr);
     });
     box.appendChild(table);

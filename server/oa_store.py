@@ -996,13 +996,15 @@ class Store(object):
         lines = []
         for r in ins:
             lines.append({
-                "dir": "in", "at": r["ts"], "kind": r["kind"], "text": r["text"] or "",
+                "dir": "in", "id": r["id"], "at": r["ts"], "kind": r["kind"],
+                "text": r["text"] or "",
                 "raw": r["raw"] or "", "grid": r["msg_grid"] or r["grid"] or "",
                 "via": r["via"] or "", "digi": r["digi"] or "", "msgid": r["msgid"] or "",
             })
         for r in outs:
             lines.append({
-                "dir": "out", "at": r["created"], "kind": "ack", "text": r["line"] or "",
+                "dir": "out", "id": r["id"], "at": r["created"], "kind": "ack",
+                "text": r["line"] or "",
                 "sent": r["sent"] or "", "error": r["error"] or "", "acked": r["acked"] or "",
                 "msgid": r["msgid"] or "",
             })
