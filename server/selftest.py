@@ -882,6 +882,54 @@ def main():
             "subtitle": "测试轮次",
             "explain": "北京时间的周六整天都算，报文发到轮值呼号就行，不用报名，也不用到现场"})
         check("解释标题写长了也画得出", tall[:8], b"\x89PNG\r\n\x1a\n")
+
+        # 签到表最后那一列「消息」：有人写了话才多一列、表也宽一点，一台都没写还是原来那六列
+        from PIL import ImageDraw as _ImageDraw
+        probe = _ImageDraw.Draw(_Image.new("RGB", (8, 8), oa_image.PAPER))
+        spoke = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
+            {"call": "BG7LZQ-2", "grid": "OL51", "via": "is", "digi": [], "at": "10-17 01:08",
+             "status": "confirmed", "msg": "VY73！"},
+            {"call": "BA4JPR-10", "grid": "OM86PP", "via": "is", "digi": [],
+             "at": "10-17 08:15", "status": "confirmed",
+             "msg": "美好的73从青岛送给大家！"}]}
+        silent = {"date": "2026-10-17", "call": "BG7LZQ-3",
+                  "stations": [dict(row, msg="") for row in spoke["stations"]]}
+        check("一台都没写话就还是六列",
+              _Image.open(_BytesIO(oa_image.render_board(silent))).size[0], oa_image.WIDTH)
+        said_png = oa_image.render_board(spoke)
+        check("有人写了话，签到表加宽",
+              _Image.open(_BytesIO(said_png)).size[0], oa_image.BOARD_WIDE)
+        words = oa_image.TEXT["zh"]
+        cells = [[row["call"], oa_image._country(row["call"], "zh"), row["grid"],
+                  oa_image._path_text(row, words), "", row["at"],
+                  oa_image._note_of(row)] for row in spoke["stations"]]
+        want, xs = oa_image.board_columns(
+            probe, list(words["cols"]) + [words["col_msg"]], cells,
+            [oa_image.font(24)] * 7, oa_image.font(23), 6, oa_image.BOARD_WIDE)
+        check("七列的右端贴着右边距", int(round(xs[-1] + want[-1])),
+              oa_image.BOARD_WIDE - oa_image.PAD)
+        check("消息那一列比路径窄不了多少", want[6] >= oa_image.MSG_MIN, True)
+        ink = 0
+        px = _Image.open(_BytesIO(said_png)).convert("RGB").load()
+        for y in range(270, 420):
+            for x in range(xs[6], int(xs[6] + want[6])):
+                if px[x, y][0] < 180 and abs(px[x, y][0] - px[x, y][1]) < 30:
+                    ink += 1
+        check("那句话真的画进消息那一列", ink > 40, True)
+        check("一句话一行装不下就折两行、不吞字",
+              "".join(oa_image._note_lines(probe, "美好的73从青岛送给大家！",
+                                           oa_image.font(24), 150, 2)),
+              "美好的73从青岛送给大家！")
+        check("正好一行就不折",
+              oa_image._note_lines(probe, "VY73！", oa_image.font(24), 150, 2), ["VY73！"])
+        check("没写话就不占地方",
+              oa_image._note_lines(probe, "", oa_image.font(24), 150), [])
+        check("长得离谱的才切尾巴",
+              oa_image._note_lines(probe, "73 " * 80, oa_image.font(24), 150, 2)[-1].endswith(
+                  "\u2026"), True)
+        check("那句话名单里叫 msg", oa_image._note_of({"msg": "VY73！"}), "VY73！")
+        check("直接读库那份行叫 note", oa_image._note_of({"note": "73"}), "73")
+        check("两样都没有就是空", oa_image._note_of({"call": "BG7LZQ-2"}), "")
         cert_meta = oa_image.render_cert(portrait, {"call": "BG7LZQ-2", "grid": "OL62AA"},
                                          meta={"subtitle": "测试轮次",
                                                "explain": "北京时间周六整天的空中签到"})

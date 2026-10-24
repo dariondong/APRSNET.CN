@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """把当轮的签到表、网格表与每台的奖状画成 PNG。
 
-数据面板上那两个下载按钮点到的就是这里：`/api/board.png` 是签到表，一台一行；
+数据面板上那两个下载按钮点到的就是这里：`/api/board.png` 是签到表，一台一行，
+最后多一列「消息」放这一台自己写的那句话（一台都没写就还是原来那六列）；
 `/api/grid.png` 是网格表，一个网格一行，后面跟着这一格里的呼号。
 名单里每一台自己那份奖状是 `/api/cert.png`，参数是 `?call=呼号`。
 三张都可以用 `?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文。
@@ -54,6 +55,7 @@ TEXT = {
         "serial": "编号",
         "duty": "轮值呼号",
         "cols": ("呼号", "国家", "网格", "路径", "状态", "时间"),
+        "col_msg": "消息",
         "rf": "射频",
         "is": "网络",
         "status": {"called": "只喊到", "acked": "已回 ACK", "confirmed": "已确认"},
@@ -73,6 +75,7 @@ TEXT = {
         "serial": "Serial",
         "duty": "Duty callsign",
         "cols": ("Call", "Country", "Grid", "Path", "Status", "Time"),
+        "col_msg": "Message",
         "rf": "RF",
         "is": "Network",
         "status": {"called": "Called", "acked": "ACKed", "confirmed": "Confirmed"},
@@ -233,11 +236,30 @@ def _wrap_tight(draw, text, face, width, limit=2):
     return lines
 
 
-def _footer(draw, height, words, extra="", code="", lift=0):
+def _note_of(station):
+    """这一台自己那句话：名单里叫 msg，直接读库那份行时叫 note。"""
+    return str(station.get("msg") or station.get("note") or "").strip()
+
+
+def _note_lines(draw, text, face, width, limit=2):
+    """把一句话排进那么宽：有空格就在空格处断，连成一片汉字就挨个字断。
+
+    跟路径一样最多 limit 行，还装不下最后一行尾巴留个省略号。
+    """
+    text = str(text or "").strip()
+    if not text:
+        return []
+    if " " in text:
+        return _fit_lines(draw, text, face, width, limit)
+    return _wrap_tight(draw, text, face, width, limit)
+
+
+def _footer(draw, height, words, extra="", code="", lift=0, width=WIDTH):
     """脚注：左边是出处与生成时间，右边是站名加活动编号。
 
     一行装不下就折成两行，右边那段始终贴着最后一行的右端，两段文字都留着。
     编号跟着图走：纸上只剩这一张图的时候，靠「#261017」就能找回这一场。
+    width 是这张图的宽：签到表有消息那一列时会比 WIDTH 宽一点。
     """
     small = font(22)
     left = "%s · %s %s（北京时间）" % (words["foot"], words["gen"],
@@ -247,12 +269,12 @@ def _footer(draw, height, words, extra="", code="", lift=0):
     mark = "aprsnet.cn/oa" + ((" · #%s" % code) if code else "")
     mark_w = draw.textlength(mark, font=small)
     y = height - 62 - lift
-    room = WIDTH - PAD * 2 - mark_w - 28
+    room = width - PAD * 2 - mark_w - 28
     lines = _fit_lines(draw, left, small, room, 2)
     y0 = y - 34 * (len(lines) - 1)
     for i, line in enumerate(lines):
         draw.text((PAD, y0 + i * 34), line, font=small, fill=GREY)
-    draw.text((WIDTH - PAD - mark_w, y0 + 34 * (len(lines) - 1)), mark, font=small, fill=GREY)
+    draw.text((width - PAD - mark_w, y0 + 34 * (len(lines) - 1)), mark, font=small, fill=GREY)
 
 
 def _head(draw, title, plan, style="accent"):
@@ -405,56 +427,36 @@ def _png(image):
     return buf.getvalue()
 
 
-def render_board(row, note="", lang="zh", meta=None):
-    """签到表：一台一行，列是呼号 / 国家 / 网格 / 路径 / 状态 / 时间。
+COL_GAP = 26          # 列与列之间的空
+MSG_MAX = 300         # 「消息」那一列最宽到这里，再宽就折成两行
+MSG_MIN = 170
+BOARD_WIDE = 1260     # 有「消息」那一列时整张表宽一点，不然路径和那句话都只剩省略号
 
-    meta 里是页面上那两行字（subtitle / explain），主控台填过的就印在抬头。
+
+def board_columns(draw, names, cells, faces, name_face, msg_col=None, width=WIDTH):
+    """签到表的列宽与每列起点：先按内容量，富余都给路径，挤不下就按顺序压。
+
+    msg_col 是「消息」那一列的下标；给了它就把它收进 MSG_MAX（那句话只会折行，不会把整张表撑宽），
+    真挤不下时也能一路收到 MSG_MIN。width 是整张表的宽。返回 (want, xs)。
     """
-    from PIL import Image, ImageDraw
-    words = TEXT.get(lang, TEXT["zh"])
-    stations = row.get("stations") or []
-    probe = ImageDraw.Draw(Image.new("RGB", (8, 8), PAPER))
-    head, explain = _heads(meta, note)
-    plan, y_end = _head_plan(probe, head, explain, WIDTH - PAD * 2)
-    facts = _subtitle(row, "", words)
-    top = y_end + 42
-    row_h = 62
-    height = max(560, top + 76 + row_h * max(len(stations), 1) + 110)
-    image = Image.new("RGB", (WIDTH, height), PAPER)
-    draw = ImageDraw.Draw(image)
-    _head(draw, words["board"], plan)
-    draw.text((PAD, y_end), facts, font=font(22), fill=GREY)
-
-    cols = words["cols"]
-    heads = font(23)
-    body = font(27)
-    small = font(24)
-    faces = (body, small, small, small, small, small)
-    cells = []
-    for station in stations:
-        cells.append((
-            str(station.get("call") or ""),
-            _country(station.get("call"), lang),
-            str(station.get("grid") or "\u2014"),
-            _path_text(station, words),
-            str(words["status"].get(station.get("status") or "", "")),
-            str(station.get("at") or ""),
-        ))
-    # 列宽按这份名单里最长的一条来排：宁可某一列宽一点，也不把字切成省略号
-    want = [0] * 6
+    want = [0] * len(names)
     for line in cells:
         for i, cell in enumerate(line):
             want[i] = max(want[i], draw.textlength(cell, font=faces[i]))
-    for i, name in enumerate(cols):
-        want[i] = max(want[i], draw.textlength(name, font=heads))
-    gap = 26
-    room = WIDTH - PAD * 2 - gap * 5
+    for i, name in enumerate(names):
+        want[i] = max(want[i], draw.textlength(name, font=name_face))
+    if msg_col is not None:
+        want[msg_col] = min(want[msg_col], MSG_MAX)
+    room = width - PAD * 2 - COL_GAP * (len(names) - 1)
     need = sum(want)
     if need <= room:                                 # 富余的都给路径那一列
         want[3] += room - need
-    else:                                            # 真挤不下：先压路径，再压国家、状态、时间
+    else:                                            # 真挤不下：先压路径，再压消息，再压国家、状态、时间
         over = need - room
-        for i, floor in ((3, 260), (1, 90), (4, 100), (5, 140), (3, 120)):
+        floors = [(3, 240), (1, 90), (4, 100), (5, 140), (3, 120)]
+        if msg_col is not None:
+            floors.insert(1, (msg_col, MSG_MIN))
+        for i, floor in floors:
             take = min(over, max(0.0, want[i] - floor))
             want[i] -= take
             over -= take
@@ -464,28 +466,80 @@ def render_board(row, note="", lang="zh", meta=None):
     x = PAD
     for width in want:
         xs.append(int(round(x)))
-        x += width + gap
+        x += width + COL_GAP
+    return want, xs
+
+
+def render_board(row, note="", lang="zh", meta=None):
+    """签到表：一台一行，列是呼号 / 国家 / 网格 / 路径 / 状态 / 时间，有人写了话再多一列消息。
+
+    meta 里是页面上那两行字（subtitle / explain），主控台填过的就印在抬头。
+    """
+    from PIL import Image, ImageDraw
+    words = TEXT.get(lang, TEXT["zh"])
+    stations = row.get("stations") or []
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8), PAPER))
+    head, explain = _heads(meta, note)
+    cols = list(words["cols"])
+    heads = font(23)
+    body = font(27)
+    small = font(24)
+    faces = [body, small, small, small, small, small]
+    cells = []
+    for station in stations:
+        cells.append([
+            str(station.get("call") or ""),
+            _country(station.get("call"), lang),
+            str(station.get("grid") or "\u2014"),
+            _path_text(station, words),
+            str(words["status"].get(station.get("status") or "", "")),
+            str(station.get("at") or ""),
+        ])
+    # 每台签到那行后面写的那句话：真有人写了才多一列，一台都没写就还是原来那六列
+    notes = [_note_of(station) for station in stations]
+    msg_col = None
+    if any(notes):
+        cols.append(words["col_msg"])
+        faces.append(small)
+        for line, said in zip(cells, notes):
+            line.append(said)
+        msg_col = len(cols) - 1
+    width = BOARD_WIDE if msg_col is not None else WIDTH
+    plan, y_end = _head_plan(probe, head, explain, width - PAD * 2)
+    facts = _subtitle(row, "", words)
+    top = y_end + 42
+    row_h = 62
+    height = max(560, top + 76 + row_h * max(len(stations), 1) + 110)
+    image = Image.new("RGB", (width, height), PAPER)
+    draw = ImageDraw.Draw(image)
+    _head(draw, words["board"], plan)
+    draw.text((PAD, y_end), facts, font=font(22), fill=GREY)
+
+    want, xs = board_columns(draw, cols, cells, faces, heads, msg_col, width)
     clips = list(want)
     for x, name in zip(xs, cols):
         draw.text((x, top), name, font=heads, fill=GREY)
-    draw.line([PAD, top + 40, WIDTH - PAD, top + 40], fill=INK, width=2)
+    draw.line([PAD, top + 40, width - PAD, top + 40], fill=INK, width=2)
 
     if not stations:
         draw.text((PAD, top + 78), words["empty"], font=body, fill=GREY)
     for i, line in enumerate(cells):
         y = top + 66 + i * row_h
         if i % 2 == 1:                                  # 隔一行铺一层极淡的底，读起来不串行
-            draw.rectangle([PAD - 12, y - 12, WIDTH - PAD + 12, y + 46], fill=(238, 235, 228))
+            draw.rectangle([PAD - 12, y - 12, width - PAD + 12, y + 46], fill=(238, 235, 228))
         for j, cell in enumerate(line):
             face = faces[j]
             fill = INK if j in (0, 2, 3) else GREY
             if j == 3:                                  # 路径最长：一行装不下就在本行里折成两行
-                for k, part in enumerate(_fit_lines(draw, cell, face, clips[j], 2)):
-                    draw.text((xs[j], y + k * 29), part, font=face, fill=fill)
+                parts = _fit_lines(draw, cell, face, clips[j], 2)
+            elif j == msg_col:                          # 那句话也一样，最多两行，空着就不画
+                parts = _note_lines(draw, cell, face, clips[j], 2)
             else:
-                draw.text((xs[j], y), _clip(draw, cell, face, clips[j]), font=face, fill=fill)
+                parts = [_clip(draw, cell, face, clips[j])]
+            for k, part in enumerate(parts):
+                draw.text((xs[j], y + k * 29), part, font=face, fill=fill)
     _footer(draw, height, words, words["count"] % len(stations),
-            str((meta or {}).get("code") or "").strip())
+            str((meta or {}).get("code") or "").strip(), width=width)
     return _png(image)
 
 
