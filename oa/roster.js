@@ -634,7 +634,7 @@
     var round = current;
     var stations = (round && Array.isArray(round.stations)) ? round.stations : [];
     var q = typed();
-    if (searchBox) searchBox.hidden = !stations.length;
+    if (searchBox) searchBox.hidden = !round;   /* 名单到了才把搜索框露出来 */
     var frag = document.createDocumentFragment();
     var n = 0;
     stations.forEach(function (st) {
