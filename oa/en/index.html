@@ -69,6 +69,7 @@
 .oa-lines { list-style: none; margin: 30px 0 0; padding-left: 18px; max-width: 62ch; border-top: 1px solid var(--line-strong); border-left: 2px solid var(--hot); }
 .oa-lines li { padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--text-dim); font-size: 16.5px; }
 .oa-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.oa-actions a.oa-btn { opacity: 1; }
 .oa-btn { font-family: inherit; opacity: .55; }
 .oa-btn:hover { background: transparent; color: var(--text); border-color: var(--text); }
 .oa-switch { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
@@ -147,6 +148,7 @@
       <li>Send <code>CQ CNNET callsign grid</code> first, then <code>U CNNET</code> once the ACK arrives.</li>
     </ul>
     <div class="oa-actions">
+      <a class="btn btn-ghost oa-btn" href="data.html">Data panel</a>
       <button class="btn btn-ghost oa-btn" type="button" disabled>Testing now</button>
     </div>
   </div>
@@ -176,7 +178,14 @@
         <span class="st-note">This round has no station yet.</span>
       </li>
     </ul>
-    <p class="oa-note">The earlier rounds and the totals are on the <a href="data.html">data panel</a>.</p>
+    <ul class="link-list">
+      <li>
+        <a class="link-row" href="data.html">
+          <span class="lr-main"><b>Data panel</b><span>The earlier rounds and their totals.</span></span>
+          <span class="lr-go" aria-hidden="true">→</span>
+        </a>
+      </li>
+    </ul>
   </div>
 </section>
 
