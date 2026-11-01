@@ -607,21 +607,59 @@
     gridBox.appendChild(frag);
   };
 
-  var paint = function (round) {
-    exportRound = round || null;
+  /* 搜索框：框里打了字就只留对得上的一行，按这一行写出来的字对，不另立规则；
+     框里没字就原样画。框在页面上没有就整块跳过。 */
+  var searchBox = document.getElementById("oaSearchBox");
+  var searchIn = document.getElementById("oaSearch");
+  var searchMiss = list.getAttribute("data-search-miss") || "";
+  var current = null;
+
+  var typed = function () {
+    return searchIn ? String(searchIn.value || "").trim().toLowerCase() : "";
+  };
+
+  /* 一行说明性的字：搜索没对上的时候用它 */
+  var makeNote = function (text) {
+    var li = document.createElement("li");
+    li.className = "st";
+    var note = document.createElement("span");
+    note.className = "st-note";
+    note.textContent = text;
+    li.appendChild(note);
+    return li;
+  };
+
+  /* 只重画名单那一段：换一轮与边打边筛都走这里，底图与下载按钮不跟着重画 */
+  var draw = function () {
+    var round = current;
     var stations = (round && Array.isArray(round.stations)) ? round.stations : [];
+    var q = typed();
+    if (searchBox) searchBox.hidden = !stations.length;
     var frag = document.createDocumentFragment();
     var n = 0;
     stations.forEach(function (st) {
       var li = makeRow(st);
-      if (li) { frag.appendChild(li); n += 1; }
+      if (!li) return;
+      if (q && String(li.textContent || "").toLowerCase().indexOf(q) < 0) return;
+      frag.appendChild(li);
+      n += 1;
     });
     if (!n) {
-      if (!emptyTitle) return;      /* 没有可写的占位文案：宁可让页面保持原样 */
-      frag.appendChild(makeEmpty());
+      if (q) {
+        if (searchMiss) frag.appendChild(makeNote(searchMiss));
+      } else {
+        if (!emptyTitle) return;    /* 没有可写的占位文案：宁可让页面保持原样 */
+        frag.appendChild(makeEmpty());
+      }
     }
     list.textContent = "";
     list.appendChild(frag);
+  };
+
+  var paint = function (round) {
+    exportRound = round || null;
+    current = round || null;
+    draw();
     stamp(round);
     fillGrid(round);
     fillImages(round);
@@ -945,6 +983,11 @@
       })
       .catch(function () {});
   };
+
+  /* 边打边筛：框在页面上就听它的字，换一轮也照这份字重新筛 */
+  if (searchIn) {
+    searchIn.addEventListener("input", function () { draw(); });
+  }
 
   /* 换一轮就画那一轮，不重新拉 */
   if (box && picker) {

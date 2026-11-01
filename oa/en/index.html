@@ -77,6 +77,13 @@
 .oa-switch label { color: var(--text-faint); font-size: 14.5px; }
 .oa-switch select { font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 6px 10px; }
 .oa-note { margin-top: 20px; color: var(--text-faint); font-size: 14.5px; max-width: 76ch; }
+/* 名单上面那一行：打进去就筛，框里没字就原样画 */
+.oa-search { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 30px 0 0; }
+.oa-search[hidden] { display: none; }
+.oa-search label { color: var(--text-faint); font-size: 14.5px; }
+.oa-search input { -webkit-appearance: none; appearance: none; font: inherit; font-size: 15px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 8px 12px; flex: 1 1 240px; min-width: 0; }
+.oa-search input:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+.oa-search + .st-list { margin-top: 14px; }
 /* 参与台那一块：一台一段，字段名与值并排，窄屏自己换行。 */
 .st-list { list-style: none; margin: 30px 0; border-top: 1px solid var(--line-strong); }
 .st-list > li { padding: 15px 0; border-bottom: 1px solid var(--line); }
@@ -172,7 +179,11 @@
     <p>One line per station, with its grid, path and time.</p>
   </div>
   <div class="section-body">
-    <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-copy-done="Copied" data-cert-label="Certificate" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
+    <div class="oa-search" id="oaSearchBox" hidden>
+      <label for="oaSearch">Find a station</label>
+      <input id="oaSearch" type="search" autocomplete="off" spellcheck="false" placeholder="Callsign or grid">
+    </div>
+    <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-search-miss="No station in this list matches that." data-copy-done="Copied" data-cert-label="Certificate" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
         <b class="st-call">The list is still empty</b>
         <span class="st-note">This round has no station yet.</span>
@@ -402,7 +413,7 @@
 </a>
 
 <script src="../clock.js?v=1"></script>
-<script src="../roster.js?v=31"></script>
+<script src="../roster.js?v=32"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 </body>
 </html>
