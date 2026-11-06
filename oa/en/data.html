@@ -51,10 +51,12 @@
 .oa-top { padding: clamp(104px, 15vh, 168px) var(--gut) clamp(40px, 6vh, 66px); border-bottom: 1px solid var(--line); }
 .oa-top-inner { max-width: var(--measure); margin: 0 auto; }
 .oa-status { max-width: 940px; margin: 0; }
-.oa-lang { display: flex; gap: 14px; margin-bottom: 30px; font-size: 14.5px; }
-.oa-lang strong { font-weight: 700; }
-.oa-lang a { color: var(--text-dim); transition: color .2s var(--ease); }
-.oa-lang a:hover { color: var(--hot); }
+.oa-lang { display: inline-flex; margin: 0 0 30px; border: 1px solid var(--line-strong); font-size: 14.5px; }
+.oa-lang > * { padding: 6px 16px; line-height: 1.5; }
+.oa-lang > * + * { border-left: 1px solid var(--line-strong); }
+.oa-lang [aria-current] { background: var(--text); color: var(--bg-1); }
+.oa-lang a { color: var(--text-dim); transition: background .2s var(--ease), color .2s var(--ease); }
+.oa-lang a:hover, .oa-lang a:focus-visible { color: var(--text); background: var(--surface-1); }
 .oa-kicker { margin-top: 40px; border-top: 1px solid var(--line-strong); padding-top: 16px; font-size: 14px; color: var(--text-faint); }
 .oa-title { margin-top: 16px; font-size: clamp(30px, 5.6vw, 66px); font-weight: 700; letter-spacing: -.035em; line-height: 1.03; }
 .oa-clock { list-style: none; margin: 30px 0 0; padding: 1px; max-width: 820px; background: var(--line-strong); }
@@ -180,7 +182,10 @@
 
 <section class="oa-top">
   <div class="oa-top-inner">
-    <p class="oa-lang"><a href="../data.html" hreflang="zh-CN" lang="zh-CN">中文</a><strong>English</strong></p>
+    <div class="oa-lang" role="group" aria-label="Language">
+      <a href="../data.html" hreflang="zh-CN" lang="zh-CN">中文</a>
+      <span lang="en" aria-current="true">English</span>
+    </div>
     <p class="oa-kicker">APRSNETCN OA · data panel</p>
     <h1 class="oa-title">Data panel</h1>
     <ul class="oa-stats">
@@ -305,5 +310,14 @@
 
 <script src="../roster.js?v=33"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
+<script>
+/* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */
+(function () {
+  var h = location.hash;
+  if (!/^#[A-Za-z0-9_-]+$/.test(h)) return;
+  var links = document.querySelectorAll(".oa-lang a[hreflang]");
+  for (var i = 0; i < links.length; i++) links[i].hash = h;
+})();
+</script>
 </body>
 </html>
