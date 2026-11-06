@@ -109,22 +109,18 @@
 .oa-stats li:first-child { border-left: 0; padding-left: 0; }
 .oa-stats b { display: block; font-size: clamp(32px, 5.6vw, 54px); font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 .oa-stats span { display: block; margin-top: 12px; font-size: 13.5px; color: var(--text-faint); }
-.oa-stamp { margin-top: 14px; font-size: 14px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.oa-stamp b { font-weight: 400; color: var(--text-dim); }
-/* 名单那一节顶上那一行：切轮次在左，下载按钮在右，窄屏自己换行 */
-.oa-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
-.oa-tools .oa-switch { margin: 0 auto 0 0; }
-.oa-tools .oa-actions { margin-top: 0; }
-.oa-tools + .oa-search { margin-top: 0; }
+/* 名单那一节顶上那一行：选哪一轮在左，找一台靠右，窄屏各占一整行 */
+.oa-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 24px; margin-bottom: 0; }
+.oa-tools .oa-switch { margin: 0; }
+.oa-tools .oa-search { margin: 0 0 0 auto; flex: 1 1 240px; max-width: 340px; }
+.oa-tools + .st-list { margin-top: 18px; }
 /* 导出用哪种语言：两个小方块，按下的那个反白 */
-.oa-export { display: flex; align-items: center; gap: 8px; font-size: 14.5px; color: var(--text-faint); }
+.oa-export { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14.5px; color: var(--text-faint); }
+.oa-export + .oa-actions { margin-top: 20px; }
 .oa-export-btn { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 1px solid var(--line-strong); padding: 5px 12px; cursor: pointer; }
 .oa-export-btn:hover { color: var(--text); border-color: var(--text); }
 .oa-export-btn[aria-pressed="true"] { color: var(--bg-1); background: var(--text); border-color: var(--text); }
-/* 核验编号：一个小块，标题、一句说明、一行输入，拆开的结果就当一行台站写 */
-.oa-verify { margin: 30px 0 0; }
-.oa-verify-title { margin: 0 0 6px; font-size: 15px; color: var(--text); }
-.oa-verify-hint { margin: 0 0 12px; font-size: 14.5px; line-height: 1.7; color: var(--text-faint); }
+/* 核验编号：一行输入，拆开的结果就当一行台站写 */
 .oa-verify-form { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
 .oa-verify-label { font-size: 14.5px; color: var(--text-faint); }
 .oa-verify-in { font: inherit; font-size: 15px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 8px 12px; flex: 1 1 260px; min-width: 0; letter-spacing: .06em; }
@@ -194,7 +190,6 @@
       <li><b data-oa-stat="stations">0</b><span>All rounds</span></li>
       <li><b data-oa-stat="rf">0</b><span>Over RF</span></li>
     </ul>
-    <p class="oa-stamp">Roster last updated <b data-oa-stat="updated">—</b></p>
     <div class="oa-actions">
       <a class="btn btn-ghost oa-btn" href="../">Back to the net page</a>
     </div>
@@ -212,19 +207,10 @@
         <label for="oaRound">Round</label>
         <select id="oaRound"></select>
       </div>
-      <div class="oa-export">
-        <span class="oa-export-label">Export language</span>
-        <button class="oa-export-btn" type="button" data-oa-lang="zh" aria-pressed="false">中文</button>
-        <button class="oa-export-btn" type="button" data-oa-lang="en" aria-pressed="true">English</button>
+      <div class="oa-search" id="oaSearchBox" hidden>
+        <label for="oaSearch">Find a station</label>
+        <input id="oaSearch" type="search" autocomplete="off" spellcheck="false" placeholder="Callsign or grid">
       </div>
-      <div class="oa-actions">
-        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">Download check-in table (PNG)</a>
-        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">Download grid table (PNG)</a>
-      </div>
-    </div>
-    <div class="oa-search" id="oaSearchBox" hidden>
-      <label for="oaSearch">Find a station</label>
-      <input id="oaSearch" type="search" autocomplete="off" spellcheck="false" placeholder="Callsign or grid">
     </div>
     <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-search-miss="No station in this list matches that." data-cert-label="Certificate" data-image-base="https://oa.aprsnet.cn/api/" data-label-grid="Grid" data-label-path="Path" data-label-at="Time" data-label-round="Round" data-label-packets="Packets" data-label-msg="Message" data-status-called="Called" data-status-acked="ACKed" data-status-confirmed="Confirmed" data-path-rf="RF" data-path-is="Network" data-updated-label="Roster last updated: " data-empty-title="No station in this round yet" data-empty-note="The list starts empty again in the next round.">
       <li>
@@ -232,9 +218,35 @@
         <span class="st-note">This round has no station yet.</span>
       </li>
     </ul>
+    <p class="oa-note">The fields come from the messages the duty station receives.</p>
+  </div>
+</section>
+
+<section class="section alt" id="data-export">
+  <div class="section-head">
+    <h2>Export</h2>
+    <p>Both tables save as a PNG, and the export language is picked here.</p>
+  </div>
+  <div class="section-body">
+    <div class="oa-export">
+      <span class="oa-export-label">Export language</span>
+      <button class="oa-export-btn" type="button" data-oa-lang="zh" aria-pressed="false">中文</button>
+      <button class="oa-export-btn" type="button" data-oa-lang="en" aria-pressed="true">English</button>
+    </div>
+    <div class="oa-actions">
+      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">Download check-in table (PNG)</a>
+      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">Download grid table (PNG)</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="data-verify">
+  <div class="section-head">
+    <h2>Check a serial</h2>
+    <p>Paste the serial from the top right of a certificate and compare the parts.</p>
+  </div>
+  <div class="section-body">
     <div class="oa-verify" data-verify-miss="Cannot read that. A certificate serial is 20 characters of 0-9 and A-Z." data-verify-absent="No station in the roster matches this serial.">
-      <h3 class="oa-verify-title">Check a serial</h3>
-      <p class="oa-verify-hint">Paste the serial from the top right of a certificate and compare the parts.</p>
       <div class="oa-verify-form">
         <label class="oa-verify-label" for="oaVerifyIn">Serial</label>
         <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="0MM91RP22DH024SQF001">
@@ -242,7 +254,6 @@
       </div>
       <ul class="st-list oa-verify-out" id="oaVerifyOut" aria-live="polite"></ul>
     </div>
-    <p class="oa-note">The fields come from the messages the duty station receives.</p>
   </div>
 </section>
 

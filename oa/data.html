@@ -109,22 +109,18 @@
 .oa-stats li:first-child { border-left: 0; padding-left: 0; }
 .oa-stats b { display: block; font-size: clamp(32px, 5.6vw, 54px); font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 .oa-stats span { display: block; margin-top: 12px; font-size: 13.5px; color: var(--text-faint); }
-.oa-stamp { margin-top: 14px; font-size: 14px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.oa-stamp b { font-weight: 400; color: var(--text-dim); }
-/* 名单那一节顶上那一行：切轮次在左，下载按钮在右，窄屏自己换行 */
-.oa-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
-.oa-tools .oa-switch { margin: 0 auto 0 0; }
-.oa-tools .oa-actions { margin-top: 0; }
-.oa-tools + .oa-search { margin-top: 0; }
+/* 名单那一节顶上那一行：选哪一轮在左，找一台靠右，窄屏各占一整行 */
+.oa-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 24px; margin-bottom: 0; }
+.oa-tools .oa-switch { margin: 0; }
+.oa-tools .oa-search { margin: 0 0 0 auto; flex: 1 1 240px; max-width: 340px; }
+.oa-tools + .st-list { margin-top: 18px; }
 /* 导出用哪种语言：两个小方块，按下的那个反白 */
-.oa-export { display: flex; align-items: center; gap: 8px; font-size: 14.5px; color: var(--text-faint); }
+.oa-export { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14.5px; color: var(--text-faint); }
+.oa-export + .oa-actions { margin-top: 20px; }
 .oa-export-btn { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 1px solid var(--line-strong); padding: 5px 12px; cursor: pointer; }
 .oa-export-btn:hover { color: var(--text); border-color: var(--text); }
 .oa-export-btn[aria-pressed="true"] { color: var(--bg-1); background: var(--text); border-color: var(--text); }
-/* 核验编号：一个小块，标题、一句说明、一行输入，拆开的结果就当一行台站写 */
-.oa-verify { margin: 30px 0 0; }
-.oa-verify-title { margin: 0 0 6px; font-size: 15px; color: var(--text); }
-.oa-verify-hint { margin: 0 0 12px; font-size: 14.5px; line-height: 1.7; color: var(--text-faint); }
+/* 核验编号：一行输入，拆开的结果就当一行台站写 */
 .oa-verify-form { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
 .oa-verify-label { font-size: 14.5px; color: var(--text-faint); }
 .oa-verify-in { font: inherit; font-size: 15px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); padding: 8px 12px; flex: 1 1 260px; min-width: 0; letter-spacing: .06em; }
@@ -194,7 +190,6 @@
       <li><b data-oa-stat="stations">0</b><span>各轮台站合计</span></li>
       <li><b data-oa-stat="rf">0</b><span>走射频的</span></li>
     </ul>
-    <p class="oa-stamp">名单最后更新 <b data-oa-stat="updated">—</b></p>
     <div class="oa-actions">
       <a class="btn btn-ghost oa-btn" href="./">回到活动页</a>
     </div>
@@ -212,19 +207,10 @@
         <label for="oaRound">看哪一轮</label>
         <select id="oaRound"></select>
       </div>
-      <div class="oa-export">
-        <span class="oa-export-label">导出语言</span>
-        <button class="oa-export-btn" type="button" data-oa-lang="zh" aria-pressed="true">中文</button>
-        <button class="oa-export-btn" type="button" data-oa-lang="en" aria-pressed="false">English</button>
+      <div class="oa-search" id="oaSearchBox" hidden>
+        <label for="oaSearch">找一台</label>
+        <input id="oaSearch" type="search" autocomplete="off" spellcheck="false" placeholder="呼号或网格">
       </div>
-      <div class="oa-actions">
-        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">下载签到表 PNG</a>
-        <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">下载网格表 PNG</a>
-      </div>
-    </div>
-    <div class="oa-search" id="oaSearchBox" hidden>
-      <label for="oaSearch">找一台</label>
-      <input id="oaSearch" type="search" autocomplete="off" spellcheck="false" placeholder="呼号或网格">
     </div>
     <ul class="st-list" id="oaRoster" data-roster="https://oa.aprsnet.cn/api/roster" data-search-miss="名单里没有这一台。" data-cert-label="奖状" data-image-base="https://oa.aprsnet.cn/api/" data-label-grid="网格" data-label-path="路径" data-label-at="时间" data-label-round="场次" data-label-packets="报文" data-label-msg="消息" data-status-called="只喊到" data-status-acked="已回 ACK" data-status-confirmed="已确认" data-path-rf="射频" data-path-is="网络" data-updated-label="名单最后更新：" data-empty-title="这一轮还没有台站" data-empty-note="名单每周换一次，下一轮从空名单重新开始。">
       <li>
@@ -232,9 +218,35 @@
         <span class="st-note">本轮还没有台站。</span>
       </li>
     </ul>
+    <p class="oa-note">字段按轮值台收到的报文写。</p>
+  </div>
+</section>
+
+<section class="section alt" id="data-export">
+  <div class="section-head">
+    <h2>导出</h2>
+    <p>签到表与网格表各存一张 PNG，导出语言单独选。</p>
+  </div>
+  <div class="section-body">
+    <div class="oa-export">
+      <span class="oa-export-label">导出语言</span>
+      <button class="oa-export-btn" type="button" data-oa-lang="zh" aria-pressed="true">中文</button>
+      <button class="oa-export-btn" type="button" data-oa-lang="en" aria-pressed="false">English</button>
+    </div>
+    <div class="oa-actions">
+      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">下载签到表 PNG</a>
+      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">下载网格表 PNG</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="data-verify">
+  <div class="section-head">
+    <h2>核验编号</h2>
+    <p>拿奖状右上角那一串填进去，拆开对着看。</p>
+  </div>
+  <div class="section-body">
     <div class="oa-verify" data-verify-miss="看不出来。奖状的编号是 20 位，0-9 与 A-Z。" data-verify-absent="名单里没有这一台。">
-      <h3 class="oa-verify-title">核验编号</h3>
-      <p class="oa-verify-hint">拿奖状右上角那一串填进去，拆开对着看。</p>
       <div class="oa-verify-form">
         <label class="oa-verify-label" for="oaVerifyIn">编号</label>
         <input class="oa-verify-in" id="oaVerifyIn" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="0MM91RP22DH024SQF001">
@@ -242,7 +254,6 @@
       </div>
       <ul class="st-list oa-verify-out" id="oaVerifyOut" aria-live="polite"></ul>
     </div>
-    <p class="oa-note">字段按轮值台收到的报文写。</p>
   </div>
 </section>
 
