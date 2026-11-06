@@ -425,7 +425,12 @@ class Runtime(object):
     # ---- 自动开轮收轮 ----
 
     def auto_round(self):
-        """按北京时间自己看着：周六开这一轮，周六过完就收轮归档。"""
+        """按北京时间自己看着：周六开这一轮，周六过完就收轮归档。
+
+        收只收「日期已经过去了」的那一轮。手开的下一周六（日期在今天之后）不能
+        跟着被收 —— 主控提前开好一轮，下一个 tick 就被归档掉，页面上看着就像
+        自己換了一轮。
+        """
         if not self.auto_round_on:
             return
         today = oa_store.bj_now_date()
@@ -434,7 +439,7 @@ class Runtime(object):
             if not active or active["date"] != today:
                 self.store.open_round(today, self.conf["OA_ROUND_DUTY"])
                 sys.stderr.write("自动开轮：%s\n" % today)
-        elif active:                                     # 周六过完了，收轮
+        elif active and active["date"] < today:         # 周六过完了，收轮
             self.close_and_archive(active["date"])
 
     def close_and_archive(self, date):

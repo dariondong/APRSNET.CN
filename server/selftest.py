@@ -539,6 +539,14 @@ def main():
         check("关着的时候不补", again.retry_pending_acks(), 0)
         again.set_auto_mode(True)
         check("打开了", again.auto_mode, True)
+        # 主控手开的下一轮（日期在今天之后）：全自动不能把它当「周六过完了」收掉。
+        # 真撞上过：开好一轮，下一个 tick 就被归档，页面上看着像自己换了一轮。
+        future = (datetime.now(UTC).date() + timedelta(days=400)).isoformat()
+        again.store.open_round(future, "BD3QID-6")
+        again.auto_round()
+        check("手开的下一轮不会被自动收掉",
+              (again.store.round_by_date(future) or {}).get("closed"), "")
+        again.store.open_round("2026-10-17", "BG7LZQ-2")
         check("只补没回上 ACK 的那台", again.retry_pending_acks(), 1)
         check("补回那条的写法", said(again.store.outbox_for("BG1AAA")[0]["line"]), "ACK")
         check("回的那条不挂编号（标准 ack）",
