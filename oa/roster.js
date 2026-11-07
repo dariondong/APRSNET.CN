@@ -795,6 +795,7 @@
   var bgBox = document.getElementById("oaCertBg");
   var bgForm = document.getElementById("oaCertBgForm");
   var bgUrl = bgBox ? String(bgBox.getAttribute("data-certbg") || "") : "";
+  if (!bgUrl && imgBase) bgUrl = imgBase + "certbg";  /* 活动页没有那块，地址从接口目录推 */
   var bgItems = [];
   var bgTop = "";                                     /* 全站最高票 */
   var bgCur = "";                                      /* 本期最高票 */
@@ -927,7 +928,7 @@
   var bgRoundCode = "";
 
   var bgLoad = function () {
-    if (!bgBox || !bgUrl || !window.fetch) return;
+    if (!bgUrl || !window.fetch) return;
     fetch(bgUrl, { cache: "no-store" }).then(function (r) { return r.json(); })
       .then(function (data) {
         if (!data || !data.ok) return;
@@ -1007,6 +1008,161 @@
       reader.readAsDataURL(pick);
     });
   }
+
+  /* 投稿弹窗与导出挑图：都走 .oa-modal 那一层，点背景或按 Esc 就关 */
+  var bgModal = document.getElementById("oaCertBgModal");
+  var bgOpenBtn = document.getElementById("oaCertBgOpen");
+  var bgCloseBtn = document.getElementById("oaCertBgClose");
+
+  var bgModalShow = function (on) {
+    if (!bgModal) return;
+    bgModal.hidden = !on;
+    if (bgOpenBtn) bgOpenBtn.setAttribute("aria-expanded", on ? "true" : "false");
+    if (!on) return;
+    var first = bgModal.querySelector("input");
+    if (first) first.focus();
+  };
+
+  if (bgOpenBtn) {
+    bgOpenBtn.addEventListener("click", function () { bgModalShow(true); });
+  }
+  if (bgCloseBtn) {
+    bgCloseBtn.addEventListener("click", function () { bgModalShow(false); });
+  }
+  if (bgModal) {
+    bgModal.addEventListener("click", function (ev) {
+      if (ev.target === bgModal) bgModalShow(false);      /* 点面板外面 */
+    });
+  }
+
+  var PICK_WORDS = function () {
+    return chinese
+      ? { title: "导出用哪张底图", classic: "官方经典", top: "本期最高票",
+          votes: "%d 票", close: "取消" }
+      : { title: "Which background", classic: "Official classic", top: "Top of this round",
+          votes: "%d votes", close: "Cancel" };
+  };
+
+  var pickBox = null;
+  var pickList = null;
+  var pickDown = null;            /* 点下去的那条奖状链接 */
+  var pickGoing = false;          /* 选完自动再点一次，那一次别再拦 */
+
+  var pickRows = function (words) {
+    var rows = [];
+    rows.push({ id: "", name: words.classic, votes: null });
+    if (bgCur) rows.push({ id: bgCur, name: words.top, votes: null });
+    bgItems.forEach(function (it) {
+      rows.push({ id: it.id, name: [it.call, it.name].filter(Boolean).join(" \u00b7 "),
+                  votes: it.votes || 0, shot: (imgBase || "") + "certbg/image/" +
+                    encodeURIComponent(it.id) + ".png" });
+    });
+    return rows;
+  };
+
+  var pickFill = function () {
+    if (!pickList) return;
+    var words = PICK_WORDS();
+    pickList.textContent = "";
+    pickRows(words).forEach(function (row) {
+      var li = document.createElement("li");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.setAttribute("data-pick", row.id);
+      if (row.shot) {
+        var img = document.createElement("img");
+        img.src = row.shot;
+        img.alt = "";
+        img.loading = "lazy";
+        btn.appendChild(img);
+      }
+      var name = document.createElement("span");
+      name.className = "cb-pick-name";
+      name.textContent = row.name;
+      btn.appendChild(name);
+      if (row.votes !== null) {
+        var votes = document.createElement("span");
+        votes.className = "cb-pick-votes";
+        votes.textContent = words.votes.replace("%d", String(row.votes));
+        btn.appendChild(votes);
+      }
+      btn.addEventListener("click", function () { pickChoose(row.id); });
+      li.appendChild(btn);
+      pickList.appendChild(li);
+    });
+  };
+
+  var pickShow = function (on) {
+    if (!pickBox) return;
+    pickBox.hidden = !on;
+    if (on) pickFill();
+  };
+
+  var pickChoose = function (id) {
+    var link = pickDown;
+    bgSave(id);
+    pickShow(false);
+    pickDown = null;
+    if (!link) return;
+    pickGoing = true;
+    if (typeof link.click === "function") link.click();
+    else if (link.href) window.location.href = link.href;
+    pickGoing = false;
+  };
+
+  var pickBuild = function () {
+    var words = PICK_WORDS();
+    pickBox = document.createElement("div");
+    pickBox.className = "oa-modal";
+    pickBox.id = "oaCertBgPick";
+    pickBox.hidden = true;
+    var box = document.createElement("div");
+    box.className = "oa-modal-box";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+    var head = document.createElement("div");
+    head.className = "oa-modal-head";
+    var title = document.createElement("b");
+    title.textContent = words.title;
+    var close = document.createElement("button");
+    close.type = "button";
+    close.className = "oa-modal-close";
+    close.textContent = words.close;
+    close.addEventListener("click", function () { pickShow(false); });
+    head.appendChild(title);
+    head.appendChild(close);
+    box.appendChild(head);
+    pickList = document.createElement("ul");
+    pickList.className = "cb-pick";
+    box.appendChild(pickList);
+    pickBox.appendChild(box);
+    pickBox.addEventListener("click", function (ev) {
+      if (ev.target === pickBox) pickShow(false);
+    });
+    document.body.appendChild(pickBox);
+  };
+
+  /* 点任何一台的「奖状」：先问用哪张底图，选完才真的去下载 */
+  document.addEventListener("click", function (ev) {
+    if (pickGoing) return;
+    var el = ev.target;
+    while (el && el !== document.body) {
+      if (el.getAttribute && el.getAttribute("data-oa-cert")) break;
+      el = el.parentNode;
+    }
+    if (!el || el === document.body || !el.getAttribute) return;
+    if (!bgItems.length || !el.getAttribute("href")) return;   /* 没底图就照常下载 */
+    ev.preventDefault();
+    pickDown = el;
+    if (!pickBox) pickBuild();
+    pickShow(true);
+  }, false);
+
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape" && ev.key !== "Esc") return;
+    if (pickBox && !pickBox.hidden) { pickShow(false); pickDown = null; }
+    if (bgModal && !bgModal.hidden) bgModalShow(false);
+  });
 
   bgLoad();
 

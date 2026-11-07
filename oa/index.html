@@ -103,6 +103,24 @@
 /* 每台那一行右端的奖状链接：点一下从后端拿这一台这一轮的参与证书 PNG。 */
 .st-cert { margin-left: auto; color: var(--hot); font-size: 14px; border-bottom: 1px dotted currentColor; }
 .st-cert:hover, .st-cert:focus-visible { color: var(--hot-deep); }
+/* 弹窗：底图投稿与导出挑图共用一层，纸白面板，点外面就关 */
+.oa-modal { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(21, 24, 28, .45); }
+.oa-modal[hidden] { display: none; }
+.oa-modal-box { width: 100%; max-width: 520px; max-height: 86vh; overflow-y: auto; background: var(--bg-1); border: 1px solid var(--line-strong); padding: 20px 22px 22px; }
+.oa-modal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.oa-modal-head b { font-size: 17px; }
+.oa-modal-close { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 0; padding: 0; cursor: pointer; border-bottom: 1px dotted currentColor; }
+.oa-modal-close:hover, .oa-modal-close:focus-visible { color: var(--text); }
+/* 投稿那一小块：一句说明 + 一个按钮，放在这一节顶上 */
+.cb-call { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 18px; }
+.cb-call p { margin: 0; color: var(--text-faint); font-size: 14.5px; }
+/* 导出挑图：一张一行，小图在左，署名与票数在右 */
+.cb-pick { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cb-pick button { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font: inherit; font-size: 14.5px; color: var(--text); background: none; border: 1px solid var(--line); padding: 8px 12px; cursor: pointer; }
+.cb-pick button:hover, .cb-pick button:focus-visible { border-color: var(--text); }
+.cb-pick img { display: block; width: 46px; height: auto; border: 1px solid var(--line); }
+.cb-pick .cb-pick-name { flex: 1 1 auto; min-width: 0; }
+.cb-pick .cb-pick-votes { color: var(--text-faint); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 
@@ -418,7 +436,7 @@
 </a>
 
 <script src="clock.js?v=1"></script>
-<script src="roster.js?v=34"></script>
+<script src="roster.js?v=35"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */

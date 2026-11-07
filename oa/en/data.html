@@ -103,6 +103,24 @@
 /* 每台那一行右端的奖状链接：点一下从后端拿这一台这一轮的参与证书 PNG。 */
 .st-cert { margin-left: auto; color: var(--hot); font-size: 14px; border-bottom: 1px dotted currentColor; }
 .st-cert:hover, .st-cert:focus-visible { color: var(--hot-deep); }
+/* 弹窗：底图投稿与导出挑图共用一层，纸白面板，点外面就关 */
+.oa-modal { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(21, 24, 28, .45); }
+.oa-modal[hidden] { display: none; }
+.oa-modal-box { width: 100%; max-width: 520px; max-height: 86vh; overflow-y: auto; background: var(--bg-1); border: 1px solid var(--line-strong); padding: 20px 22px 22px; }
+.oa-modal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.oa-modal-head b { font-size: 17px; }
+.oa-modal-close { font: inherit; font-size: 14px; color: var(--text-dim); background: none; border: 0; padding: 0; cursor: pointer; border-bottom: 1px dotted currentColor; }
+.oa-modal-close:hover, .oa-modal-close:focus-visible { color: var(--text); }
+/* 投稿那一小块：一句说明 + 一个按钮，放在这一节顶上 */
+.cb-call { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 18px; }
+.cb-call p { margin: 0; color: var(--text-faint); font-size: 14.5px; }
+/* 导出挑图：一张一行，小图在左，署名与票数在右 */
+.cb-pick { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cb-pick button { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font: inherit; font-size: 14.5px; color: var(--text); background: none; border: 1px solid var(--line); padding: 8px 12px; cursor: pointer; }
+.cb-pick button:hover, .cb-pick button:focus-visible { border-color: var(--text); }
+.cb-pick img { display: block; width: 46px; height: auto; border: 1px solid var(--line); }
+.cb-pick .cb-pick-name { flex: 1 1 auto; min-width: 0; }
+.cb-pick .cb-pick-votes { color: var(--text-faint); font-variant-numeric: tabular-nums; }
 /* 首屏那四个数字：一格一个，数字大、标签小，细线分开 */
 .oa-stats { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 34px 0 0; border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line); }
 .oa-stats li { padding: 20px 16px 22px; border-left: 1px solid var(--line); }
@@ -144,7 +162,7 @@
 .cb-shot { display: block; width: 132px; height: auto; border: 1px solid var(--line-strong); background: var(--bg-1); }
 .cb-main { flex: 1 1 200px; min-width: 0; }
 .cb-btn { align-self: center; }
-.oa-certbg-title { margin: 34px 0 12px; font-size: 17px; }
+.oa-certbg-note { grid-column: 1 / -1; margin: 0; color: var(--text-faint); font-size: 13.5px; }
 .oa-certbg-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 16px; align-items: end; }
 .oa-certbg-form input { width: 100%; }
 .oa-certbg-agree { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-start; font-size: 14.5px; color: var(--text-dim); }
@@ -256,9 +274,13 @@
 <section class="section" id="data-certbg">
   <div class="section-head">
     <h2>Certificate backgrounds</h2>
-    <p>The certificate can wear artwork from other operators. Every picture is reviewed by the duty station before it shows up here, and the most-voted sits first.</p>
+    <p>The certificate can wear artwork from other operators. Drawings and photos both work, the duty station reviews every picture, and the most-voted sits first.</p>
   </div>
   <div class="section-body">
+    <div class="cb-call">
+      <p>Send your callsign, name, contact and a short agreement.</p>
+      <button class="oa-verify-go" id="oaCertBgOpen" type="button" aria-controls="oaCertBgModal" aria-expanded="false">Submit a picture</button>
+    </div>
     <div class="oa-export">
       <span class="oa-export-label">Export with</span>
       <button class="oa-export-btn" type="button" data-oa-certbg="classic" aria-pressed="true">Official classic</button>
@@ -270,19 +292,27 @@
         <span class="st-note">Reviewed pictures show up here.</span>
       </li>
     </ul>
-    <h3 class="oa-certbg-title">Submit</h3>
-    <form class="oa-certbg-form" id="oaCertBgForm" data-busy="Uploading…" data-done="Sent. The duty station reviews it first." data-failed="It did not go through, try again later." data-missing="Callsign, name, contact, picture and the agreement are all needed." data-too-big="That picture is too big, keep it under 4 MB.">
-      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbCall">Callsign</label><input class="oa-verify-in" id="cbCall" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="BG7LZQ-2"></div>
-      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbName">Name</label><input class="oa-verify-in" id="cbName" type="text" maxlength="40" autocomplete="off"></div>
-      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbContact">Contact</label><input class="oa-verify-in" id="cbContact" type="text" maxlength="120" autocomplete="off" placeholder="Phone, email or QQ"></div>
-      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbFile">Picture</label><input id="cbFile" type="file" accept="image/png,image/jpeg"></div>
-      <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>I made this picture myself and agree to its use on APRSNETCN OA certificates.</span></label>
-      <div class="oa-certbg-actions">
-        <button class="oa-verify-go" id="oaCertBgSend" type="submit">Send it</button>
-        <p class="oa-certbg-msg" id="oaCertBgMsg" aria-live="polite"></p>
+    <p class="oa-note">Contact details stay with the duty station, the page shows only callsign and name.</p>
+    <div class="oa-modal" id="oaCertBgModal" hidden>
+      <div class="oa-modal-box" role="dialog" aria-modal="true" aria-labelledby="oaCertBgModalTitle">
+        <div class="oa-modal-head">
+          <b id="oaCertBgModalTitle">Submit a background</b>
+          <button class="oa-modal-close" id="oaCertBgClose" type="button">Close</button>
+        </div>
+        <form class="oa-certbg-form" id="oaCertBgForm" data-busy="Uploading…" data-done="Sent. The duty station reviews it first." data-failed="It did not go through, try again later." data-missing="Callsign, name, contact, picture and the agreement are all needed." data-too-big="That picture is too big, keep it under 4 MB.">
+          <div class="oa-certbg-field"><label class="oa-verify-label" for="cbCall">Callsign</label><input class="oa-verify-in" id="cbCall" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="BG7LZQ-2"></div>
+          <div class="oa-certbg-field"><label class="oa-verify-label" for="cbName">Name</label><input class="oa-verify-in" id="cbName" type="text" maxlength="40" autocomplete="off"></div>
+          <div class="oa-certbg-field"><label class="oa-verify-label" for="cbContact">Contact</label><input class="oa-verify-in" id="cbContact" type="text" maxlength="120" autocomplete="off" placeholder="Phone, email or QQ"></div>
+          <div class="oa-certbg-field"><label class="oa-verify-label" for="cbFile">Picture</label><input id="cbFile" type="file" accept="image/png,image/jpeg"></div>
+          <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>The picture is mine and I agree to its use on the certificate.</span></label>
+          <div class="oa-certbg-actions">
+            <button class="oa-verify-go" id="oaCertBgSend" type="submit">Send it</button>
+            <p class="oa-certbg-msg" id="oaCertBgMsg" aria-live="polite"></p>
+          </div>
+          <p class="oa-certbg-note">PNG or JPG, 1080 wide, under 4 MB. The text sits on the picture, so it is dimmed a layer.</p>
+        </form>
       </div>
-    </form>
-    <p class="oa-note">PNG, 1080 wide. The text sits on the picture, so the picture is dimmed under paper white. Contact details stay with the duty station; the page shows only callsign and name.</p>
+    </div>
   </div>
 </section>
 
@@ -365,7 +395,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=34"></script>
+<script src="../roster.js?v=35"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */
