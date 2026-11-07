@@ -274,42 +274,37 @@
 <section class="section" id="data-certbg">
   <div class="section-head">
     <h2>奖状卡片底图征集</h2>
-    <p>奖状可以换一张底图。画的拍的都行，主控台审过才上这里，票多的排在前面。</p>
+    <p>奖状可以换一张底图。底图由用户投稿，经主控台审核后展示，得票多的排在前面。</p>
   </div>
   <div class="section-body">
     <div class="cb-call">
-      <p>投稿写呼号、姓名、联系方式，勾一句授权。</p>
+      <p>投稿请填写呼号、姓名、联系方式，并确认授权。</p>
       <button class="oa-verify-go" id="oaCertBgOpen" type="button" aria-controls="oaCertBgModal" aria-expanded="false">投稿</button>
     </div>
-    <div class="oa-export">
-      <span class="oa-export-label">导出用哪张</span>
-      <button class="oa-export-btn" type="button" data-oa-certbg="classic" aria-pressed="true">官方经典</button>
-      <button class="oa-export-btn" type="button" data-oa-certbg="top" aria-pressed="false" disabled>本期最高票</button>
-    </div>
-    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="场次" data-label-votes="票数" data-label-at="收到" data-use-label="用这张" data-in-use-label="在用" data-vote-label="投这张" data-voted-label="已投" data-vote-failed="投票没成，过一会儿再试。" data-empty-title="还没有收到底图" data-empty-note="审过的底图会出现在这里。">
+    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="场次" data-label-votes="票数" data-label-at="收到" data-use-label="选用这张" data-in-use-label="已选用" data-vote-label="投票" data-voted-label="已投票" data-vote-failed="投票失败，请稍后再试。" data-empty-title="暂无投稿" data-empty-note="通过审核的底图会显示在这里。">
       <li>
-        <b class="st-call">还没有收到底图</b>
-        <span class="st-note">审过的底图会出现在这里。</span>
+        <b class="st-call">暂无投稿</b>
+        <span class="st-note">通过审核的底图会显示在这里。</span>
       </li>
     </ul>
-    <p class="oa-note">联系方式只给主控台看，页面上只写呼号与姓名。</p>
+    <p class="oa-note">联系方式仅供主控台查看，页面上只显示呼号与姓名。</p>
     <div class="oa-modal" id="oaCertBgModal" hidden>
       <div class="oa-modal-box" role="dialog" aria-modal="true" aria-labelledby="oaCertBgModalTitle">
         <div class="oa-modal-head">
-          <b id="oaCertBgModalTitle">投稿一张底图</b>
-          <button class="oa-modal-close" id="oaCertBgClose" type="button">关掉</button>
+          <b id="oaCertBgModalTitle">投稿底图</b>
+          <button class="oa-modal-close" id="oaCertBgClose" type="button">关闭</button>
         </div>
-        <form class="oa-certbg-form" id="oaCertBgForm" data-busy="正在传…" data-done="交上去了，等主控台审。" data-failed="没交上去，过一会儿再试。" data-missing="呼号、姓名、联系方式、图、授权都要有。" data-too-big="图太大了，控制在 4 MB 以内。">
+        <form class="oa-certbg-form" id="oaCertBgForm" data-busy="正在提交…" data-done="已提交，等待主控台审核。" data-failed="提交失败，请稍后再试。" data-missing="呼号、姓名、联系方式、图片与授权均为必填。" data-too-big="图片过大，请控制在 4 MB 以内。">
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbCall">呼号</label><input class="oa-verify-in" id="cbCall" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="BG7LZQ-2"></div>
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbName">姓名</label><input class="oa-verify-in" id="cbName" type="text" maxlength="40" autocomplete="off"></div>
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbContact">联系方式</label><input class="oa-verify-in" id="cbContact" type="text" maxlength="120" autocomplete="off" placeholder="手机、邮箱或 QQ"></div>
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbFile">底图</label><input id="cbFile" type="file" accept="image/png,image/jpeg"></div>
-          <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>图是我自己的，同意用在奖状上。</span></label>
+          <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>本人确认该图由本人创作或拍摄，同意用于 APRSNETCN OA 的奖状。</span></label>
           <div class="oa-certbg-actions">
-            <button class="oa-verify-go" id="oaCertBgSend" type="submit">交上去</button>
+            <button class="oa-verify-go" id="oaCertBgSend" type="submit">提交</button>
             <p class="oa-certbg-msg" id="oaCertBgMsg" aria-live="polite"></p>
           </div>
-          <p class="oa-certbg-note">宽 1080 的 PNG 或 JPG，4 MB 以内。文字压在图上，图会被盖淡一层。</p>
+          <p class="oa-certbg-note">宽 1080 像素的 PNG 或 JPG，4 MB 以内。文字覆盖在图上，因此图片会做淡化处理。</p>
         </form>
       </div>
     </div>
@@ -395,7 +390,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="roster.js?v=35"></script>
+<script src="roster.js?v=36"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */

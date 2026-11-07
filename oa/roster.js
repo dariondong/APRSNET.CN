@@ -56,7 +56,9 @@
    是 data-image-base 拼上 certbg/image/<id>.png；投票往 data-certbg 后面接 /vote 发一条
    POST {"id": …}，投稿往 /submit 发呼号、姓名、联系方式、授权与那张图的 data URL。
    选中的那张记在 localStorage 的 oa_certbg 里，导出奖状的链接后面就多一个 bg=<id>，
-   空串是官方经典；[data-oa-certbg=classic|top] 那两个按钮就改这个选择。 */
+   空串是官方经典。点任何一条 [data-oa-cert] 奖状链接都先弹一层挑图（官方经典 / 本期最高票 /
+   收来的每一张），选完才真的去下载；活动页没有征集那块也照样弹，接口地址从名单地址推。
+   投稿是页面上那块 [data-oa-certbg] 表单，收在 #oaCertBgModal 这一层弹窗里。 */
 (function () {
   "use strict";
 
@@ -805,13 +807,6 @@
   };
 
   var bgPaintPicks = function () {
-    Array.prototype.forEach.call(document.querySelectorAll("[data-oa-certbg]"), function (el) {
-      var want = el.getAttribute("data-oa-certbg");
-      var on = want === "classic" ? !bgPick
-        : (want === "top" ? (!!bgCur && bgPick === bgCur) : false);
-      el.setAttribute("aria-pressed", on ? "true" : "false");
-      if (want === "top") el.disabled = !bgCur;
-    });
     Array.prototype.forEach.call(document.querySelectorAll("[data-bg-use]"), function (el) {
       var on = el.getAttribute("data-bg-use") === bgPick;
       el.setAttribute("aria-pressed", on ? "true" : "false");
@@ -944,14 +939,6 @@
       }).catch(function () { bgPaint(); });
   };
 
-  Array.prototype.forEach.call(document.querySelectorAll("[data-oa-certbg]"), function (el) {
-    el.addEventListener("click", function () {
-      var want = el.getAttribute("data-oa-certbg");
-      if (want === "classic") bgSave("");
-      else if (want === "top" && bgCur) bgSave(bgCur);
-    });
-  });
-
   if (bgForm) {
     var bgFields = {
       call: document.getElementById("cbCall"),
@@ -1037,9 +1024,9 @@
 
   var PICK_WORDS = function () {
     return chinese
-      ? { title: "导出用哪张底图", classic: "官方经典", top: "本期最高票",
+      ? { title: "选择导出底图", classic: "官方经典", top: "本期最高票",
           votes: "%d 票", close: "取消" }
-      : { title: "Which background", classic: "Official classic", top: "Top of this round",
+      : { title: "Choose a background", classic: "Official classic", top: "Top of this round",
           votes: "%d votes", close: "Cancel" };
   };
 

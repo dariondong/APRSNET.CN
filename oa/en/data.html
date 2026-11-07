@@ -274,42 +274,37 @@
 <section class="section" id="data-certbg">
   <div class="section-head">
     <h2>Certificate backgrounds</h2>
-    <p>The certificate can wear artwork from other operators. Drawings and photos both work, the duty station reviews every picture, and the most-voted sits first.</p>
+    <p>The certificate can use another background. Backgrounds are submitted by users and reviewed by the duty station before they are listed; the most-voted comes first.</p>
   </div>
   <div class="section-body">
     <div class="cb-call">
-      <p>Send your callsign, name, contact and a short agreement.</p>
+      <p>Submissions need a callsign, name and contact details, plus the agreement below.</p>
       <button class="oa-verify-go" id="oaCertBgOpen" type="button" aria-controls="oaCertBgModal" aria-expanded="false">Submit a picture</button>
     </div>
-    <div class="oa-export">
-      <span class="oa-export-label">Export with</span>
-      <button class="oa-export-btn" type="button" data-oa-certbg="classic" aria-pressed="true">Official classic</button>
-      <button class="oa-export-btn" type="button" data-oa-certbg="top" aria-pressed="false" disabled>Top of this round</button>
-    </div>
-    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="Round" data-label-votes="Votes" data-label-at="Received" data-use-label="Use this" data-in-use-label="In use" data-vote-label="Vote" data-voted-label="Voted" data-vote-failed="The vote did not go through, try again later." data-empty-title="No background yet" data-empty-note="Reviewed pictures show up here.">
+    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="Round" data-label-votes="Votes" data-label-at="Received" data-use-label="Select this" data-in-use-label="Selected" data-vote-label="Vote" data-voted-label="Voted" data-vote-failed="Voting failed, please try again later." data-empty-title="No submissions yet" data-empty-note="Reviewed backgrounds are listed here.">
       <li>
-        <b class="st-call">No background yet</b>
-        <span class="st-note">Reviewed pictures show up here.</span>
+        <b class="st-call">No submissions yet</b>
+        <span class="st-note">Reviewed backgrounds are listed here.</span>
       </li>
     </ul>
-    <p class="oa-note">Contact details stay with the duty station, the page shows only callsign and name.</p>
+    <p class="oa-note">Contact details are visible to the duty station only. The page shows the callsign and name.</p>
     <div class="oa-modal" id="oaCertBgModal" hidden>
       <div class="oa-modal-box" role="dialog" aria-modal="true" aria-labelledby="oaCertBgModalTitle">
         <div class="oa-modal-head">
           <b id="oaCertBgModalTitle">Submit a background</b>
           <button class="oa-modal-close" id="oaCertBgClose" type="button">Close</button>
         </div>
-        <form class="oa-certbg-form" id="oaCertBgForm" data-busy="Uploading…" data-done="Sent. The duty station reviews it first." data-failed="It did not go through, try again later." data-missing="Callsign, name, contact, picture and the agreement are all needed." data-too-big="That picture is too big, keep it under 4 MB.">
+        <form class="oa-certbg-form" id="oaCertBgForm" data-busy="Submitting…" data-done="Submitted, waiting for review." data-failed="Submission failed, please try again later." data-missing="Callsign, name, contact, picture and the agreement are required." data-too-big="The picture is too large, keep it within 4 MB.">
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbCall">Callsign</label><input class="oa-verify-in" id="cbCall" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="BG7LZQ-2"></div>
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbName">Name</label><input class="oa-verify-in" id="cbName" type="text" maxlength="40" autocomplete="off"></div>
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbContact">Contact</label><input class="oa-verify-in" id="cbContact" type="text" maxlength="120" autocomplete="off" placeholder="Phone, email or QQ"></div>
           <div class="oa-certbg-field"><label class="oa-verify-label" for="cbFile">Picture</label><input id="cbFile" type="file" accept="image/png,image/jpeg"></div>
-          <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>The picture is mine and I agree to its use on the certificate.</span></label>
+          <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>I confirm this picture is my own work or my own photograph, and I agree to its use on APRSNETCN OA certificates.</span></label>
           <div class="oa-certbg-actions">
             <button class="oa-verify-go" id="oaCertBgSend" type="submit">Send it</button>
             <p class="oa-certbg-msg" id="oaCertBgMsg" aria-live="polite"></p>
           </div>
-          <p class="oa-certbg-note">PNG or JPG, 1080 wide, under 4 MB. The text sits on the picture, so it is dimmed a layer.</p>
+          <p class="oa-certbg-note">PNG or JPG, 1080 px wide, within 4 MB. The text is drawn over the picture, so the picture is faded.</p>
         </form>
       </div>
     </div>
@@ -395,7 +390,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=35"></script>
+<script src="../roster.js?v=36"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */
