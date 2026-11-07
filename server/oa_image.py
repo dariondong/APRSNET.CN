@@ -254,6 +254,60 @@ def _note_lines(draw, text, face, width, limit=2):
     return _wrap_tight(draw, text, face, width, limit)
 
 
+def _text_lines(draw, text, face, width, limit=4):
+    """奖状上那句自己写的话：先往空格上落，汉字连成一片就挨个字断。
+
+    跟签到表的「消息」那列不同：句子中间的字一个不跳，超过 limit 行只在尾巴收个省略号。
+    """
+    text = str(text or "").strip()
+    if not text:
+        return []
+    if draw.textlength(text, font=face) <= width:
+        return [text]
+    lines, cur = [], ""
+    for ch in text:
+        if cur and draw.textlength(cur + ch, font=face) > width:
+            cut = cur.rfind(" ")
+            if cut > 0 and draw.textlength(cur[:cut], font=face) > width * 0.4:
+                lines.append(cur[:cut])
+                cur = cur[cut + 1:] + ch
+            else:
+                lines.append(cur.rstrip())
+                cur = "" if ch == " " else ch
+        else:
+            cur += ch
+    if cur.strip():
+        lines.append(cur.rstrip())
+    if len(lines) > limit:
+        last = _clip(draw, lines[limit - 1], face, width).rstrip("\u2026") + "\u2026"
+        lines = lines[:limit - 1] + [last]
+    return lines
+
+
+def _footer_left(words, extra=""):
+    """脚注左边那段：出处、生成时间，后面还能挂一句 extra。"""
+    left = "%s · %s %s（北京时间）" % (words["foot"], words["gen"],
+                                  datetime.now(BJ).strftime("%Y-%m-%d %H:%M"))
+    return (left + " · " + extra) if extra else left
+
+
+def _footer_mark(code=""):
+    """脚注右边那段：站名加活动编号。"""
+    return "aprsnet.cn/oa" + ((" · #%s" % code) if code else "")
+
+
+def _footer_room(draw, code="", width=WIDTH):
+    """左边那段能用的宽度：右边「站名 · #编号」先占住自己的位置。"""
+    mark_w = draw.textlength(_footer_mark(code), font=font(22))
+    return width - PAD * 2 - mark_w - 28
+
+
+def _footer_lines(draw, words, extra="", code="", width=WIDTH):
+    """脚注左边要折几行：奖状靠这个先给脚注留够位置，字不会压上那句留言。"""
+    return _fit_lines(draw, _footer_left(words, extra), font(22),
+                      _footer_room(draw, code, width), 2)
+
+
 def _footer(draw, height, words, extra="", code="", lift=0, width=WIDTH):
     """脚注：左边是出处与生成时间，右边是站名加活动编号。
 
@@ -262,11 +316,8 @@ def _footer(draw, height, words, extra="", code="", lift=0, width=WIDTH):
     width 是这张图的宽：签到表有消息那一列时会比 WIDTH 宽一点。
     """
     small = font(22)
-    left = "%s · %s %s（北京时间）" % (words["foot"], words["gen"],
-                                  datetime.now(BJ).strftime("%Y-%m-%d %H:%M"))
-    if extra:
-        left = left + " · " + extra
-    mark = "aprsnet.cn/oa" + ((" · #%s" % code) if code else "")
+    left = _footer_left(words, extra)
+    mark = _footer_mark(code)
     mark_w = draw.textlength(mark, font=small)
     y = height - 62 - lift
     room = width - PAD * 2 - mark_w - 28
@@ -695,7 +746,9 @@ def render_grid(row, note="", lang="zh", meta=None):
 
 
 def render_cert(row, station, note="", lang="zh", meta=None):
-    """一台一张的参与证书：细边框里，呼号压着左边那根红线，右上是编号，下面三个字段加一条路径。"""
+    """一台一张的参与证书：细边框里，呼号压着左边那根红线，右上是编号，下面三个字段、一条路径，
+    最后是这一台报名时自己写的那句话（没人写就不出这一块）。
+    """
     from PIL import Image, ImageDraw
     words = TEXT.get(lang, TEXT["zh"])
     call = (station.get("call") or "").strip() or "\u2014"
@@ -724,15 +777,22 @@ def render_cert(row, station, note="", lang="zh", meta=None):
     after = s_y + 37 * (len(sentence) - 1) + (28 if sentence else 0)
     rule_y = after + 44
 
-    # 字段：国家 / 网格 / 时间 三格排一行，路径单占一行
+    # 字段：国家 / 网格 / 时间 三格排一行，路径单占一行，这一台自己那句话排在最后
     label = font(20)
     value = font(30)
     cell = (WIDTH - PAD * 2 - 40) / 3.0
     f_y = rule_y + 40
     p_y = f_y + 100
     path = _fit_lines(probe, facts[2], value, WIDTH - PAD * 2, 2) or [""]
-    content_end = p_y + 34 + 32 + 37 * (len(path) - 1)
-    height = max(760, content_end + 132)
+    said = _text_lines(probe, _note_of(station), value, WIDTH - PAD * 2)
+    p_end = p_y + 34 + 32 + 37 * (len(path) - 1)
+    m_y = p_end + 44
+    # 那句话是整段字，最后一行下面还压着一截笔画，收尾多留 30 px
+    content_end = m_y + 34 + 37 * (len(said) - 1) + 30 if said else p_end
+    # 脚注自己折成两行时也要占地方，纸张先留够，字不会压上那句留言
+    code = str((meta or {}).get("code") or "").strip()
+    foot = len(_footer_lines(probe, words, code=code))
+    height = max(760, content_end + 132 + 34 * (foot - 1))
 
     image = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(image)
@@ -764,9 +824,13 @@ def render_cert(row, station, note="", lang="zh", meta=None):
     draw.text((PAD, p_y), cols[2], font=label, fill=GREY)
     for i, part in enumerate(path):
         draw.text((PAD, p_y + 34 + i * 37), part, font=value, fill=INK)
+    if said:                                            # 报名时自己写的那句话，最多四行
+        draw.text((PAD, m_y), words["col_msg"], font=label, fill=GREY)
+        for i, part in enumerate(said):
+            draw.text((PAD, m_y + 34 + i * 37), part, font=value, fill=INK)
 
     draw.rectangle([36, 36, WIDTH - 38, height - 38], outline=LINE, width=1)
-    _footer(draw, height, words, code=str((meta or {}).get("code") or "").strip(), lift=30)
+    _footer(draw, height, words, code=code, lift=30)
     return _png(image)
 
 

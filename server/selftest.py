@@ -960,6 +960,32 @@ def main():
                                                "explain": "北京时间周六整天的空中签到"})
         check("奖状跟着长高",
               _Image.open(_BytesIO(cert_meta)).size[1] > _Image.open(_BytesIO(cert)).size[1], True)
+        # 奖状上要不要印报名那句：有人写了才印，句子中间的字一个不跳
+        said_cert = {"subtitle": "测试轮次", "explain": "北京时间周六整天的空中签到", "code": "261107"}
+        plain_h = _Image.open(_BytesIO(oa_image.render_cert(
+            portrait, {"call": "BG7LZQ-2", "grid": "OL62AA"}, meta=said_cert))).size[1]
+        short_h2 = _Image.open(_BytesIO(oa_image.render_cert(
+            portrait, {"call": "BG7LZQ-2", "grid": "OL62AA", "msg": "73"},
+            meta=said_cert))).size[1]
+        long_h2 = _Image.open(_BytesIO(oa_image.render_cert(
+            portrait, {"call": "BG7LZQ-2", "grid": "OL62AA",
+                       "msg": "美好的73从青岛送给大家！周末在山上，天线在树上，听到请回一声。祝顺利。"},
+            meta=said_cert))).size[1]
+        check("奖状印上报名那句，纸跟着长高", short_h2 > plain_h, True)
+        check("那句话折两行，纸再长一行", long_h2, short_h2 + 37)
+        said_text = "美好的73从青岛送给大家！周末在山上，天线在树上，听到请回一声。今天风大，信号不太好。"
+        said_rows = oa_image._text_lines(probe, said_text, oa_image.font(30),
+                                         oa_image.WIDTH - oa_image.PAD * 2)
+        check("奖状上那句话一句不缺", "".join(said_rows), said_text)
+        check("太长只收尾巴、头几行是原句开头",
+              (len(oa_image._text_lines(probe, "73 " * 200, oa_image.font(30),
+                                        oa_image.WIDTH - oa_image.PAD * 2)),
+               oa_image._text_lines(probe, "73 " * 200, oa_image.font(30),
+                                    oa_image.WIDTH - oa_image.PAD * 2)[-1].endswith("\u2026")),
+              (4, True))
+        check("奖状上没写话就不出这一块",
+              oa_image._text_lines(probe, "", oa_image.font(30), 400), [])
+        check("英文那份那一块叫 Message", oa_image.TEXT["en"]["col_msg"], "Message")
         check("编号是 20 位",
               len(oa_image.serial_of("BG7LZQ-2", "2026-10-17", "10-17 01:08", "OL62")), 20)
         check("编号拆回去就是那四样",
