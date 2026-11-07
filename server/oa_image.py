@@ -237,8 +237,12 @@ def _wrap_tight(draw, text, face, width, limit=2):
 
 
 def _note_of(station):
-    """这一台自己那句话：名单里叫 msg，直接读库那份行时叫 note。"""
-    return str(station.get("msg") or station.get("note") or "").strip()
+    """这一台自己那句话：名单里叫 msg，直接读库那份行时叫 note。
+
+    GBK 解出来的句子前面常带一个 U+FEFF，那是编码标记，不是字，印出来只会多个方框。
+    """
+    text = str(station.get("msg") or station.get("note") or "")
+    return text.replace("\ufeff", "").replace("\u200b", "").strip()
 
 
 def _note_lines(draw, text, face, width, limit=2):
@@ -481,9 +485,10 @@ def _png(image):
 COL_GAP = 26          # 列与列之间的空
 ROW_H = 62            # 一行的常规高度
 ROW_TALL = 88         # 有一格写了两行的那一行自己长高，不挤到下一行
-MSG_MAX = 300         # 「消息」那一列最宽到这里，再宽就折成两行
-MSG_MIN = 170
-BOARD_WIDE = 1260     # 有「消息」那一列时整张表宽一点，不然路径和那句话都只剩省略号
+MSG_MAX = 420         # 「消息」那一列最宽到这里，再宽就折成几行
+MSG_MIN = 200
+MSG_LINES = 3         # 一句话最多铺三行，写长一点也看得见
+BOARD_WIDE = 1460     # 有「消息」那一列时整张表宽一点，不然路径和那句话都只剩省略号
 
 
 def board_columns(draw, names, cells, faces, name_face, msg_col=None, width=WIDTH):
@@ -569,13 +574,15 @@ def render_board(row, note="", lang="zh", meta=None):
         for j, content in enumerate(line):
             if j == 3:                                  # 路径最长：一行装不下就在本行里折成两行
                 parts.append(_fit_lines(probe, content, faces[j], want[j], 2))
-            elif j == msg_col:                          # 那句话也一样，最多两行，空着就不画
-                parts.append(_note_lines(probe, content, faces[j], want[j], 2))
+            elif j == msg_col:                          # 那句话也一样，最多 MSG_LINES 行，空着就不画
+                parts.append(_note_lines(probe, content, faces[j], want[j], MSG_LINES))
             else:
                 parts.append([_clip(probe, content, faces[j], want[j])])
         row_parts.append(parts)
-    heights = [ROW_TALL if max(len(part) for part in parts) > 1 else ROW_H
-               for parts in row_parts]
+    heights = []                                    # 折了几行就给几行的高度，第三行不会压到下一行
+    for parts in row_parts:
+        lines = max(len(part) for part in parts)
+        heights.append(ROW_H if lines <= 1 else ROW_TALL + (lines - 2) * 32)
     body_h = sum(heights) if heights else ROW_H
     height = max(560, top + 76 + body_h + 110)
     image = Image.new("RGB", (width, height), PAPER)

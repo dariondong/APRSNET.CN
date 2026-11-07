@@ -950,11 +950,24 @@ def main():
             {"call": "BI7DIJ", "grid": "OL62", "via": "is", "digi": [],
              "at": "10-17 04:08", "status": "confirmed", "msg": "73"}]}
         two_row = dict(one_row, stations=[
-            dict(one_row["stations"][0], msg="美好的73从青岛送给大家！周末在山上")] +
+            dict(one_row["stations"][0], msg="美好的73从青岛送给大家！周末在山上，天线挂在树上")] +
             one_row["stations"][1:])
         short_h = _Image.open(_BytesIO(oa_image.render_board(one_row))).size[1]
         tall_h = _Image.open(_BytesIO(oa_image.render_board(two_row))).size[1]
         check("消息折两行的行自己长高，不挤到下一行", tall_h > short_h, True)
+        # 一句话最长铺 MSG_LINES 行：写长一点的也整句看得见，不再早早收尾
+        long_note = "美好的73从青岛送给大家，周末都在山上，天线挂在树上，听到请回一声，73，祝顺利"
+        long_lines = oa_image._note_lines(probe, long_note, oa_image.font(24),
+                                          oa_image.MSG_MAX, oa_image.MSG_LINES)
+        check("那句话最多铺三行", oa_image.MSG_LINES, 3)
+        check("长一句就铺满三行", len(long_lines), 3)
+        check("三行之内一个字不跳", "".join(long_lines), long_note)
+        three_row = dict(one_row, stations=[
+            dict(one_row["stations"][0], msg=long_note)] + one_row["stations"][1:])
+        check("消息折三行的行比两行的还高",
+              _Image.open(_BytesIO(oa_image.render_board(three_row))).size[1] > tall_h, True)
+        check("GBK 那个不可见的开头标记不印出来",
+              oa_image._note_of({"msg": "\ufeffGL"}), "GL")
         check("直接读库那份行叫 note", oa_image._note_of({"note": "73"}), "73")
         check("两样都没有就是空", oa_image._note_of({"call": "BG7LZQ-2"}), "")
         cert_meta = oa_image.render_cert(portrait, {"call": "BG7LZQ-2", "grid": "OL62AA"},
