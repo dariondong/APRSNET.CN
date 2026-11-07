@@ -745,7 +745,26 @@ def render_grid(row, note="", lang="zh", meta=None):
     return _png(image)
 
 
-def render_cert(row, station, note="", lang="zh", meta=None):
+# 底图上压一层纸白：字压得住，图还看得出来。要改深浅就改这一个数
+BG_VEIL = 0.80
+
+
+def _cover(image, bg):
+    """底图先铺满整张纸再居中裁：给的比例跟纸不一样也不拉变形。"""
+    from PIL import Image as _Image
+    w, h = image.size
+    bw, bh = bg.size
+    if bw <= 0 or bh <= 0:
+        return image
+    scale = max(float(w) / bw, float(h) / bh)
+    size = (max(1, int(round(bw * scale))), max(1, int(round(bh * scale))))
+    scaled = bg.convert("RGB").resize(size, _Image.LANCZOS)
+    left = max(0, (size[0] - w) // 2)
+    top = max(0, (size[1] - h) // 2)
+    return scaled.crop((left, top, left + w, top + h))
+
+
+def render_cert(row, station, note="", lang="zh", meta=None, bg=None):
     """一台一张的参与证书：细边框里，呼号压着左边那根红线，右上是编号，下面三个字段、一条路径，
     最后是这一台报名时自己写的那句话（没人写就不出这一块）。
     """
@@ -795,6 +814,9 @@ def render_cert(row, station, note="", lang="zh", meta=None):
     height = max(760, content_end + 132 + 34 * (foot - 1))
 
     image = Image.new("RGB", (WIDTH, height), PAPER)
+    if bg is not None:                                  # 征集来的底图：铺满，再压一层纸白
+        image = Image.blend(_cover(image, bg),
+                            Image.new("RGB", (WIDTH, height), PAPER), BG_VEIL)
     draw = ImageDraw.Draw(image)
     _head(draw, words["cert"], plan, style="rule")
     draw.text((PAD, y_end), _subtitle(row, "", words), font=font(22), fill=GREY)

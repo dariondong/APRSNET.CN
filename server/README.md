@@ -36,7 +36,11 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /api/roster` | 名单，与静态 `roster.json` 同格式，顶层多一份 `meta`（页面抬头那两行字） |
 | `GET /api/board.png` | 签到表那张 PNG，`?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文 |
 | `GET /api/grid.png` | 网格表那张 PNG，参数同上；旧的 `/api/points.png` 302 到这里 |
-| `GET /api/cert.png` | 一台一份的参与证书 PNG，`?call=BG7LZQ-2` 必写，`?date=` 与 `?lang=` 同上 |
+| `GET /api/cert.png` | 一台一份的参与证书 PNG，`?call=BG7LZQ-2` 必写，`?date=` 与 `?lang=` 同上，`?bg=<id>` 挑征集来的底图 |
+| `GET /api/certbg` | 审过的奖状底图与票数，带 `top` / `topCurrent` 两个提示 |
+| `GET /api/certbg/image/<id>.png` | 底图本身；没审过的要带主控口令 |
+| `POST /api/certbg/submit` | 投稿：`{"call","name","contact","agree","image"}`，`image` 是 data URL |
+| `POST /api/certbg/vote` | 投一票：`{"id":"…"}`，一个地址一张一票 |
 | `GET /api/health` | 连接状态、收到多少行、当轮、报文数 |
 | `GET /admin` | 主控台（要口令） |
 | `GET /api/admin/state` | 主控台读的一切：状态、轮次、本轮数字、名单、流水 |
@@ -45,6 +49,9 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `POST /api/admin/settings` | 切全自动：`{"auto":true}` / `{"auto":false}`；同一处写页面抬头那两行字：`{"subtitle_zh":"…","subtitle_en":"…","op_name":"…"}`，空串就是抹掉 |
 | `POST /api/admin/close` | 结束一轮，并把这一轮归档 |
 | `POST /api/admin/archive` | 单独归档一轮：`{"date":"2026-10-17"}` |
+| `GET /api/admin/certbg` | 底图三批：待审 / 上架 / 退回，联系方式只在这里 |
+| `POST /api/admin/certbg/review` | 审一张：`{"id":"…","action":"approve"\|"reject"}` |
+| `POST /api/admin/certbg/delete` | 删一张，图一起删：`{"id":"…"}` |
 | `POST /api/admin/duty` | 换轮值呼号 |
 | `POST /api/admin/station` | 加或改一台：呼号、网格、路径、中继、时间、状态 |
 | `POST /api/admin/station/delete` | 删一台 |
@@ -78,6 +85,27 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 - 中文字体先找 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`，找不到就退回 Pillow 自带的位图字；
 - `OA_TEST_NOTE`：写在两张图副标题后面的一句小字（红），本机写着「测试轮次」；空着就不写。
   英文图单独看 `OA_TEST_NOTE_EN`，空着就用 `OA_TEST_NOTE` 那一句。
+
+## 奖状卡片的底图
+
+奖状的底图是大家投稿来的：数据面板上那张表填呼号、姓名、联系方式，勾一句授权，选一张图传上来。
+收上来先记成 `pending`，图存在数据目录的 `certbg/<id>.png`，页面上一眼都看不见。
+主控台的「底图」那一页能看到待审的、上架的、退回的三批，联系方式只有那里看得到；
+点「通过」之后才上页面、才能投票，点「退回」就留着记录不上页面。
+
+- 导出的奖状挑哪张：`/api/cert.png?call=…&bg=<id>`。`bg` 空着或者认不出（没审过的也算认不出），
+  就是官方那张经典纸；页面上把选中的 id 记在浏览器里，导出的链接后面自己接上；
+- 底图铺满整张纸再居中裁，不随纸高变形；上面压一层纸白（`oa_image.BG_VEIL`，0.80），
+  字压得住，图还看得出；
+- 只收 PNG / JPEG，解码后 4 MB 以内，短边 600 像素以上，存的时候统一转成 PNG；
+- 一个地址一小时最多传 3 张，待审的攒到 60 张就先不收；
+- 投票一个地址一张一票（`certbg_votes`，按 `X-Real-IP` 或连接地址认），票多的排前面；
+  票一样就早传上来的在前；
+- 页面上只写呼号与姓名，联系方式与地址一个字都不出现在公开接口里；
+- 接口：`GET /api/certbg`（审过的底图 + 票数 + 最高票）、`POST /api/certbg/submit`、
+  `POST /api/certbg/vote`、`GET /api/certbg/image/<id>.png`（已上架的直接看，没审的带主控口令才看）；
+  主控那边是 `GET /api/admin/certbg`、`POST /api/admin/certbg/review`（`approve` / `reject`）、
+  `POST /api/admin/certbg/delete`。
 
 ## 发报文
 

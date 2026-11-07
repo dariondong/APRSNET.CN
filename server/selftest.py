@@ -6,6 +6,7 @@
 会话结束后临时目录会自己删掉，不碰真实数据。
 """
 import json
+import base64
 import os
 import re
 import shutil
@@ -21,6 +22,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import oa_aprs
+import oa_certbg
 import oa_region
 import oa_server
 import oa_store
@@ -1094,6 +1096,95 @@ def main():
             check("只写呼号也认（去掉 SSID）", loose.status, 200)
             check("去掉 SSID 找到的是名单里的那台",
                   "aprsnetcn-oa-BG7XXX-9-" in (loose.headers.get("Content-Disposition") or ""), True)
+
+            # ---- 奖状底图的征集：投稿先挂着，主控台审过才上页面 ----
+            def post_plain(path, payload):
+                req = urllib.request.Request(
+                    "%s%s" % (base, path), data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"}, method="POST")
+                try:
+                    body = urllib.request.urlopen(req, timeout=15).read()
+                    return json.loads(body.decode("utf-8")), 200
+                except urllib.error.HTTPError as exc:
+                    return json.loads(exc.read().decode("utf-8") or "{}"), exc.code
+
+            def gget(path):
+                try:
+                    res = urllib.request.urlopen("%s%s" % (base, path), timeout=15)
+                    return res.read(), res.status
+                except urllib.error.HTTPError as exc:
+                    return exc.read(), exc.code
+
+            def post_admin(path, payload):
+                req = urllib.request.Request(
+                    "%s%s?token=%s" % (base, path, conf["OA_ADMIN_TOKEN"]),
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"}, method="POST")
+                try:
+                    body = urllib.request.urlopen(req, timeout=10).read()
+                except urllib.error.HTTPError as exc:
+                    body = exc.read()
+                return json.loads(body.decode("utf-8"))
+
+            def png_url(w=900, h=1200, color=(196, 108, 54)):
+                buf = _BytesIO()
+                _Image.new("RGB", (w, h), color).save(buf, "PNG")
+                return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+            draft = {"call": "bg7lzq-9", "name": "张三", "contact": "13800000000",
+                     "agree": True, "image": png_url()}
+            sent, code = post_plain("/api/certbg/submit", draft)
+            check("投稿收下了，先挂着等审", (code, sent.get("status")), (200, "pending"))
+            first = str(sent.get("id") or "")
+            public = json.loads(gget("/api/certbg")[0].decode("utf-8"))
+            check("没审过的底图不在页面上", len(public.get("items") or []), 0)
+            check("没审过的图看不见", gget("/api/certbg/image/%s.png" % first)[1], 404)
+            check("没审过的不能投票", post_plain("/api/certbg/vote", {"id": first})[1], 404)
+            admin = json.loads(urllib.request.urlopen(
+                "%s/api/admin/certbg?token=%s" % (base, conf["OA_ADMIN_TOKEN"]),
+                timeout=10).read().decode("utf-8"))
+            check("主控台看得到待审那张", len(admin.get("pending") or []), 1)
+            check("主控台看得到联系方式", (admin["pending"][0]["contact"],
+                                        admin["pending"][0]["call"]), ("13800000000", "BG7LZQ-9"))
+            check("主控台看得到授权时间", bool(admin["pending"][0]["agree_ts"]), True)
+            post_admin("/api/admin/certbg/review", {"id": first, "action": "approve"})
+            public = json.loads(gget("/api/certbg")[0].decode("utf-8"))
+            check("审过了就上页面", [it["id"] for it in public.get("items") or []], [first])
+            check("页面上不写联系方式",
+                  any(key in public["items"][0] for key in ("contact", "ip", "agree_ts")), False)
+            check("署名是呼号与姓名", (public["items"][0]["call"], public["items"][0]["name"]),
+                  ("BG7LZQ-9", "张三"))
+            check("只有一张时最高票就是它",
+                  (public.get("top"), public.get("topCurrent")), (first, first))
+            image, code = gget("/api/certbg/image/%s.png" % first)
+            check("审过的图能看", (code, image[:8]), (200, b"\x89PNG\r\n\x1a\n"))
+            voted, code = post_plain("/api/certbg/vote", {"id": first})
+            check("投一票记上了", (code, voted.get("votes")), (200, 1))
+            voted, code = post_plain("/api/certbg/vote", {"id": first})
+            check("同一个地址再投不多算", (voted.get("votes"), voted.get("again")), (1, True))
+            plain_cert, _ = gget("/api/cert.png?call=BG7XXX-9")
+            bg_cert, code = gget("/api/cert.png?call=BG7XXX-9&bg=%s" % first)
+            check("带底图的奖状画得出", (code, bg_cert[:8]), (200, b"\x89PNG\r\n\x1a\n"))
+            check("带底图与不带底图不是同一张", bg_cert != plain_cert, True)
+            check("认不出的底图退回经典那张",
+                  gget("/api/cert.png?call=BG7XXX-9&bg=bg-000000-abcdef")[0], plain_cert)
+            # 退回的不上页面，图也不再对外
+            bad, code = post_plain("/api/certbg/submit", dict(draft, name="李四"))
+            second = str(bad.get("id") or "")
+            post_admin("/api/admin/certbg/review", {"id": second, "action": "reject"})
+            public = json.loads(gget("/api/certbg")[0].decode("utf-8"))
+            check("退回的不上页面", [it["id"] for it in public.get("items") or []], [first])
+            check("退回的图看不见", gget("/api/certbg/image/%s.png" % second)[1], 404)
+            # 表单那四项各缺一样都不收
+            for broken, want in ((dict(draft, call="73"), "呼号"),
+                                 (dict(draft, name=""), "姓名"),
+                                 (dict(draft, contact="1"), "联系方式"),
+                                 (dict(draft, agree=False), "授权"),
+                                 (dict(draft, image=png_url(120, 120)), "短边"),
+                                 (dict(draft, image="data:image/png;base64,bm90IGEgcG5n"), "读不出来")):
+                body, code = post_plain("/api/certbg/submit", broken)
+                check("少一样就不收：%s" % want,
+                      (code, want in str(body.get("error") or "")), (400, True))
             page = urllib.request.urlopen("%s/data" % base, timeout=10).read().decode("utf-8")
             check("页面里名单指本机", 'data-roster="/api/roster"' in page, True)
             check("页面里下载按钮指本机", 'data-image-base="/api/"' in page, True)

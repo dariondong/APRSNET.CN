@@ -31,6 +31,7 @@ from urllib.parse import parse_qs, urlparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import oa_aprs
+import oa_certbg
 import oa_store
 
 DEFAULTS = {
@@ -915,6 +916,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/cert.png":
             self._cert(query)
             return
+        if path == "/api/certbg":
+            self._json(oa_certbg.listing(self.rt.store, self._round_code()), 200,
+                       {"Access-Control-Allow-Origin": "*"})
+            return
+        if path.startswith("/api/certbg/image/"):
+            self._certbg_image(path.rsplit("/", 1)[-1].split(".png")[0])
+            return
         if path == "/api/health":
             self._json(self.rt.health())
             return
@@ -924,6 +932,11 @@ class Handler(BaseHTTPRequestHandler):
             limit = int((query.get("limit") or ["200"])[0] or 200)
             kind = (query.get("kind") or [""])[0] or None
             self._json({"ok": True, "packets": self.rt.store.packets(limit=min(limit, 1000), kind=kind)})
+            return
+        if path == "/api/admin/certbg":
+            if not self._need_token():
+                return
+            self._json(dict(oa_certbg.queue(self.rt.store), ok=True, round=self._round_code()))
             return
         if path == "/api/admin/state":
             if not self._need_token():
@@ -982,6 +995,15 @@ class Handler(BaseHTTPRequestHandler):
         self._static(path)
 
     # ---- POST ----
+
+    def do_OPTIONS(self):
+        """跨域预检：页面在 aprsnet.cn，接口在 oa.aprsnet.cn，投稿与投票都得先过这一关。"""
+        self._send(204, b"", "text/plain; charset=utf-8", {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "600",
+        })
 
     def do_POST(self):
         path = urlparse(self.path).path
@@ -1157,6 +1179,49 @@ class Handler(BaseHTTPRequestHandler):
             written = self.rt.store.archive_round(date, self.rt.archive_dir)
             self._json({"ok": bool(written), "files": written, "dir": self.rt.archive_dir})
             return
+        if path == "/api/certbg/submit":
+            if int(self.headers.get("Content-Length") or 0) > 8 * 1024 * 1024:
+                self._fail(413, "图太大了，控制在 4 MB 以内。")
+                return
+            try:
+                row = oa_certbg.save(self.rt.store, body, self._client_ip(), self._round_code())
+            except oa_certbg.CertBgError as exc:
+                self._fail(400, str(exc))
+                return
+            except Exception as exc:
+                self._fail(500, "收不上：%s" % exc)
+                return
+            self._json({"ok": True, "id": row["id"], "status": row["status"]}, 200,
+                       {"Access-Control-Allow-Origin": "*"})
+            return
+        if path == "/api/certbg/vote":
+            bid = str(body.get("id") or "").strip()
+            row = self.rt.store.certbg_get(bid)
+            if not row or row.get("status") != "approved":
+                self._fail(404, "没有这张底图")
+                return
+            votes, again = self.rt.store.certbg_vote(bid, self._client_ip())
+            self._json({"ok": True, "id": bid, "votes": votes, "again": again}, 200,
+                       {"Access-Control-Allow-Origin": "*"})
+            return
+        if path == "/api/admin/certbg/review":
+            if not self._need_token():
+                return
+            bid = str(body.get("id") or "").strip()
+            action = str(body.get("action") or "").strip()
+            row = self.rt.store.certbg_review(bid, action, str(body.get("note") or ""))
+            if row is None:
+                self._fail(400, "没有这张底图" if action in ("approve", "reject")
+                           else "动作只有 approve 与 reject")
+                return
+            self._json({"ok": True, "item": row})
+            return
+        if path == "/api/admin/certbg/delete":
+            if not self._need_token():
+                return
+            bid = str(body.get("id") or "").strip()
+            self._json({"ok": oa_certbg.remove(self.rt.store, bid), "id": bid})
+            return
         self._fail(404, "没有这个接口")
 
     # ---- 文件 ----
@@ -1253,9 +1318,10 @@ class Handler(BaseHTTPRequestHandler):
         if station is None:
             self._fail(404, "这一轮没有 %s 这一台" % want)
             return
+        bg = oa_certbg.load(self.rt.store, (query.get("bg") or [""])[0].strip())
         try:
             body = oa_image.render_cert(row, station, note=self._note(lang), lang=lang,
-                                        meta=self._meta_text(lang, row.get("date")))
+                                        meta=self._meta_text(lang, row.get("date")), bg=bg)
         except Exception as exc:
             self._fail(500, "画不出来：%s" % exc)
             return
@@ -1263,6 +1329,38 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, body, "image/png", {
             "Content-Disposition": 'attachment; filename="%s"' % name,
         })
+
+    def _round_code(self):
+        """当前这一轮的编号：投票的「本期」与底图的归属都按它算。"""
+        store = self.rt.store
+        rnd = store.active_round()
+        if not rnd:
+            rounds = store.rounds()
+            rnd = rounds[0] if rounds else None
+        if not rnd:
+            return ""
+        return str((store.round_text(rnd["date"]) or {}).get("code") or "")
+
+    def _client_ip(self):
+        """来的人是谁：反代后面看 X-Real-IP，直接连就是连接地址。"""
+        for key in ("X-Real-IP", "X-Forwarded-For"):
+            value = (self.headers.get(key) or "").split(",")[0].strip()
+            if value:
+                return value
+        return self.client_address[0]
+
+    def _certbg_image(self, bid):
+        """底图本身：审核通过的谁都能看；没审过的带主控口令才给看（主控台预览）。"""
+        row = self.rt.store.certbg_get(bid)
+        if not row:
+            self._fail(404, "没有这张底图")
+            return
+        if row.get("status") != "approved":
+            want = self.rt.conf.get("OA_ADMIN_TOKEN") or ""
+            if not want or not hmac.compare_digest(self._token(), want):
+                self._fail(404, "没有这张底图")     # 没审的不许看，也别漏存在与否
+                return
+        self._file(oa_certbg.file_of(self.rt.store, row["id"]))
 
     def _page(self, rel):
         path = os.path.join(self.rt.site_root, rel)
@@ -1275,6 +1373,7 @@ class Handler(BaseHTTPRequestHandler):
         # 静态那份 data-roster 指的是反代上的 /api/roster；本机自己发页面时直接指本机。
         html = re.sub(r'data-roster="[^"]*"', 'data-roster="/api/roster"', html)
         html = re.sub(r'data-image-base="[^"]*"', 'data-image-base="/api/"', html)
+        html = re.sub(r'data-certbg="[^"]*"', 'data-certbg="/api/certbg"', html)
         # 页面在静态站上住在 oa/ 目录里，脚本写成相对路径就行；在 /、/en、/data 这些
         # 短地址上，相对路径会指到根上去，改成绝对路径才找得着。
         html = re.sub(r'(<script src=")(?:\.\./)*(roster\.js|clock\.js)', r'\1/oa/\2', html)

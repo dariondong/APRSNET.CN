@@ -129,6 +129,33 @@ CREATE TABLE IF NOT EXISTS meta_log (
   ts    TEXT NOT NULL DEFAULT '',
   round_date TEXT NOT NULL DEFAULT ''
 );
+
+-- 奖状卡片底图的征集：上传先躺着（pending），主控台审过（approved）才上页面
+CREATE TABLE IF NOT EXISTS certbg (
+  id       TEXT PRIMARY KEY,
+  call     TEXT NOT NULL DEFAULT '',
+  name     TEXT NOT NULL DEFAULT '',
+  contact  TEXT NOT NULL DEFAULT '',
+  agree_ts TEXT NOT NULL DEFAULT '',
+  file     TEXT NOT NULL DEFAULT '',
+  w        INTEGER NOT NULL DEFAULT 0,
+  h        INTEGER NOT NULL DEFAULT 0,
+  status   TEXT NOT NULL DEFAULT 'pending',
+  ts       TEXT NOT NULL DEFAULT '',
+  reviewed TEXT NOT NULL DEFAULT '',
+  note     TEXT NOT NULL DEFAULT '',
+  round    TEXT NOT NULL DEFAULT '',
+  ip       TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS certbg_status ON certbg (status, ts DESC);
+
+-- 一票一行，同一个地址对同一张只算一票
+CREATE TABLE IF NOT EXISTS certbg_votes (
+  item TEXT NOT NULL,
+  ip   TEXT NOT NULL DEFAULT '',
+  ts   TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (item, ip)
+);
 """
 
 STATUS_ORDER = {"called": 1, "acked": 2, "confirmed": 3}
@@ -1179,3 +1206,97 @@ class Store(object):
             last = self.db.execute("SELECT ts FROM packets ORDER BY id DESC LIMIT 1").fetchone()
         return {"packets": total, "kinds": counts,
                 "last_packet": last["ts"] if last else ""}
+
+    # ---- 奖状卡片底图：征集、审核、投票 ----
+
+    def certbg_add(self, record):
+        """一张刚传上来的底图：先记成 pending，主控台审完才改状态。"""
+        bid = str(record.get("id") or "").strip()
+        if not bid:
+            return None
+        now = now_iso()
+        with self.lock:
+            self.db.execute(
+                "INSERT OR REPLACE INTO certbg (id, call, name, contact, agree_ts, file, w, h,"
+                " status, ts, reviewed, note, round, ip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (bid, str(record.get("call") or "").strip().upper(),
+                 str(record.get("name") or "").strip(),
+                 str(record.get("contact") or "").strip(),
+                 str(record.get("agree_ts") or now),
+                 str(record.get("file") or ""), int(record.get("w") or 0),
+                 int(record.get("h") or 0), str(record.get("status") or "pending"),
+                 str(record.get("ts") or now), "", "", str(record.get("round") or ""),
+                 str(record.get("ip") or "")))
+            self.db.commit()
+        return bid
+
+    def certbg_get(self, bid):
+        """一张底图的全部记录（含联系方式，只给主控台与渲染用）。"""
+        with self.lock:
+            row = self.db.execute("SELECT * FROM certbg WHERE id=?", (str(bid or ""),)).fetchone()
+        return dict(row) if row is not None else None
+
+    def certbg_rows(self, status=None):
+        """底图列表，新的在前；status 传了就只要那一种。"""
+        sql = "SELECT * FROM certbg"
+        args = ()
+        if status:
+            sql += " WHERE status=?"
+            args = (str(status),)
+        sql += " ORDER BY ts DESC, id DESC"
+        with self.lock:
+            rows = self.db.execute(sql, args).fetchall()
+        return [dict(r) for r in rows]
+
+    def certbg_review(self, bid, action, note=""):
+        """审一张：approved 上页面，rejected 退回。审过的不再改口。"""
+        status = "approved" if action == "approve" else ("rejected" if action == "reject" else "")
+        if not status:
+            return None
+        with self.lock:
+            row = self.db.execute("SELECT status FROM certbg WHERE id=?", (str(bid or ""),)).fetchone()
+            if row is None:
+                return None
+            self.db.execute("UPDATE certbg SET status=?, reviewed=?, note=? WHERE id=?",
+                            (status, now_iso(), str(note or "").strip(), str(bid)))
+            self.db.commit()
+        return self.certbg_get(bid)
+
+    def certbg_delete(self, bid):
+        """一整个拿掉（图在磁盘上由 oa_certbg 删）。"""
+        with self.lock:
+            cur = self.db.execute("DELETE FROM certbg WHERE id=?", (str(bid or ""),))
+            self.db.execute("DELETE FROM certbg_votes WHERE item=?", (str(bid or ""),))
+            self.db.commit()
+            return cur.rowcount > 0
+
+    def certbg_votes(self):
+        """{id: 票数}。"""
+        with self.lock:
+            rows = self.db.execute(
+                "SELECT item, COUNT(*) AS n FROM certbg_votes GROUP BY item").fetchall()
+        return dict((r["item"], r["n"]) for r in rows)
+
+    def certbg_vote(self, bid, ip):
+        """投一票：同一个地址对同一张只算一次。返回 (票数, 是不是又投了一次)。"""
+        item = str(bid or "")
+        who = str(ip or "")
+        with self.lock:
+            old = self.db.execute("SELECT 1 FROM certbg_votes WHERE item=? AND ip=?",
+                                  (item, who)).fetchone()
+            if old is None:
+                self.db.execute("INSERT INTO certbg_votes (item, ip, ts) VALUES (?,?,?)",
+                                (item, who, now_iso()))
+                self.db.commit()
+            n = self.db.execute("SELECT COUNT(*) AS n FROM certbg_votes WHERE item=?",
+                                (item,)).fetchone()["n"]
+        return n, old is not None
+
+    def certbg_recent(self, ip, seconds=3600):
+        """这个地址最近传了几张（防连点）。"""
+        now = datetime.now(UTC)
+        since = (now - timedelta(seconds=int(seconds))).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with self.lock:
+            row = self.db.execute("SELECT COUNT(*) AS n FROM certbg WHERE ip=? AND ts>=?",
+                                  (str(ip or ""), since)).fetchone()
+        return row["n"] if row else 0
