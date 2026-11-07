@@ -92,6 +92,7 @@ a{color:inherit}
     <button type="button" role="tab" data-pane="packets" data-label="流水" aria-selected="false">流水</button>
     <button type="button" role="tab" data-pane="add" data-label="加台" aria-selected="false">加台</button>
     <button type="button" role="tab" data-pane="meta" data-label="页面文字" aria-selected="false">页面文字</button>
+    <button type="button" role="tab" data-pane="certbg" data-label="底图" aria-selected="false">底图</button>
     <button type="button" role="tab" data-pane="thread" data-label="对话" aria-selected="false">对话</button>
     <button type="button" role="tab" data-pane="outbox" data-label="发件箱" aria-selected="false">发件箱</button>
     <button type="button" role="tab" data-pane="set" data-label="设置" aria-selected="false">设置</button>
@@ -169,6 +170,14 @@ a{color:inherit}
   <p class="note" id="metaPreview">页面上显示：—</p>
   <p class="note">改过的每一行都记在这儿，带着是哪一轮的。点「填回去」就装进上面的框，再点「写到页面上」就换回去了。</p>
   <div id="metaLog" class="scroll"></div>
+  </section>
+
+  <section class="pane" id="pane-certbg" role="tabpanel">
+  <p class="note">奖状卡片的底图是大家投稿来的，审过才上页面，也才能投票。联系方式只在这里看得到，页面上只写呼号与姓名。</p>
+  <p class="note" id="cbFor">待审 — 张。</p>
+  <div id="cbPending" class="scroll"></div>
+  <div id="cbApproved" class="scroll"></div>
+  <div id="cbRejected" class="scroll"></div>
   </section>
 
   <section class="pane" id="pane-thread" role="tabpanel">
@@ -362,6 +371,121 @@ a{color:inherit}
     window.prompt("复制这行", text);
   };
 
+  // 奖状底图：待审的排前面，通过 / 退回一步一个；审过的可以下架，图跟着删
+  var cbImage = function (row) {
+    var a = document.createElement("a");
+    a.href = "/api/certbg/image/" + encodeURIComponent(row.id) + ".png?token=" +
+      encodeURIComponent(token);
+    a.target = "_blank";
+    a.rel = "noopener";
+    var img = document.createElement("img");
+    img.src = a.getAttribute("href");
+    img.width = 108;
+    img.alt = "";
+    img.loading = "lazy";
+    a.appendChild(img);
+    return a;
+  };
+
+  var cbTable = function (rows, mode) {
+    var table = document.createElement("table");
+    var head = document.createElement("tr");
+    ["图", "呼号", "姓名", "联系方式", "收到", "尺寸", "票数", "操作"].forEach(function (label) {
+      var th = document.createElement("th");
+      th.textContent = label;
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var pic = document.createElement("td");
+      pic.appendChild(cbImage(row));
+      tr.appendChild(pic);
+      cell(tr, row.call, "mono");
+      cell(tr, row.name);
+      cell(tr, row.contact, "mono");
+      cell(tr, bjTime(row.ts), "mono");
+      cell(tr, (row.w || 0) + "×" + (row.h || 0), "mono");
+      cell(tr, String(row.votes || 0), "mono");
+      var ops = document.createElement("td");
+      ops.className = "ops";
+      if (mode === "pending") {
+        ops.appendChild(cbBtn("通过", function () { cbReview(row.id, "approve", "上架了。"); }));
+        ops.appendChild(cbBtn("退回", function () { cbReview(row.id, "reject", "退回了，不上页面。"); }));
+      } else if (mode === "approved") {
+        ops.appendChild(cbBtn("下架", function () { cbDelete(row.id); }, true));
+      } else {
+        ops.appendChild(cbBtn("删掉", function () { cbDelete(row.id); }, true));
+      }
+      tr.appendChild(ops);
+      table.appendChild(tr);
+    });
+    return table;
+  };
+
+  var cbBtn = function (label, run, hot) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "mini" + (hot ? " hot" : "");
+    b.textContent = label;
+    b.addEventListener("click", run);
+    return b;
+  };
+
+  var cbFill = function (box, rows, mode, empty) {
+    box.textContent = "";
+    if (!(rows || []).length) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = empty;
+      box.appendChild(p);
+      return;
+    }
+    box.appendChild(cbTable(rows, mode));
+  };
+
+  var paintCertBg = function (data) {
+    var pending = (data && data.pending) || [];
+    cbFill($("cbPending"), pending, "pending", "没有等着审的。");
+    cbFill($("cbApproved"), (data && data.approved) || [], "approved", "还没有上架的底图。");
+    cbFill($("cbRejected"), (data && data.rejected) || [], "rejected", "没有退回的。");
+    $("cbFor").textContent = "待审 " + pending.length + " 张，上架 " +
+      ((data && data.approved) || []).length + " 张。";
+    setTabCount("certbg", pending.length);
+  };
+
+  var loadCertBg = function () {
+    return api("/api/admin/certbg").then(function (data) {
+      if (data && data.ok) paintCertBg(data);
+    });
+  };
+
+  var cbReview = function (id, action, done) {
+    api("/api/admin/certbg/review", "POST", { id: id, action: action }).then(function (d) {
+      if (!d || !d.ok) {
+        var why = (d && d.error) || "没成。";
+        showErr(why);
+        say(why, true);
+        return;
+      }
+      showErr("");
+      say(done);
+      refresh();
+    });
+  };
+
+  var cbDelete = function (id) {
+    if (!window.confirm("这张底图连图一起删掉？")) return;
+    api("/api/admin/certbg/delete", "POST", { id: id }).then(function (d) {
+      if (!d || !d.ok) {
+        say((d && d.error) || "没删成。", true);
+        return;
+      }
+      say("删掉了。");
+      refresh();
+    });
+  };
+
   var refresh = function () {
     var url = "/api/admin/state" + (state.date ? "?date=" + encodeURIComponent(state.date) : "");
     return api(url).then(function (data) {
@@ -401,6 +525,11 @@ a{color:inherit}
         }
       });
       if (state.thread) openThread(state.thread);
+      try {
+        loadCertBg();
+      } catch (e) {
+        showErr("底图那块没读出来：" + ((e && e.message) || e));
+      }
     });
   };
 
