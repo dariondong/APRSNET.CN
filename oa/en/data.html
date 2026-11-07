@@ -139,6 +139,19 @@
 .oa-grid { margin: 26px 0 4px; }
 .gc-map { margin: 26px 0 24px; border: 1px solid var(--line-strong); }
 .gc-canvas { display: block; width: 100%; max-width: 720px; height: auto; }
+/* 奖状底图：一张一行，图在左，署名与票数在右，两个按钮管投票与选用 */
+.cb { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 18px; }
+.cb-shot { display: block; width: 132px; height: auto; border: 1px solid var(--line-strong); background: var(--bg-1); }
+.cb-main { flex: 1 1 200px; min-width: 0; }
+.cb-btn { align-self: center; }
+.oa-certbg-title { margin: 34px 0 12px; font-size: 17px; }
+.oa-certbg-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 16px; align-items: end; }
+.oa-certbg-form input { width: 100%; }
+.oa-certbg-agree { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-start; font-size: 14.5px; color: var(--text-dim); }
+.oa-certbg-agree input { width: auto; margin: 4px 0 0; }
+.oa-certbg-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.oa-certbg-msg { margin: 0; color: var(--text-faint); font-size: 14px; }
+.oa-certbg-msg:empty { display: none; }
 </style>
 </head>
 
@@ -240,7 +253,40 @@
   </div>
 </section>
 
-<section class="section" id="data-verify">
+<section class="section" id="data-certbg">
+  <div class="section-head">
+    <h2>Certificate backgrounds</h2>
+    <p>The certificate can wear artwork from other operators. Every picture is reviewed by the duty station before it shows up here, and the most-voted sits first.</p>
+  </div>
+  <div class="section-body">
+    <div class="oa-export">
+      <span class="oa-export-label">Export with</span>
+      <button class="oa-export-btn" type="button" data-oa-certbg="classic" aria-pressed="true">Official classic</button>
+      <button class="oa-export-btn" type="button" data-oa-certbg="top" aria-pressed="false" disabled>Top of this round</button>
+    </div>
+    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="Round" data-label-votes="Votes" data-label-at="Received" data-use-label="Use this" data-in-use-label="In use" data-vote-label="Vote" data-voted-label="Voted" data-vote-failed="The vote did not go through, try again later." data-empty-title="No background yet" data-empty-note="Reviewed pictures show up here.">
+      <li>
+        <b class="st-call">No background yet</b>
+        <span class="st-note">Reviewed pictures show up here.</span>
+      </li>
+    </ul>
+    <h3 class="oa-certbg-title">Submit</h3>
+    <form class="oa-certbg-form" id="oaCertBgForm" data-busy="Uploading…" data-done="Sent. The duty station reviews it first." data-failed="It did not go through, try again later." data-missing="Callsign, name, contact, picture and the agreement are all needed." data-too-big="That picture is too big, keep it under 4 MB.">
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbCall">Callsign</label><input class="oa-verify-in" id="cbCall" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="BG7LZQ-2"></div>
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbName">Name</label><input class="oa-verify-in" id="cbName" type="text" maxlength="40" autocomplete="off"></div>
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbContact">Contact</label><input class="oa-verify-in" id="cbContact" type="text" maxlength="120" autocomplete="off" placeholder="Phone, email or QQ"></div>
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbFile">Picture</label><input id="cbFile" type="file" accept="image/png,image/jpeg"></div>
+      <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>I made this picture myself and agree to its use on APRSNETCN OA certificates.</span></label>
+      <div class="oa-certbg-actions">
+        <button class="oa-verify-go" id="oaCertBgSend" type="submit">Send it</button>
+        <p class="oa-certbg-msg" id="oaCertBgMsg" aria-live="polite"></p>
+      </div>
+    </form>
+    <p class="oa-note">PNG, 1080 wide. The text sits on the picture, so the picture is dimmed under paper white. Contact details stay with the duty station; the page shows only callsign and name.</p>
+  </div>
+</section>
+
+<section class="section alt" id="data-verify">
   <div class="section-head">
     <h2>Check a serial</h2>
     <p>Paste the serial from the top right of a certificate and compare the parts.</p>
@@ -257,7 +303,7 @@
   </div>
 </section>
 
-<section class="section alt" id="data-grid">
+<section class="section" id="data-grid">
   <div class="section-head">
     <h2>Grids</h2>
     <p>The grids the stations reported this round sit on one world grid, taken to four characters. Squares with a check-in are lit.</p>
@@ -319,7 +365,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=33"></script>
+<script src="../roster.js?v=34"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */

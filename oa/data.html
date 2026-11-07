@@ -139,6 +139,19 @@
 .oa-grid { margin: 26px 0 4px; }
 .gc-map { margin: 26px 0 24px; border: 1px solid var(--line-strong); }
 .gc-canvas { display: block; width: 100%; max-width: 720px; height: auto; }
+/* 奖状底图：一张一行，图在左，署名与票数在右，两个按钮管投票与选用 */
+.cb { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 18px; }
+.cb-shot { display: block; width: 132px; height: auto; border: 1px solid var(--line-strong); background: var(--bg-1); }
+.cb-main { flex: 1 1 200px; min-width: 0; }
+.cb-btn { align-self: center; }
+.oa-certbg-title { margin: 34px 0 12px; font-size: 17px; }
+.oa-certbg-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 16px; align-items: end; }
+.oa-certbg-form input { width: 100%; }
+.oa-certbg-agree { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-start; font-size: 14.5px; color: var(--text-dim); }
+.oa-certbg-agree input { width: auto; margin: 4px 0 0; }
+.oa-certbg-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.oa-certbg-msg { margin: 0; color: var(--text-faint); font-size: 14px; }
+.oa-certbg-msg:empty { display: none; }
 </style>
 </head>
 
@@ -240,7 +253,40 @@
   </div>
 </section>
 
-<section class="section" id="data-verify">
+<section class="section" id="data-certbg">
+  <div class="section-head">
+    <h2>奖状卡片底图征集</h2>
+    <p>奖状可以换一张底图。图是大家投稿来的，主控台审过才上这里，票多的排在前面。</p>
+  </div>
+  <div class="section-body">
+    <div class="oa-export">
+      <span class="oa-export-label">导出用哪张</span>
+      <button class="oa-export-btn" type="button" data-oa-certbg="classic" aria-pressed="true">官方经典</button>
+      <button class="oa-export-btn" type="button" data-oa-certbg="top" aria-pressed="false" disabled>本期最高票</button>
+    </div>
+    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="场次" data-label-votes="票数" data-label-at="收到" data-use-label="用这张" data-in-use-label="在用" data-vote-label="投这张" data-voted-label="已投" data-vote-failed="投票没成，过一会儿再试。" data-empty-title="还没有收到底图" data-empty-note="审过的底图会出现在这里。">
+      <li>
+        <b class="st-call">还没有收到底图</b>
+        <span class="st-note">审过的底图会出现在这里。</span>
+      </li>
+    </ul>
+    <h3 class="oa-certbg-title">投稿</h3>
+    <form class="oa-certbg-form" id="oaCertBgForm" data-busy="正在传…" data-done="交上去了，等主控台审。" data-failed="没交上去，过一会儿再试。" data-missing="呼号、姓名、联系方式、图、授权都要有。" data-too-big="图太大了，控制在 4 MB 以内。">
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbCall">呼号</label><input class="oa-verify-in" id="cbCall" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="BG7LZQ-2"></div>
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbName">姓名</label><input class="oa-verify-in" id="cbName" type="text" maxlength="40" autocomplete="off"></div>
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbContact">联系方式</label><input class="oa-verify-in" id="cbContact" type="text" maxlength="120" autocomplete="off" placeholder="手机、邮箱或 QQ"></div>
+      <div class="oa-certbg-field"><label class="oa-verify-label" for="cbFile">底图</label><input id="cbFile" type="file" accept="image/png,image/jpeg"></div>
+      <label class="oa-certbg-agree"><input id="cbAgree" type="checkbox"><span>这张图是我自己画的，同意用在 APRSNETCN OA 的奖状上。</span></label>
+      <div class="oa-certbg-actions">
+        <button class="oa-verify-go" id="oaCertBgSend" type="submit">交上来</button>
+        <p class="oa-certbg-msg" id="oaCertBgMsg" aria-live="polite"></p>
+      </div>
+    </form>
+    <p class="oa-note">宽 1080 的 PNG，文字压在图上面，图会被纸白盖淡。联系方式只给主控台看，页面上只写呼号与姓名。</p>
+  </div>
+</section>
+
+<section class="section alt" id="data-verify">
   <div class="section-head">
     <h2>核验编号</h2>
     <p>拿奖状右上角那一串填进去，拆开对着看。</p>
@@ -257,7 +303,7 @@
   </div>
 </section>
 
-<section class="section alt" id="data-grid">
+<section class="section" id="data-grid">
   <div class="section-head">
     <h2>网格</h2>
     <p>台站报出来的网格落在世界网格上，按前 4 位算。有签到的格子点亮。</p>
@@ -319,7 +365,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="roster.js?v=33"></script>
+<script src="roster.js?v=34"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */

@@ -48,7 +48,15 @@
    跟着选中那一轮重画；活动页没有这个位子，什么也不做。
    每台那一行的右端还有一个奖状链接（data-oa-cert=呼号，文字取 ul 上的 data-cert-label），
    地址是同一目录下的 cert.png。活动页没写 data-image-base，那半截就从名单地址上去掉
-   「roster」那一截自己推。 */
+   「roster」那一截自己推。
+
+   数据面板上还有一块奖状底图的征集：<ul id="oaCertBg" data-certbg="…">，里面铺主控台审过的
+   那些底图，一行一张（data-label-round / -votes / -at 是那三项的字段名，use / in-use /
+   vote / voted / vote-failed / empty-title / empty-note 是几个按钮与空状态的字）。图自己的地址
+   是 data-image-base 拼上 certbg/image/<id>.png；投票往 data-certbg 后面接 /vote 发一条
+   POST {"id": …}，投稿往 /submit 发呼号、姓名、联系方式、授权与那张图的 data URL。
+   选中的那张记在 localStorage 的 oa_certbg 里，导出奖状的链接后面就多一个 bg=<id>，
+   空串是官方经典；[data-oa-certbg=classic|top] 那两个按钮就改这个选择。 */
 (function () {
   "use strict";
 
@@ -736,12 +744,18 @@
     });
   };
 
-  /* 按钮与奖状链接共用的那半截查询：选中那一轮 + 导出语言 */
+  /* 导出用哪张底图：空串是官方经典，别的就是那一张的 id。选在哪台机器上就记在那台机器上 */
+  var BG_KEY = "oa_certbg";
+  var bgPick = "";
+  try { bgPick = String(localStorage.getItem(BG_KEY) || ""); } catch (e) { bgPick = ""; }
+
+  /* 按钮与奖状链接共用的那半截查询：选中那一轮 + 导出语言 + 选中的底图 */
   var imgQuery = function (round) {
     var query = [];
     var date = String((round && round.date) || "").trim();
     if (date) query.push("date=" + encodeURIComponent(date));
     if (exportLang === "en") query.push("lang=en");
+    if (bgPick) query.push("bg=" + encodeURIComponent(bgPick));
     return query.join("&");
   };
 
@@ -773,6 +787,228 @@
       });
     });
   }
+
+  /* ---- 奖状卡片底图 ----
+     审过的底图铺成行：图在左，署名、场次、票数在右，两个按钮管投票与选用。
+     选中的那张记在浏览器里，导出奖状时接到链接后面（bg=<id>）；空串就是官方经典。
+     投票是一个地址一票，服务器自己认，这里只管把票数换成新的。 */
+  var bgBox = document.getElementById("oaCertBg");
+  var bgForm = document.getElementById("oaCertBgForm");
+  var bgUrl = bgBox ? String(bgBox.getAttribute("data-certbg") || "") : "";
+  var bgItems = [];
+  var bgTop = "";                                     /* 全站最高票 */
+  var bgCur = "";                                      /* 本期最高票 */
+
+  var bgWord = function (key) {
+    return bgBox ? String(bgBox.getAttribute("data-" + key) || "") : "";
+  };
+
+  var bgPaintPicks = function () {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-oa-certbg]"), function (el) {
+      var want = el.getAttribute("data-oa-certbg");
+      var on = want === "classic" ? !bgPick
+        : (want === "top" ? (!!bgCur && bgPick === bgCur) : false);
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+      if (want === "top") el.disabled = !bgCur;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-bg-use]"), function (el) {
+      var on = el.getAttribute("data-bg-use") === bgPick;
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+      el.textContent = on ? (bgWord("in-use-label") || el.textContent)
+        : (bgWord("use-label") || el.textContent);
+    });
+  };
+
+  var bgSave = function (id) {
+    bgPick = String(id || "");
+    try { localStorage.setItem(BG_KEY, bgPick); } catch (e) {}
+    bgPaintPicks();
+    fillImages(exportRound);
+  };
+
+  var bgRow = function (item) {
+    var li = document.createElement("li");
+    li.className = "st cb";
+    var shot = document.createElement("img");
+    shot.className = "cb-shot";
+    shot.src = (imgBase || "") + "certbg/image/" + encodeURIComponent(item.id) + ".png";
+    shot.alt = "";
+    shot.loading = "lazy";
+    shot.width = 132;
+    li.appendChild(shot);
+    var main = document.createElement("div");
+    main.className = "cb-main";
+    var call = document.createElement("b");
+    call.className = "st-call";
+    call.textContent = [item.call, item.name].filter(Boolean).join(" \u00b7 ");
+    main.appendChild(call);
+    var dl = document.createElement("dl");
+    dl.className = "st-fields";
+    addField(dl, bgWord("label-round"), item.round);
+    addField(dl, bgWord("label-votes"), String(item.votes || 0));
+    addField(dl, bgWord("label-at"), item.at);
+    main.appendChild(dl);
+    li.appendChild(main);
+    var use = document.createElement("button");
+    use.type = "button";
+    use.className = "oa-export-btn cb-btn";
+    use.setAttribute("data-bg-use", item.id);
+    use.textContent = bgWord("use-label");
+    use.addEventListener("click", function () { bgSave(item.id); });
+    li.appendChild(use);
+    var vote = document.createElement("button");
+    vote.type = "button";
+    vote.className = "oa-export-btn cb-btn";
+    vote.textContent = item.voted ? (bgWord("voted-label") || bgWord("vote-label"))
+      : bgWord("vote-label");
+    if (item.voted) vote.disabled = true;
+    vote.addEventListener("click", function () { bgVote(item.id, vote); });
+    li.appendChild(vote);
+    return li;
+  };
+
+  var bgPaint = function () {
+    if (!bgBox) return;
+    bgBox.textContent = "";
+    if (!bgItems.length) {
+      var li = document.createElement("li");
+      var title = document.createElement("b");
+      title.className = "st-call";
+      title.textContent = bgWord("empty-title");
+      var note = document.createElement("span");
+      note.className = "st-note";
+      note.textContent = bgWord("empty-note");
+      li.appendChild(title);
+      li.appendChild(note);
+      bgBox.appendChild(li);
+    } else {
+      bgItems.forEach(function (item) { bgBox.appendChild(bgRow(item)); });
+    }
+    bgPaintPicks();
+  };
+
+  var bgTopOf = function (items) {
+    var best = "";
+    var bestN = -1;
+    items.forEach(function (it) {
+      var n = it.votes || 0;
+      if (n > bestN) { best = it.id; bestN = n; }
+    });
+    return best;
+  };
+
+  var bgVote = function (id, btn) {
+    if (!bgUrl) return;
+    btn.disabled = true;
+    fetch(bgUrl + "/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: id })
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      if (!data || !data.ok) {
+        btn.disabled = false;
+        btn.textContent = bgWord("vote-failed") || btn.textContent;
+        return;
+      }
+      bgItems.forEach(function (it) {
+        if (it.id === data.id) { it.votes = data.votes; it.voted = true; }
+      });
+      bgTop = bgTopOf(bgItems);
+      bgCur = bgTopOf(bgItems.filter(function (it) {
+        return !bgRoundCode || it.round === bgRoundCode;
+      }));
+      if (!bgCur) bgCur = bgTop;
+      bgPaint();
+    }).catch(function () {
+      btn.disabled = false;
+    });
+  };
+
+  var bgRoundCode = "";
+
+  var bgLoad = function () {
+    if (!bgBox || !bgUrl || !window.fetch) return;
+    fetch(bgUrl, { cache: "no-store" }).then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) return;
+        bgItems = data.items || [];
+        bgRoundCode = String(data.round || "");
+        bgTop = String(data.top || "") || bgTopOf(bgItems);
+        bgCur = String(data.topCurrent || "") || bgTop;
+        var alive = false;
+        bgItems.forEach(function (it) { if (it.id === bgPick) alive = true; });
+        if (bgPick && !alive) bgPick = "";            /* 选中的下架了，退回经典 */
+        bgPaint();
+        fillImages(exportRound);
+      }).catch(function () { bgPaint(); });
+  };
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-oa-certbg]"), function (el) {
+    el.addEventListener("click", function () {
+      var want = el.getAttribute("data-oa-certbg");
+      if (want === "classic") bgSave("");
+      else if (want === "top" && bgCur) bgSave(bgCur);
+    });
+  });
+
+  if (bgForm) {
+    var bgFields = {
+      call: document.getElementById("cbCall"),
+      name: document.getElementById("cbName"),
+      contact: document.getElementById("cbContact"),
+      file: document.getElementById("cbFile"),
+      agree: document.getElementById("cbAgree"),
+      msg: document.getElementById("oaCertBgMsg"),
+      send: document.getElementById("oaCertBgSend")
+    };
+    var bgSay = function (text) {
+      if (bgFields.msg) bgFields.msg.textContent = text || "";
+    };
+    bgForm.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var pick = bgFields.file && bgFields.file.files ? bgFields.file.files[0] : null;
+      if (!bgFields.call.value.trim() || !bgFields.name.value.trim()
+          || !bgFields.contact.value.trim() || !pick || !bgFields.agree.checked) {
+        bgSay(bgForm.getAttribute("data-missing"));
+        return;
+      }
+      if (pick.size > 4 * 1024 * 1024) {
+        bgSay(bgForm.getAttribute("data-too-big"));
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        bgSay(bgForm.getAttribute("data-busy"));
+        bgFields.send.disabled = true;
+        fetch(bgUrl + "/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            call: bgFields.call.value.trim(),
+            name: bgFields.name.value.trim(),
+            contact: bgFields.contact.value.trim(),
+            agree: true,
+            image: String(reader.result || "")
+          })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+          bgFields.send.disabled = false;
+          if (!data || !data.ok) {
+            bgSay((data && data.error) || bgForm.getAttribute("data-failed"));
+            return;
+          }
+          bgSay(bgForm.getAttribute("data-done"));
+          bgFields.file.value = "";
+          bgFields.agree.checked = false;
+        }).catch(function () {
+          bgFields.send.disabled = false;
+          bgSay(bgForm.getAttribute("data-failed"));
+        });
+      };
+      reader.readAsDataURL(pick);
+    });
+  }
+
+  bgLoad();
 
   /* 编号：奖状右上角那 20 位是算出来的，几段定长 32 进制拼在一起。
      位置固定，拆开就是呼号、场次、时间、网格，不靠服务器、不靠名单。 */
