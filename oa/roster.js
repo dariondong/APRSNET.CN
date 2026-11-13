@@ -42,8 +42,9 @@
 
    主控呼号那几个位子写的是 [data-oa-duty]，点一下就复制（按钮上的字先换成
    名单 ul 上 data-copy-done 的那句话，过一会儿换回来）。
-   数据面板上还有两个下载按钮，位子是 [data-oa-image]，地址前半截取自名单 ul 的
-   data-image-base，后半截是 board.png / points.png，后面接上选中那一轮与页面语言。
+   数据面板上还有几个下载按钮，位子是 [data-oa-image]，地址前半截取自名单 ul 的
+   data-image-base，后半截是 board.png / grid.png，后面接上选中那一轮与页面语言；
+   按钮上写了 data-oa-view 的（网格表的中国视图），再接一个 view=。
    数据面板上还有一份网格表，位子是 <ul id="oaGrid">：一个网格一行，后面跟着这一格里的呼号，
    跟着选中那一轮重画；活动页没有这个位子，什么也不做。
    每台那一行的右端还有一个奖状链接（data-oa-cert=呼号，文字取 ul 上的 data-cert-label），
@@ -766,10 +767,14 @@
   var fillImages = function (round) {
     if (!imgBase) return;
     var query = imgQuery(round);
-    var tail = query ? "?" + query : "";
     Array.prototype.forEach.call(document.querySelectorAll("[data-oa-image]"), function (el) {
       var name = el.getAttribute("data-oa-image");
-      if (name) el.setAttribute("href", imgBase + name + ".png" + tail);
+      var view = String(el.getAttribute("data-oa-view") || "").trim();
+      if (!name) return;
+      /* 网格表有一张只要中国那一块的：带 data-oa-view 的按钮后面多挂一个 view= */
+      var own = view ? (query ? query + "&view=" + encodeURIComponent(view)
+                              : "view=" + encodeURIComponent(view)) : query;
+      el.setAttribute("href", imgBase + name + ".png" + (own ? "?" + own : ""));
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-oa-cert]"), function (el) {
       var call = String(el.getAttribute("data-oa-cert") || "").trim();
