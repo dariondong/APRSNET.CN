@@ -1278,7 +1278,7 @@ class Handler(BaseHTTPRequestHandler):
         """签到表 / 网格表的 PNG。数据面板上那两个下载按钮点到这里。
 
         ?date=2026-10-17 指定哪一轮，不给就是最新一轮；?lang=en 要英文；
-        网格表还能 ?view=cn 只要中国周围那一块。
+        网格表还能 ?view=ea 只要亚洲东部那一块。
         名单读不出来就画一张空表；没装 Pillow 回 503。
         """
         oa_image = self._oa_image()
@@ -1289,16 +1289,16 @@ class Handler(BaseHTTPRequestHandler):
         if row is None:
             row = {"date": date, "call": "", "stations": []}
         view = str((query.get("view") or [""])[0] or "").strip().lower()
-        china = what == "grid" and view in ("cn", "china")
+        east = what == "grid" and view in ("ea", "east", "eastasia")
         try:
             body = steps[what](row, note=self._note(lang), lang=lang,
                                meta=self._meta_text(lang, row.get("date")),
-                               **({"view": "cn"} if china else {}))
+                               **({"view": "ea"} if east else {}))
         except Exception as exc:
             self._fail(500, "画不出来：%s" % exc)
             return
         name = "aprsnetcn-oa-%s-%s%s.png" % (row.get("date") or "empty", what,
-                                            "-cn" if china else "")
+                                            "-ea" if east else "")
         self._send(200, body, "image/png", {
             "Content-Disposition": 'attachment; filename="%s"' % name,
         })

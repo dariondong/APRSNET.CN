@@ -861,27 +861,32 @@ def main():
         grid = oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
             {"call": "BG7LZQ-2", "grid": "OL62"}, {"call": "BG6TA", "grid": "ON80"}]})
         check("网格表画得出 PNG", grid[:8], b"\x89PNG\r\n\x1a\n")
-        # 中国视图：纸窄一点，只画中国周围那一块；外面的格子不画，呼号表照样列着
+        # 亚洲东部视图：纸窄一点，只画东亚那一块；外面的格子不画，呼号表照样列着
         from io import BytesIO as _BIO
         from PIL import Image as _IMG
         hot = oa_image.HOT
-        cn_row = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
+        ea_row = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
             {"call": "BG7LZQ-2", "grid": "OL62"}]}
-        cn_body = oa_image.render_grid(cn_row, view="cn")
-        cn_img = _IMG.open(_BIO(cn_body)).convert("RGB")
-        check("中国视图画得出 PNG，纸按中国那一块裁窄", cn_img.size[0], oa_image.CN_SHEET)
-        check("中国视图比世界那张窄", cn_img.size[0] < _IMG.open(_BIO(grid)).size[0], True)
+        ea_body = oa_image.render_grid(ea_row, view="ea")
+        ea_img = _IMG.open(_BIO(ea_body)).convert("RGB")
+        check("亚洲东部视图画得出 PNG，纸按那一块裁窄", ea_img.size[0], oa_image.EA_SHEET)
+        check("亚洲东部视图比世界那张窄", ea_img.size[0] < _IMG.open(_BIO(grid)).size[0], True)
+
         def _hot(body):
             return sum(1 for p in _IMG.open(_BIO(body)).convert("RGB").getdata() if p == hot)
 
         blank = _hot(oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3",
-                                           "stations": []}, view="cn"))
-        check("中国视图里 OL62 那一格点红", _hot(cn_body) > blank, True)
+                                           "stations": []}, view="ea"))
+        check("亚洲东部视图里 OL62 那一格点红", _hot(ea_body) > blank, True)
         outside = oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3",
                                         "stations": [{"call": "W1AW", "grid": "FM18"}]},
-                                       view="cn")
-        check("中国视图不画范围外面的格子", _hot(outside), blank)
-        check("中国视图的图题带中国", "APRSNETCN OA 网格表 · 中国" in oa_image.TEXT["zh"]["grid_cn"], True)
+                                       view="ea")
+        check("亚洲东部视图不画范围外面的格子", _hot(outside), blank)
+        check("视图的图题写的是亚洲东部", oa_image.TEXT["zh"]["grid_ea"], "APRSNETCN OA 网格表 · 亚洲东部")
+        check("图上写明底图只是大致轮廓", oa_image.TEXT["zh"]["map_note"],
+              "底图为陆地大致轮廓，不作地图依据。")
+        check("英文那句也在", oa_image.TEXT["en"]["map_note"].startswith("The base map is a rough outline"),
+              True)
         cert = oa_image.render_cert({"date": "2026-10-17", "call": "BG7LZQ-3"},
                                     {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
                                      "digi": [], "at": "10-17 01:08"})
