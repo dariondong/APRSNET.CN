@@ -861,6 +861,27 @@ def main():
         grid = oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
             {"call": "BG7LZQ-2", "grid": "OL62"}, {"call": "BG6TA", "grid": "ON80"}]})
         check("网格表画得出 PNG", grid[:8], b"\x89PNG\r\n\x1a\n")
+        # 中国视图：纸窄一点，只画中国周围那一块；外面的格子不画，呼号表照样列着
+        from io import BytesIO as _BIO
+        from PIL import Image as _IMG
+        hot = oa_image.HOT
+        cn_row = {"date": "2026-10-17", "call": "BG7LZQ-3", "stations": [
+            {"call": "BG7LZQ-2", "grid": "OL62"}]}
+        cn_body = oa_image.render_grid(cn_row, view="cn")
+        cn_img = _IMG.open(_BIO(cn_body)).convert("RGB")
+        check("中国视图画得出 PNG，纸按中国那一块裁窄", cn_img.size[0], oa_image.CN_SHEET)
+        check("中国视图比世界那张窄", cn_img.size[0] < _IMG.open(_BIO(grid)).size[0], True)
+        def _hot(body):
+            return sum(1 for p in _IMG.open(_BIO(body)).convert("RGB").getdata() if p == hot)
+
+        blank = _hot(oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3",
+                                           "stations": []}, view="cn"))
+        check("中国视图里 OL62 那一格点红", _hot(cn_body) > blank, True)
+        outside = oa_image.render_grid({"date": "2026-10-17", "call": "BG7LZQ-3",
+                                        "stations": [{"call": "W1AW", "grid": "FM18"}]},
+                                       view="cn")
+        check("中国视图不画范围外面的格子", _hot(outside), blank)
+        check("中国视图的图题带中国", "APRSNETCN OA 网格表 · 中国" in oa_image.TEXT["zh"]["grid_cn"], True)
         cert = oa_image.render_cert({"date": "2026-10-17", "call": "BG7LZQ-3"},
                                     {"call": "BG7LZQ-2", "grid": "OL62AA", "via": "is",
                                      "digi": [], "at": "10-17 01:08"})

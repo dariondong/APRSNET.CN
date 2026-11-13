@@ -35,7 +35,7 @@ APRS-IS：收到谁发出的 `CQ CNNET` 与 `U CNNET`，就把哪一台并进当
 | `GET /en/` | 英文活动页 |
 | `GET /api/roster` | 名单，与静态 `roster.json` 同格式，顶层多一份 `meta`（页面抬头那两行字） |
 | `GET /api/board.png` | 签到表那张 PNG，`?date=2026-10-17` 指定哪一轮，`?lang=en` 要英文 |
-| `GET /api/grid.png` | 网格表那张 PNG，参数同上；旧的 `/api/points.png` 302 到这里 |
+| `GET /api/grid.png` | 网格表那张 PNG，参数同上，多一个 `?view=cn` 只要中国周围那一块；旧的 `/api/points.png` 302 到这里 |
 | `GET /api/cert.png` | 一台一份的参与证书 PNG，`?call=BG7LZQ-2` 必写，`?date=` 与 `?lang=` 同上，`?bg=<id>` 挑征集来的底图 |
 | `GET /api/certbg` | 审过的奖状底图与票数，带 `top` / `topCurrent` 两个提示 |
 | `GET /api/certbg/image/<id>.png` | 底图本身；没审过的要带主控口令 |
