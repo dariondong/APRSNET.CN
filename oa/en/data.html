@@ -256,7 +256,7 @@
 <section class="section alt" id="data-export">
   <div class="section-head">
     <h2>Export</h2>
-    <p>One check-in table, and the grid table in two views: the world and China. The export language is picked here.</p>
+    <p>One check-in table, and the grid table in two views: the world and East Asia. The export language is picked here.</p>
   </div>
   <div class="section-body">
     <div class="oa-export">
@@ -267,7 +267,7 @@
     <div class="oa-actions">
       <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/board.png" data-oa-image="board">Download check-in table (PNG)</a>
       <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png" data-oa-image="grid">Download grid table (PNG)</a>
-      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png?view=cn" data-oa-image="grid" data-oa-view="cn">Download grid table, China (PNG)</a>
+      <a class="btn btn-ghost oa-btn" href="https://oa.aprsnet.cn/api/grid.png?view=cn" data-oa-image="grid" data-oa-view="ea">Download grid table, East Asia (PNG)</a>
     </div>
   </div>
 </section>
@@ -332,10 +332,15 @@
 <section class="section" id="data-grid">
   <div class="section-head">
     <h2>Grids</h2>
-    <p>The grids the stations reported this round sit on one world grid, taken to four characters. Squares with a check-in are lit.</p>
+    <p>The grids the stations reported this round sit on one world grid, taken to four characters. Squares with a check-in are lit. The base map is a rough outline of land, not an official map.</p>
   </div>
   <div class="section-body">
-    <div class="oa-grid" id="oaGrid" data-world="/oa/world.png">
+    <div class="oa-export">
+      <span class="oa-export-label">Map area</span>
+      <button class="oa-export-btn" type="button" data-oa-map="world" aria-pressed="true">World</button>
+      <button class="oa-export-btn" type="button" data-oa-map="ea" aria-pressed="false">East Asia</button>
+    </div>
+    <div class="oa-grid" id="oaGrid" data-world="/oa/world.png" data-east="/oa/ea.png" data-east-box="125 163 93 145">
       <p class="prose">No station in this round yet</p>
       <p class="prose">The list starts empty again in the next round.</p>
     </div>
@@ -391,7 +396,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=38"></script>
+<script src="../roster.js?v=39"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */

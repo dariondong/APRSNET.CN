@@ -46,7 +46,8 @@
    data-image-base，后半截是 board.png / grid.png，后面接上选中那一轮与页面语言；
    按钮上写了 data-oa-view 的（网格表的中国视图），再接一个 view=。
    数据面板上还有一份网格表，位子是 <ul id="oaGrid">：一个网格一行，后面跟着这一格里的呼号，
-   跟着选中那一轮重画；活动页没有这个位子，什么也不做。
+   跟着选中那一轮重画；活动页没有这个位子，什么也不做。顶上那两个按钮换地图范围
+   （data-oa-map=world / ea），亚洲东部那张的底图与范围写在 data-east 与 data-east-box 上。
    每台那一行的右端还有一个奖状链接（data-oa-cert=呼号，文字取 ul 上的 data-cert-label），
    地址是同一目录下的 cert.png。活动页没写 data-image-base，那半截就从名单地址上去掉
    「roster」那一截自己推。
@@ -504,7 +505,8 @@
             (text.charCodeAt(1) - 65) * 10 + Number(text.charAt(3))];
   };
 
-  /* 世界底图：数据面板那个格子上写着 data-world，缺了就只画网格 */
+  /* 两张底图：世界那张写 data-world，亚洲东部那张写 data-east，范围写 data-east-box
+     （经度序号起、止，纬度序号起、止，跟 server/oa_image.py 的 EA_VIEW 同口径）。 */
   var worldImage = null;
   var worldURL = gridBox ? String(gridBox.getAttribute("data-world") || "") : "";
   if (worldURL && typeof window.Image === "function") {
@@ -513,11 +515,38 @@
     worldImage.src = worldURL;
   }
 
+  var EAST_BOX = [125, 163, 93, 145];
+  var eastBox = gridBox ? String(gridBox.getAttribute("data-east-box") || "").trim() : "";
+  if (eastBox) {
+    var boxParts = eastBox.split(/[\s,]+/).map(Number);
+    var boxOk = boxParts.length === 4;
+    boxParts.forEach(function (v) {
+      if (!(v >= 0 && v <= 180) || v !== Math.floor(v)) boxOk = false;
+    });
+    if (boxOk && boxParts[0] < boxParts[1] && boxParts[2] < boxParts[3]) EAST_BOX = boxParts;
+  }
+
+  var eastImage = null;
+  var eastURL = gridBox ? String(gridBox.getAttribute("data-east") || "") : "";
+  if (eastURL && typeof window.Image === "function") {
+    eastImage = new window.Image();
+    eastImage.onload = function () { paintMap(); };
+    eastImage.src = eastURL;
+  }
+
+  var mapView = "world";                /* world 是世界那张，ea 是亚洲东部 */
+
   var drawMap = function (squares) {
+    var east = mapView === "ea";
+    var win = east ? EAST_BOX : [0, 180, 0, 180];
+    var cols = win[1] - win[0];
+    var rows = win[3] - win[2];
+    var cw = east ? 30 : MAP_CW;        /* 亚洲东部那张一格画成正方形，跟导出的那张对得上 */
+    var ch = east ? 30 : MAP_CH;
     var canvas = document.createElement("canvas");
     canvas.className = "gc-canvas";
-    canvas.width = MAP_W;
-    canvas.height = MAP_H;
+    canvas.width = cols * cw;
+    canvas.height = rows * ch;
     var ctx = canvas.getContext ? canvas.getContext("2d") : null;
     if (!ctx) return canvas;
     var css = window.getComputedStyle ? window.getComputedStyle(document.documentElement) : null;
@@ -525,26 +554,59 @@
       var value = css ? String(css.getPropertyValue(name) || "").trim() : "";
       return value || fallback;
     };
-    if (worldImage && worldImage.complete && worldImage.naturalWidth) {
-      ctx.drawImage(worldImage, 0, 0, MAP_W, MAP_H);      /* 陆地压在网格线底下 */
+    var base = east ? eastImage : worldImage;
+    if (base && base.complete && base.naturalWidth) {
+      ctx.drawImage(base, 0, 0, canvas.width, canvas.height);   /* 陆地压在网格线底下 */
     }
     ctx.lineWidth = 1;
     ctx.strokeStyle = token("--line", "rgba(21,24,28,.2)");
     var i, gx, gy;
-    for (i = 0; i <= 18; i++) {                     /* 每 10 格一条 field 的界 */
-      gx = Math.min(i * MAP_CW * 10, MAP_W - 1) + 0.5;
-      gy = Math.min(i * MAP_CH * 10, MAP_H - 1) + 0.5;
-      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, MAP_H); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(MAP_W, gy); ctx.stroke();
+    for (i = 0; i <= cols; i++) {                   /* 每 10 格一条 field 的界 */
+      if ((win[0] + i) % 10 !== 0) continue;
+      gx = Math.min(i * cw, canvas.width - 1) + 0.5;
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+    }
+    for (i = 0; i <= rows; i++) {
+      if ((win[2] + i) % 10 !== 0) continue;
+      gy = Math.min(i * ch, canvas.height - 1) + 0.5;
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
     }
     ctx.fillStyle = token("--hot-bright", "#d61f26");
-    squares.forEach(function (sq) {                 /* 点亮画大一点，缩到手机上也看得见 */
-      var x = Math.max(0, (sq[0] - 1) * MAP_CW);
-      var y = Math.max(0, (179 - sq[1] - 1) * MAP_CH);
-      ctx.fillRect(x, y, Math.min(MAP_W, x + MAP_CW * 3) - x, Math.min(MAP_H, y + MAP_CH * 3) - y);
+    var pad = east ? 0 : 1;             /* 世界那张点亮画大一点，缩到手机上也看得见 */
+    squares.forEach(function (sq) {
+      if (sq[0] < win[0] || sq[0] >= win[1] || sq[1] < win[2] || sq[1] >= win[3]) return;
+      var x = (sq[0] - win[0] - pad) * cw;
+      var y = (win[3] - 1 - sq[1] - pad) * ch;
+      var w = cw * (1 + pad * 2);
+      var h = ch * (1 + pad * 2);
+      var left = Math.max(0, Math.min(x, canvas.width - 1));
+      var top = Math.max(0, Math.min(y, canvas.height - 1));
+      ctx.fillRect(left, top, Math.min(canvas.width, x + w) - left,
+                   Math.min(canvas.height, y + h) - top);
     });
     return canvas;
   };
+
+  /* 地图范围那两个小按钮：世界 / 亚洲东部，跟导出语言那一对不同 */
+  var mapBtns = document.querySelectorAll("[data-oa-map]");
+  var paintMapBtns = function () {
+    Array.prototype.forEach.call(mapBtns, function (el) {
+      var on = String(el.getAttribute("data-oa-map") || "") === mapView;
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  };
+  if (mapBtns.length) {
+    paintMapBtns();
+    Array.prototype.forEach.call(mapBtns, function (el) {
+      el.addEventListener("click", function () {
+        var want = String(el.getAttribute("data-oa-map") || "").trim();
+        if (!want || want === mapView) return;
+        mapView = want;
+        paintMapBtns();
+        paintMap();
+      });
+    });
+  }
 
   var mapCanvas = null;
   var mapSquares = [];
