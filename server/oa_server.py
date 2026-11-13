@@ -16,6 +16,7 @@
 配置从环境变量来，也可以给 --env 一个 KEY=VALUE 的文件，清单见 oa-server.env.example。
 """
 import argparse
+import gzip
 import hmac
 import json
 import os
@@ -187,6 +188,32 @@ class Runtime(object):
         self._tx_state = {"login": "", "state": "off", "error": "", "at": ""}
         self.closed_every = as_int(conf.get("OA_CLOSED_EVERY"), 1800)
         self._stop = threading.Event()
+        # 名单那份 JSON：页面二十秒拉一次，五秒内算一次就够，压缩包也一起留着
+        self._roster_body = None
+        self._roster_at = 0.0
+        self._roster_gzip = None
+        self._roster_lock = threading.Lock()
+
+    ROSTER_TTL = 5.0
+
+    def roster_body(self):
+        """页面与数据面板拉的那份名单，序列化好的 bytes。五秒一更，轮询基本都读同一份。"""
+        with self._roster_lock:
+            now = time.time()
+            if self._roster_body is not None and now - self._roster_at < self.ROSTER_TTL:
+                return self._roster_body
+            body = json.dumps(self.store.roster(), ensure_ascii=False).encode("utf-8")
+            self._roster_body, self._roster_at = body, now
+            self._roster_gzip = None
+            return body
+
+    def roster_gzip(self):
+        """同一份名单压过的样子，缓存里留一份就够。"""
+        body = self.roster_body()
+        with self._roster_lock:
+            if self._roster_gzip is None or self._roster_gzip[0] is not body:
+                self._roster_gzip = (body, gzip.compress(body, 6))
+            return self._roster_gzip[1]
 
     # ---- 全自动 ----
 
@@ -850,6 +877,21 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, obj, code=200, extra=None):
         self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8", extra)
 
+    def _send_json(self, body, extra=None, code=200, packed=None):
+        """已经序列化好的 JSON：浏览器说能收 gzip 就发压过的那份，手机上少走的这点流量最明显。"""
+        if isinstance(body, str):
+            body = body.encode("utf-8")
+        accept = (self.headers.get("Accept-Encoding") or "").lower()
+        if len(body) > 1024 and "gzip" in accept:
+            if packed is None:
+                packed = gzip.compress(body, 6)
+            headers = dict(extra or {})
+            headers["Content-Encoding"] = "gzip"
+            headers["Vary"] = "Accept-Encoding"
+            self._send(code, packed, "application/json; charset=utf-8", headers)
+            return
+        self._send(code, body, "application/json; charset=utf-8", extra)
+
     def _fail(self, code, message):
         self._json({"ok": False, "error": message}, code)
 
@@ -903,7 +945,8 @@ class Handler(BaseHTTPRequestHandler):
                        cookie="oa_token=%s; Path=/; HttpOnly" % self._token() if self._token() else None)
             return
         if path == "/api/roster":
-            self._json(self.rt.store.roster(), 200, {"Access-Control-Allow-Origin": "*"})
+            self._send_json(self.rt.roster_body(), {"Access-Control-Allow-Origin": "*"},
+                            packed=self.rt.roster_gzip())
             return
         if path in ("/api/board.png", "/api/grid.png"):
             self._image("board" if path.startswith("/api/board") else "grid", query)

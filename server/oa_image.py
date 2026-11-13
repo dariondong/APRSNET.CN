@@ -481,8 +481,9 @@ def _b32(value, width):
 
 
 def _png(image):
+    """出 PNG。以前开 optimize，每张要一两秒；压到 3 级快一倍多，文件大几十 KB，画出来一模一样。"""
     buf = io.BytesIO()
-    image.save(buf, format="PNG", optimize=True)
+    image.save(buf, format="PNG", compress_level=3)
     return buf.getvalue()
 
 

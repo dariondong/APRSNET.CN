@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS packets (
   raw      TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS packets_ts ON packets (ts DESC);
+-- 名单与网格一读就是「这一轮的那些条」：没有这条索引，每读一轮都要把整张表扫一遍
+CREATE INDEX IF NOT EXISTS packets_round ON packets (round_id, kind, ts, id);
 
 CREATE TABLE IF NOT EXISTS rounds (
   id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -299,9 +301,17 @@ class Store(object):
             os.makedirs(data_dir)
         self.path = os.path.join(data_dir or ".", "oa.db")
         self.lock = threading.RLock()      # 可重入：add_packet 里还会回调 active_round
-        self.db = sqlite3.connect(self.path, check_same_thread=False)
+        self.db = sqlite3.connect(self.path, timeout=10.0, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         with self.lock:
+            # WAL：页面读名单的时候，收报文的那个线程照写不误，不用排队等锁。
+            # 这两个 PRAGMA 落在库文件里，换进程也有效；执行失败（老文件系统）就照默认来。
+            for pragma in ("PRAGMA journal_mode=WAL", "PRAGMA synchronous=NORMAL",
+                           "PRAGMA busy_timeout=8000"):
+                try:
+                    self.db.execute(pragma)
+                except sqlite3.Error:
+                    pass
             self.db.executescript(SCHEMA)
             self._migrate()
             self.db.commit()
