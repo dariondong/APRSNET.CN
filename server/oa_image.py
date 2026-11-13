@@ -627,12 +627,14 @@ MAP_H = CELL_H * 180
 FAINT = (228, 225, 218)
 
 # 亚洲东部视图：经度序号 125..163 是东经 70..146，纬度序号 93..145 是北纬 3..55
-# （含海南与南海诸岛）；一格 30 像素，整块 1140×1560，纸也跟着窄一点。
+# （含海南与南海诸岛）。这张按度数等比画，经纬每度一样宽，陆地才不走形：
+# 一个 4 位网格是 2°×1°，于是画成 36×18 像素，整块 1368×936。
 # 网页那幅小的同口径，两边改范围要一起改（oa/roster.js 里 EAST_BOX）。
 EA_VIEW = (125, 163, 93, 145)
-EA_CELL = 30
-EA_W = (EA_VIEW[1] - EA_VIEW[0]) * EA_CELL
-EA_H = (EA_VIEW[3] - EA_VIEW[2]) * EA_CELL
+EA_CW = 36
+EA_CH = 18
+EA_W = (EA_VIEW[1] - EA_VIEW[0]) * EA_CW
+EA_H = (EA_VIEW[3] - EA_VIEW[2]) * EA_CH
 EA_SHEET = EA_W + PAD * 2
 
 
@@ -739,36 +741,36 @@ def _ea_base():
 
 
 def _ea_map(draw, x, y, lit):
-    """亚洲东部那块网格地图：画法跟世界那张一样，只是范围收到东亚、一格画得大。
+    """亚洲东部那块网格地图：画法跟世界那张一样，只是范围收到东亚、格子画得大。
 
-    世界那张把有签到的格子往两边各扩一格画成一块，这里一格本身就够大，就画满这一格；
-    落在这一块外面的格子不画，下面的呼号表照样会列着它。返回地图底边。"""
+    这一张按度数等比（36×18），陆地跟真实形状对得上；落在范围外面的格子不画，
+    下面的呼号表照样会列着它。返回地图底边。"""
     label = font(20)
     x0, x1, y0, y1 = EA_VIEW
     cols, rows = x1 - x0, y1 - y0
     for i in range(0, cols + 1):
-        gx = x + i * EA_CELL
+        gx = x + i * EA_CW
         draw.line([gx, y, gx, y + EA_H], fill=LINE if (x0 + i) % 10 == 0 else FAINT, width=1)
     for j in range(0, rows + 1):
-        gy = y + j * EA_CELL
+        gy = y + j * EA_CH
         draw.line([x, gy, x + EA_W, gy], fill=LINE if (y0 + j) % 10 == 0 else FAINT, width=1)
     for i in range((10 - x0 % 10) % 10, cols, 10):      # 每 10 格是一个 field，标那一个字母
         text = chr(65 + (x0 + i) // 10)
         band = min(cols - i, 10)
-        cx = x + (i + band / 2.0) * EA_CELL - draw.textlength(text, font=label) / 2.0
+        cx = x + (i + band / 2.0) * EA_CW - draw.textlength(text, font=label) / 2.0
         draw.text((cx, y - 28), text, font=label, fill=GREY)
     for j in range((10 - y0 % 10) % 10, rows, 10):
         text = chr(65 + (y0 + j) // 10)
         band = min(rows - j, 10)
         draw.text((x - 12 - draw.textlength(text, font=label),
-                   y + (j + band / 2.0) * EA_CELL - 12), text, font=label, fill=GREY)
+                   y + (j + band / 2.0) * EA_CH - 12), text, font=label, fill=GREY)
     for square in lit:
         lon, lat = square
         if not (x0 <= lon < x1 and y0 <= lat < y1):
             continue
-        left = x + (lon - x0) * EA_CELL
-        top = y + (y1 - 1 - lat) * EA_CELL
-        draw.rectangle([left, top, left + EA_CELL - 1, top + EA_CELL - 1], fill=HOT)
+        left = x + (lon - x0) * EA_CW
+        top = y + (y1 - 1 - lat) * EA_CH
+        draw.rectangle([left, top, left + EA_CW - 1, top + EA_CH - 1], fill=HOT)
     draw.rectangle([x, y, x + EA_W, y + EA_H], outline=INK, width=2)
     return y + EA_H
 
