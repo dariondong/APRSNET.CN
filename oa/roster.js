@@ -541,8 +541,8 @@
     var win = east ? EAST_BOX : [0, 180, 0, 180];
     var cols = win[1] - win[0];
     var rows = win[3] - win[2];
-    var cw = east ? 30 : MAP_CW;        /* 亚洲东部那张一格画成正方形，跟导出的那张对得上 */
-    var ch = east ? 30 : MAP_CH;
+    var cw = east ? 36 : MAP_CW;        /* 亚洲东部那张按度数等比：一格 36×18，跟导出的那张对得上 */
+    var ch = east ? 18 : MAP_CH;
     var canvas = document.createElement("canvas");
     canvas.className = "gc-canvas";
     canvas.width = cols * cw;
