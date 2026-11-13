@@ -274,17 +274,17 @@
 <section class="section" id="data-certbg">
   <div class="section-head">
     <h2>Certificate backgrounds</h2>
-    <p>The certificate can use another background. Backgrounds are submitted by users and reviewed by the duty station before they are listed; the most-voted comes first.</p>
+    <p>The certificate can use another background. Each round collects its own: submissions are reviewed by the duty station before they are listed, and the most-voted comes first.</p>
   </div>
   <div class="section-body">
     <div class="cb-call">
       <p>Submissions need a callsign, name and contact details, plus the agreement below.</p>
       <button class="oa-verify-go" id="oaCertBgOpen" type="button" aria-controls="oaCertBgModal" aria-expanded="false">Submit a picture</button>
     </div>
-    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="Round" data-label-votes="Votes" data-label-at="Received" data-use-label="Select this" data-in-use-label="Selected" data-vote-label="Vote" data-voted-label="Voted" data-vote-failed="Voting failed, please try again later." data-empty-title="No submissions yet" data-empty-note="Reviewed backgrounds are listed here.">
+    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-votes="Votes" data-label-at="Received" data-use-label="Select this" data-in-use-label="Selected" data-vote-label="Vote" data-voted-label="Voted" data-vote-failed="Voting failed, please try again later." data-empty-title="No backgrounds this round" data-empty-note="Reviewed backgrounds appear here.">
       <li>
-        <b class="st-call">No submissions yet</b>
-        <span class="st-note">Reviewed backgrounds are listed here.</span>
+        <b class="st-call">No backgrounds this round</b>
+        <span class="st-note">Reviewed backgrounds appear here.</span>
       </li>
     </ul>
     <p class="oa-note">Contact details are visible to the duty station only. The page shows the callsign and name.</p>
@@ -390,7 +390,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="../roster.js?v=36"></script>
+<script src="../roster.js?v=37"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */

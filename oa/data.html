@@ -274,17 +274,17 @@
 <section class="section" id="data-certbg">
   <div class="section-head">
     <h2>奖状卡片底图征集</h2>
-    <p>奖状可以换一张底图。底图由用户投稿，经主控台审核后展示，得票多的排在前面。</p>
+    <p>奖状可以换一张底图，每轮征集一次。投稿经主控台审核后展示，得票多的排在前面。</p>
   </div>
   <div class="section-body">
     <div class="cb-call">
       <p>投稿请填写呼号、姓名、联系方式，并确认授权。</p>
       <button class="oa-verify-go" id="oaCertBgOpen" type="button" aria-controls="oaCertBgModal" aria-expanded="false">投稿</button>
     </div>
-    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-round="场次" data-label-votes="票数" data-label-at="收到" data-use-label="选用这张" data-in-use-label="已选用" data-vote-label="投票" data-voted-label="已投票" data-vote-failed="投票失败，请稍后再试。" data-empty-title="暂无投稿" data-empty-note="通过审核的底图会显示在这里。">
+    <ul class="st-list oa-certbg" id="oaCertBg" data-certbg="https://oa.aprsnet.cn/api/certbg" data-label-votes="票数" data-label-at="收到" data-use-label="选用这张" data-in-use-label="已选用" data-vote-label="投票" data-voted-label="已投票" data-vote-failed="投票失败，请稍后再试。" data-empty-title="这一轮还没有底图" data-empty-note="通过审核的底图会出现在这里。">
       <li>
-        <b class="st-call">暂无投稿</b>
-        <span class="st-note">通过审核的底图会显示在这里。</span>
+        <b class="st-call">这一轮还没有底图</b>
+        <span class="st-note">通过审核的底图会出现在这里。</span>
       </li>
     </ul>
     <p class="oa-note">联系方式仅供主控台查看，页面上只显示呼号与姓名。</p>
@@ -390,7 +390,7 @@
   <svg class="backtop-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12l7-7z"/></svg>
 </a>
 
-<script src="roster.js?v=36"></script>
+<script src="roster.js?v=37"></script>
 <script src="https://aprsnet.cn/main.js?v=13"></script>
 <script>
 /* 切语言时把正读到的那一小节带过去：两个语言页的小节 id 是同一套，hash 直接跟过去。 */

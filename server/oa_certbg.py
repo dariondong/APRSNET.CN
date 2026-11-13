@@ -183,10 +183,15 @@ def pick_top(items, round_code=""):
 
 
 def listing(store, round_code=""):
-    """`/api/certbg` 那份：审核通过的底图 + 票数 + 两张「选哪张」的提示。"""
+    """`/api/certbg` 那份：这一轮审核通过的底图 + 票数 + 本期最高票。
+
+    征集一轮一次：只列这一轮收的稿，往期审过的留在库里，不混进这一轮的名单。
+    """
     rows = store.certbg_rows("approved")
     votes = store.certbg_votes()
-    items = [public(row, votes) for row in rows]
+    code = str(round_code or "")
+    items = [public(row, votes) for row in rows
+             if not code or (row.get("round") or "") == code]
     items.sort(key=lambda it: (-it["votes"], it.get("at") or "", it["id"]))
     return {"ok": True, "round": round_code, "items": items,
             "top": pick_top(items),

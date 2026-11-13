@@ -50,9 +50,10 @@
    地址是同一目录下的 cert.png。活动页没写 data-image-base，那半截就从名单地址上去掉
    「roster」那一截自己推。
 
-   数据面板上还有一块奖状底图的征集：<ul id="oaCertBg" data-certbg="…">，里面铺主控台审过的
-   那些底图，一行一张（data-label-round / -votes / -at 是那三项的字段名，use / in-use /
-   vote / voted / vote-failed / empty-title / empty-note 是几个按钮与空状态的字）。图自己的地址
+   数据面板上还有一块奖状底图的征集：<ul id="oaCertBg" data-certbg="…">，里面铺这一轮主控台
+   审过的底图，一行一张（data-label-votes / -at 是那两个字段名，use / in-use / vote / voted /
+   vote-failed / empty-title / empty-note 是几个按钮与空状态的字）。征集一轮一次：列表跟着选中
+   的那一轮走（请求带 ?date=），往期的留在库里、不混进来。图自己的地址
    是 data-image-base 拼上 certbg/image/<id>.png；投票往 data-certbg 后面接 /vote 发一条
    POST {"id": …}，投稿往 /submit 发呼号、姓名、联系方式、授权与那张图的 data URL。
    选中的那张记在 localStorage 的 oa_certbg 里，导出奖状的链接后面就多一个 bg=<id>，
@@ -673,6 +674,7 @@
     stamp(round);
     fillGrid(round);
     fillImages(round);
+    bgLoad(round);          /* 底图征集跟着选中的那一轮走 */
   };
 
   /* 主控呼号：点一下复制。老浏览器或非安全来源没有 navigator.clipboard，
@@ -840,7 +842,6 @@
     main.appendChild(call);
     var dl = document.createElement("dl");
     dl.className = "st-fields";
-    addField(dl, bgWord("label-round"), item.round);
     addField(dl, bgWord("label-votes"), String(item.votes || 0));
     addField(dl, bgWord("label-at"), item.at);
     main.appendChild(dl);
@@ -922,9 +923,12 @@
 
   var bgRoundCode = "";
 
-  var bgLoad = function () {
+  var bgLoad = function (round) {
     if (!bgUrl || !window.fetch) return;
-    fetch(bgUrl, { cache: "no-store" }).then(function (r) { return r.json(); })
+    var date = String((round && round.date) || "").trim();
+    var ask = bgUrl + (date ? (bgUrl.indexOf("?") < 0 ? "?" : "&") +
+      "date=" + encodeURIComponent(date) : "");
+    fetch(ask, { cache: "no-store" }).then(function (r) { return r.json(); })
       .then(function (data) {
         if (!data || !data.ok) return;
         bgItems = data.items || [];
@@ -1151,7 +1155,7 @@
     if (bgModal && !bgModal.hidden) bgModalShow(false);
   });
 
-  bgLoad();
+  bgLoad(null);
 
   /* 编号：奖状右上角那 20 位是算出来的，几段定长 32 进制拼在一起。
      位置固定，拆开就是呼号、场次、时间、网格，不靠服务器、不靠名单。 */

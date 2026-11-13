@@ -390,7 +390,7 @@ a{color:inherit}
   var cbTable = function (rows, mode) {
     var table = document.createElement("table");
     var head = document.createElement("tr");
-    ["图", "呼号", "姓名", "联系方式", "收到", "尺寸", "票数", "操作"].forEach(function (label) {
+    ["图", "场次", "呼号", "姓名", "联系方式", "收到", "尺寸", "票数", "操作"].forEach(function (label) {
       var th = document.createElement("th");
       th.textContent = label;
       head.appendChild(th);
@@ -401,6 +401,7 @@ a{color:inherit}
       var pic = document.createElement("td");
       pic.appendChild(cbImage(row));
       tr.appendChild(pic);
+      cell(tr, row.round || "—", "mono");
       cell(tr, row.call, "mono");
       cell(tr, row.name);
       cell(tr, row.contact, "mono");

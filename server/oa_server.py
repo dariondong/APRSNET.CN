@@ -917,7 +917,8 @@ class Handler(BaseHTTPRequestHandler):
             self._cert(query)
             return
         if path == "/api/certbg":
-            self._json(oa_certbg.listing(self.rt.store, self._round_code()), 200,
+            date = (query.get("date") or [""])[0].strip()
+            self._json(oa_certbg.listing(self.rt.store, self._round_code_of(date)), 200,
                        {"Access-Control-Allow-Origin": "*"})
             return
         if path.startswith("/api/certbg/image/"):
@@ -1340,6 +1341,13 @@ class Handler(BaseHTTPRequestHandler):
         if not rnd:
             return ""
         return str((store.round_text(rnd["date"]) or {}).get("code") or "")
+
+    def _round_code_of(self, date=""):
+        """某一轮的编号：底图征集一轮一次，页面看哪一轮就只列那一轮收的稿。"""
+        store = self.rt.store
+        if date and store.round_by_date(date):
+            return str((store.round_text(date) or {}).get("code") or "")
+        return self._round_code()
 
     def _client_ip(self):
         """来的人是谁：反代后面看 X-Real-IP，直接连就是连接地址。"""

@@ -1146,6 +1146,9 @@ def main():
 
             draft = {"call": "bg7lzq-9", "name": "张三", "contact": "13800000000",
                      "agree": True, "image": png_url()}
+            # 征集一轮一次：先把这一轮的编号写上，投稿才能记到这一轮上
+            rdate = oa_store.round_date_of(oa_aprs.now_iso())
+            rt.store.set_round_text(rdate, {"activity_code": "261017"})
             sent, code = post_plain("/api/certbg/submit", draft)
             check("投稿收下了，先挂着等审", (code, sent.get("status")), (200, "pending"))
             first = str(sent.get("id") or "")
@@ -1169,6 +1172,17 @@ def main():
                   ("BG7LZQ-9", "张三"))
             check("只有一张时最高票就是它",
                   (public.get("top"), public.get("topCurrent")), (first, first))
+            check("投稿记在这一轮的编号上", rt.store.certbg_get(first)["round"], "261017")
+            check("只列这一轮收的稿",
+                  [it["id"] for it in oa_certbg.listing(rt.store, "261999")["items"]], [])
+            check("按日期取这一轮，看得到",
+                  [it["id"] for it in json.loads(
+                      gget("/api/certbg?date=%s" % rdate)[0].decode("utf-8"))["items"]], [first])
+            rt.store.ensure_round("2020-01-04", "BG7LZQ-2")
+            rt.store.set_round_text("2020-01-04", {"activity_code": "200104"})
+            check("换到另一轮就看不到这一轮的稿",
+                  [it["id"] for it in json.loads(
+                      gget("/api/certbg?date=2020-01-04")[0].decode("utf-8"))["items"]], [])
             image, code = gget("/api/certbg/image/%s.png" % first)
             check("审过的图能看", (code, image[:8]), (200, b"\x89PNG\r\n\x1a\n"))
             voted, code = post_plain("/api/certbg/vote", {"id": first})
