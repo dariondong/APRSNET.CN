@@ -536,8 +536,19 @@ def main():
             "UPDATE rounds SET opened=? WHERE date=?",
             ((datetime.now(UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"), "2026-10-17"))
         again.store.db.commit()
-        again.store.set_station("2026-10-17", "BG1AAA", status="called")
-        again.store.set_station("2026-10-17", "BG2BBB", status="confirmed")
+        # 名单里那几台要真的喊到过才谈得上补 ACK：光有名单行、没有报文的不补
+        again.store.add_packet(oa_aprs.parse_line(
+            "BG1AAA>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET BG1AAA OL51"))
+        again.store.add_packet(oa_aprs.parse_line(
+            "BG2BBB>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :CQ CNNET BG2BBB OL52"))
+        again.store.add_packet(oa_aprs.parse_line(
+            "BG2BBB>APRS,TCPIP*,qAC,T2X::BG7LZQ-2 :U CNNET"))
+        again.store.set_station("2026-10-17", "BG3HAND", grid="OL51", status="called")
+        again.store.set_station("2026-10-17", "BG4HAND", grid="OL51", status="confirmed")
+        check("喊到过的那台还是只喊到",
+              again.store.get_station("2026-10-17", "BG1AAA")["status"], "called")
+        check("回了 U 的那台是已确认",
+              again.store.get_station("2026-10-17", "BG2BBB")["status"], "confirmed")
         check("关着的时候不补", again.retry_pending_acks(), 0)
         again.set_auto_mode(True)
         check("打开了", again.auto_mode, True)
@@ -549,7 +560,9 @@ def main():
         check("手开的下一轮不会被自动收掉",
               (again.store.round_by_date(future) or {}).get("closed"), "")
         again.store.open_round("2026-10-17", "BG7LZQ-2")
-        check("只补没回上 ACK 的那台", again.retry_pending_acks(), 1)
+        check("只补真喊到过的那两台", again.retry_pending_acks(), 2)
+        check("手写补进名单的那台不补 ACK", len(again.store.outbox_for("BG3HAND")), 0)
+        check("手写补的已确认那台也不补", len(again.store.outbox_for("BG4HAND")), 0)
         check("补回那条的写法", said(again.store.outbox_for("BG1AAA")[0]["line"]), "ACK")
         check("回的那条不挂编号（标准 ack）",
               again.store.outbox_for("BG1AAA")[0]["line"].endswith(":ACK"), True)
@@ -744,6 +757,14 @@ def main():
         rt.store.mark_acked_station(today, "BG1OLD-2")
         check("已确认的不往回掉",
               rt.store.get_station(today, "BG1OLD-2")["status"], "confirmed")
+        # 手写补进名单的台站没有喊到报文：不给它回 ACK，它的留言还读得出来
+        rt.store.set_station(today, "BG2MAN", grid="OL51", note="手写补的")
+        check("手写的台站不回 ACK",
+              rt.ack_pending(rt.store.active_round(), "BG2MAN"), False)
+        check("手写的台站不发一封信", len(rt.store.outbox_for("BG2MAN")), 0)
+        hand = [s for r in rt.store.roster()["rounds"] for s in r["stations"]
+                if s["call"] == "BG2MAN"]
+        check("手写台站的留言也读得出来", hand[0]["msg"] if hand else "", "手写补的")
         rt.store.close()
     finally:
         shutil.rmtree(mid_dir, ignore_errors=True)

@@ -847,7 +847,9 @@ class Store(object):
                     "atUtc": utc_at(row["first_ts"]) if row["at"] == first else "",
                     "firstUtc": utc_at(row["first_ts"]),
                     "lastUtc": utc_at(row["last_ts"]),
-                    "msg": msgs.get(row["call"], ""),
+                    # 报文里没读到那句话就用名单这一行自己存的：手写补进名单的台站
+                    # 只有这一份留言。
+                    "msg": msgs.get(row["call"], "") or (row["note"] or ""),
                 })
                 if row["last_ts"] > last:
                     last = row["last_ts"]

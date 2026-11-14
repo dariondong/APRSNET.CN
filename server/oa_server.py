@@ -619,6 +619,11 @@ class Runtime(object):
         station = self.store.get_station(active["date"], call)
         if not station:
             return False
+        # 没有喊到报文的台站不回：名单里手写补进去的那几台没人发过话，
+        # 补漏那一圈会拿一句没人喊过的确认真的发到天上。
+        checkin = self.store.last_checkin_ts(active["id"], call)
+        if not checkin:
+            return False
         acks = self.our_acks(call, active["opened"] or "")
         if any((not r["sent"]) and (not r["error"]) for r in acks):
             return False                                # 有一条 ACK 还排着队，等它发
@@ -628,8 +633,7 @@ class Runtime(object):
         for r in acks:
             if r["sent"] and r["sent"] > last_ok:
                 last_ok = r["sent"]
-        checkin = self.store.last_checkin_ts(active["id"], call)
-        return bool(checkin) and checkin > last_ok
+        return checkin > last_ok
 
     def ack_message(self, record, rid=None):
         """每一条发给本台的报文都回一条机器 ack：同一个编号只回一次。
