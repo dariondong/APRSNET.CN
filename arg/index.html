@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>· — ·</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0e11">
+<link rel="icon" type="image/png" href="https://aprsnet.cn/assets/favicon.png?v=5">
+<link rel="apple-touch-icon" href="https://aprsnet.cn/assets/icon.png?v=5">
+<style>
+:root{
+  --bg:#0b0e11;
+  --ink:#d8dde3;
+  --dim:#5d6b76;
+  --line:#1e262d;
+  --hot:#ff8a8a;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:16px/1.6 "Helvetica Neue",Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  overflow:hidden;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;
+  user-select:none;
+}
+#arg{
+  position:relative;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:56px;
+  padding:84px 20px 44px;
+  opacity:1;
+  transition:opacity .45s linear;
+}
+#arg.done{opacity:0}
+
+.tape{
+  position:absolute;
+  top:0;left:0;right:0;
+  height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  padding:0 18px;
+  border-bottom:1px solid var(--line);
+  font-family:var(--mono);
+  font-size:15px;
+  letter-spacing:.16em;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.tape .txt{color:var(--ink)}
+.tape .pend{color:var(--hot)}
+.tape .caret{
+  display:inline-block;
+  width:9px;height:1.05em;
+  margin-left:.42em;
+  background:var(--hot);
+  opacity:.75;
+  animation:blink 1.05s steps(1,end) infinite;
+}
+@keyframes blink{0%,49%{opacity:.75}50%,100%{opacity:0}}
+
+.lamp{
+  width:10px;height:10px;
+  border-radius:50%;
+  background:var(--hot);
+  opacity:.10;
+  box-shadow:0 0 0 0 rgba(255,138,138,0);
+  transition:opacity .06s linear,box-shadow .12s linear;
+}
+.lamp.on{opacity:1;box-shadow:0 0 22px 5px rgba(255,138,138,.35)}
+
+.key{
+  width:min(320px,72vw);
+  height:88px;
+  border:1px solid var(--line);
+  background:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  outline:none;
+  transition:border-color .08s linear,background .08s linear;
+}
+.key i{
+  display:block;
+  width:56px;height:2px;
+  background:var(--dim);
+  transition:transform .06s linear,background .06s linear;
+}
+.key.on{
+  border-color:rgba(255,138,138,.55);
+  background:rgba(255,138,138,.05);
+}
+.key.on i{background:var(--hot);transform:translateY(2px)}
+
+.gate{display:flex}
+.gate input{
+  width:min(260px,60vw);
+  background:transparent;
+  border:0;
+  border-bottom:1px solid var(--line);
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:19px;
+  letter-spacing:.34em;
+  text-indent:.34em;
+  text-align:center;
+  padding:10px 0;
+  outline:none;
+  caret-color:var(--hot);
+  transition:border-color .12s linear;
+}
+.gate input:focus{border-bottom-color:var(--dim)}
+.gate.bad input{border-bottom-color:var(--hot)}
+.gate.bad{animation:shake .34s linear}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-5px)}
+  40%{transform:translateX(4px)}
+  60%{transform:translateX(-3px)}
+  80%{transform:translateX(2px)}
+}
+
+.reveal{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:48px 24px;
+  text-align:center;
+  background:var(--bg);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .9s ease;
+}
+.reveal.on{opacity:1;pointer-events:auto}
+.reveal p{
+  margin:0 0 6px;
+  font-size:17px;
+  line-height:2.1;
+  color:var(--ink);
+}
+.reveal .sig{
+  margin-top:36px;
+  font-family:var(--mono);
+  font-size:22px;
+  letter-spacing:.5em;
+  text-indent:.5em;
+  color:var(--hot);
+}
+
+@media (max-height:620px){
+  #arg{gap:34px;padding-top:76px}
+  .key{height:72px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tape .caret{animation:none;opacity:.75}
+  .gate.bad{animation:none}
+  .reveal{transition:none}
+}
+</style>
+</head>
+<body>
+<main id="arg">
+  <div class="tape" aria-hidden="true"><span class="txt" id="txt"></span><span class="pend" id="pend"></span><i class="caret" id="caret"></i></div>
+  <div class="lamp" id="lamp" aria-hidden="true"></div>
+  <div class="key" id="key" role="button" tabindex="0" aria-label="key"><i aria-hidden="true"></i></div>
+  <form class="gate" id="gate" autocomplete="off">
+    <input id="pass" type="password" name="p" aria-label="pass" autocapitalize="none" autocorrect="off" spellcheck="false">
+  </form>
+</main>
+
+<div class="reveal" id="reveal">
+  <p>信号已确认。</p>
+  <p>这台机器不在呼号表里。</p>
+  <p>它只在夜里工作。</p>
+  <p>下一次还是同一个频率。</p>
+  <p class="sig">73</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CODE = {
+    A: '.-', B: '-...', C: '-.-.', D: '-..', E: '.', F: '..-.', G: '--.', H: '....',
+    I: '..', J: '.---', K: '-.-', L: '.-..', M: '--', N: '-.', O: '---', P: '.--.',
+    Q: '--.-', R: '.-.', S: '...', T: '-', U: '..-', V: '...-', W: '.--', X: '-..-',
+    Y: '-.--', Z: '--..',
+    '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-',
+    '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.',
+    '.': '.-.-.-', ',': '--..--', '?': '..--..', '/': '-..-.', '=': '-...-',
+    '+': '.-.-.', ':': '---...', ';': '-.-.-.', '@': '.--.-.', '-': '-....-'
+  };
+  var BACK = {};
+  for (var k in CODE) {
+    if (Object.prototype.hasOwnProperty.call(CODE, k)) BACK[CODE[k]] = k;
+  }
+
+  var UNIT = 150;      // 信标的一个点有多长（毫秒）
+  var DIT = 200;       // 手键：短于这个算点，长于这个算划
+  var GAP = 460;       // 这么久没有动静，就把手里的点划收成一个字
+  var WORD = 1500;     // 再久一点，补一个词间隔
+  var MAXCH = 44;      // 磁带只留最近这么多个字
+  var FREQ = 620;      // 侧音
+  var SECRET = 'UVk1';
+  var BEACON = 'UVK1';
+
+  var $ = function (s) { return document.querySelector(s); };
+  var argEl = $('#arg'), lamp = $('#lamp'), keyEl = $('#key'),
+      txtEl = $('#txt'), pendEl = $('#pend'), caret = $('#caret'),
+      gate = $('#gate'), passEl = $('#pass'), reveal = $('#reveal');
+
+  var locked = false, keyHeld = false, beaconOn = false;
+  var marks = [], text = '', downAt = 0;
+  var letterTimer = 0, wordTimer = 0, pointerId = null;
+  var ac = null, osc = null, gain = null;
+
+  function now() {
+    return (window.performance && performance.now) ? performance.now() : Date.now();
+  }
+
+  function refresh() {
+    var on = !locked && (keyHeld || beaconOn);
+    lamp.classList.toggle('on', on);
+    keyEl.classList.toggle('on', !locked && keyHeld);
+    if (ac) {
+      gain.gain.setTargetAtTime(on ? 0.13 : 0, ac.currentTime, 0.005);
+    }
+  }
+
+  function arm() {
+    if (ac) {
+      if (ac.state === 'suspended') { ac.resume(); }
+      return;
+    }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try {
+      ac = new AC();
+      osc = ac.createOscillator();
+      gain = ac.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = FREQ;
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start();
+      refresh();
+    } catch (e) {
+      ac = null;
+    }
+  }
+
+  function paint() {
+    txtEl.textContent = text.length > MAXCH ? text.slice(-MAXCH) : text;
+    pendEl.textContent = marks.join('');
+  }
+
+  function decode(seq) {
+    return BACK.hasOwnProperty(seq) ? BACK[seq] : '?';
+  }
+
+  function keyDown() {
+    arm();
+    if (locked || keyHeld) return;
+    keyHeld = true;
+    downAt = now();
+    clearTimeout(letterTimer);
+    clearTimeout(wordTimer);
+    refresh();
+  }
+
+  function keyUp() {
+    if (!keyHeld) return;
+    keyHeld = false;
+    var d = now() - downAt;
+    marks.push(d < DIT ? '.' : '-');
+    if (marks.length > 9) marks = marks.slice(-9);
+    paint();
+    refresh();
+    letterTimer = setTimeout(flush, GAP);
+    wordTimer = setTimeout(wordGap, WORD);
+  }
+
+  function flush() {
+    if (locked || !marks.length) return;
+    text += decode(marks.join(''));
+    marks = [];
+    paint();
+    var tail = text.replace(/\s+/g, '').toUpperCase();
+    if (tail.slice(-SECRET.length) === SECRET.toUpperCase()) unlock();
+  }
+
+  function wordGap() {
+    if (locked || !text || /\s$/.test(text)) return;
+    text += ' ';
+    paint();
+  }
+
+  // 信标：一个点划序列自己在跑，灯跟着亮
+  function pulse(ms) {
+    if (locked) return;
+    beaconOn = true;
+    refresh();
+    setTimeout(function () {
+      beaconOn = false;
+      refresh();
+    }, ms);
+  }
+
+  function beaconRun() {
+    var chars = BEACON.split(''), i = 0;
+    function nextChar() {
+      if (locked) return;
+      if (i >= chars.length) {
+        i = 0;
+        setTimeout(nextChar, 7 * UNIT + 5200);
+        return;
+      }
+      var pat = CODE[chars[i]] || '';
+      i += 1;
+      var j = 0;
+      (function nextEl() {
+        if (locked) return;
+        if (j >= pat.length) { setTimeout(nextChar, 3 * UNIT); return; }
+        var d = pat.charAt(j) === '.' ? UNIT : 3 * UNIT;
+        j += 1;
+        pulse(d);
+        setTimeout(nextEl, d + UNIT);
+      })();
+    }
+    nextChar();
+  }
+
+  function match(v) {
+    return String(v || '').replace(/\s+/g, '').toLowerCase() === SECRET.toLowerCase();
+  }
+
+  function bad() {
+    gate.classList.add('bad');
+    setTimeout(function () { gate.classList.remove('bad'); }, 380);
+  }
+
+  function unlock() {
+    if (locked) return;
+    locked = true;
+    keyHeld = false;
+    beaconOn = false;
+    clearTimeout(letterTimer);
+    clearTimeout(wordTimer);
+    refresh();
+    text = '73';
+    marks = [];
+    paint();
+    caret.style.display = 'none';
+    argEl.classList.add('done');
+    setTimeout(function () {
+      reveal.classList.add('on');
+      argEl.style.display = 'none';
+    }, 420);
+  }
+
+  gate.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = passEl.value;
+    passEl.value = '';
+    if (!String(v).trim()) return;
+    if (match(v)) { unlock(); return; }
+    bad();
+  });
+
+  document.addEventListener('pointerdown', function (e) {
+    if (locked) return;
+    if (gate.contains(e.target)) { arm(); return; }
+    if (e.button && e.button !== 0) return;
+    if (pointerId !== null) return;
+    pointerId = e.pointerId;
+    keyDown();
+  });
+
+  function release(e) {
+    if (pointerId === null) return;
+    if (e && e.pointerId !== undefined && e.pointerId !== pointerId) return;
+    pointerId = null;
+    keyUp();
+  }
+  document.addEventListener('pointerup', release);
+  document.addEventListener('pointercancel', release);
+  window.addEventListener('blur', function () { release(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.code !== 'Space' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    if (document.activeElement === passEl) return;
+    e.preventDefault();
+    if (!e.repeat) keyDown();
+  });
+  document.addEventListener('keyup', function (e) {
+    if (e.code !== 'Space' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    keyUp();
+  });
+
+  paint();
+  refresh();
+  beaconRun();
+})();
+</script>
+</body>
+</html>
