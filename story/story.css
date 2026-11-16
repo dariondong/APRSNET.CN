@@ -1,0 +1,98 @@
+/* 衍生剧本集 · 阅读排版
+   只做一件事：把一段文字放舒服。
+   主站的 style.css 管框架，这个只管正文。 */
+
+/* ---------- 目录 ---------- */
+.st-list{list-style:none;margin:34px 0 0;padding:0;
+  border-top:1px solid var(--line-strong)}
+.st-list li{border-bottom:1px solid var(--line)}
+.st-list a{
+  display:grid;grid-template-columns:1fr auto;gap:4px 24px;
+  align-items:baseline;padding:22px 2px;text-decoration:none;color:inherit;
+  transition:background .18s ease, padding-left .18s ease;
+}
+.st-list a:hover{background:var(--surface-2);padding-left:10px}
+.st-list b{font-size:19px;font-weight:600;letter-spacing:-.01em;color:var(--text)}
+.st-list .st-note{grid-column:1;color:var(--text-dim);font-size:15px;line-height:1.7}
+.st-list .st-meta{grid-column:2;grid-row:1/span 2;color:var(--text-dim);
+  font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;align-self:center}
+
+/* ---------- 正文 ---------- */
+.st-body{max-width:38em;margin:0 auto}
+.st-body p{
+  font-size:17.5px;line-height:2.0;letter-spacing:.012em;
+  color:var(--text);margin:0 0 1.35em;
+}
+/* 段与段之间留白靠 margin，不用缩进 —— 中文竖排的缩进在网页上不成立 */
+.st-body p.first{margin-top:0}
+
+/* 单独一句一行，重一点 */
+.st-body p.beat{color:var(--text);font-weight:600;letter-spacing:.02em}
+
+/* 空行/停顿。给一句留出呼吸，不要有字的物理高度。 */
+.st-body hr{
+  border:0;height:0;margin:2.2em 0;border-top:0;
+  /* 用一个极淡的点表示"这里停了一下" */
+  background:none;position:relative;
+}
+.st-body hr::after{
+  content:"";position:absolute;left:50%;top:0;width:5px;height:5px;
+  margin-left:-2.5px;border-radius:50%;
+  background:var(--line-strong);opacity:.75;
+}
+
+.st-body blockquote{
+  margin:1.8em 0;padding:2px 0 2px 20px;
+  border-left:2px solid var(--line-strong);
+  color:var(--text-dim);
+}
+.st-body blockquote p{margin-bottom:.9em;font-size:17px}
+.st-body blockquote p:last-child{margin-bottom:0}
+
+/* 手台/报文那种等宽块 */
+.st-body pre{
+  margin:1.8em 0;padding:16px 18px;overflow-x:auto;
+  background:var(--surface-2);border:1px solid var(--line);
+  font:14px/1.85 var(--mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);
+  color:var(--text-dim);white-space:pre-wrap;word-break:break-word;
+}
+
+/* 小标题（有些篇分节） */
+.st-body h2{
+  font-size:19px;font-weight:700;letter-spacing:-.01em;
+  margin:2.4em 0 1em;color:var(--text);
+}
+.st-body h2:first-child{margin-top:0}
+
+/* 篇末 */
+.st-end{
+  margin:3.4em 0 0;padding-top:22px;border-top:1px solid var(--line);
+  color:var(--text-dim);font-size:14px;letter-spacing:.02em;
+}
+.st-end .st-sig{font-family:var(--mono,ui-monospace,monospace)}
+
+/* 上下篇 */
+.st-nav{
+  display:flex;justify-content:space-between;gap:18px;
+  margin-top:46px;padding-top:26px;border-top:1px solid var(--line-strong);
+  font-size:15px;
+}
+.st-nav a{color:var(--text-dim);text-decoration:none}
+.st-nav a:hover{color:var(--hot-deep)}
+.st-nav .st-next{text-align:right;margin-left:auto}
+
+/* ---------- 提示框 ---------- */
+.st-warn{
+  margin:0 0 34px;padding:14px 18px;
+  border-left:2px solid var(--line-strong);background:var(--surface-2);
+  color:var(--text-dim);font-size:14.5px;line-height:1.8;
+}
+.st-warn b{color:var(--text)}
+
+@media (max-width:640px){
+  .st-body p{font-size:16.5px;line-height:1.95}
+  .st-list a{grid-template-columns:1fr;gap:6px}
+  .st-list .st-meta{grid-column:1;grid-row:auto}
+  .st-nav{flex-direction:column;gap:12px}
+  .st-nav .st-next{text-align:left;margin-left:0}
+}
