@@ -96,3 +96,25 @@
   .st-nav{flex-direction:column;gap:12px}
   .st-nav .st-next{text-align:left;margin-left:0}
 }
+
+/* 谁在说。第一人称的篇必须标，不然读者会读成主角。
+   选择器要写 .section-head .st-who —— 主站有 .section-head p 的规则，
+   单写 .st-who 会被它压掉（字会变成 17px 的正文大小）。 */
+.section-head .st-who{
+  margin:12px 0 0 !important;
+  font-family:var(--mono,ui-monospace,monospace) !important;
+  font-size:12.5px !important;font-weight:400 !important;
+  letter-spacing:.26em !important;color:var(--text-dim) !important;
+  line-height:1.6 !important;
+}
+.section-head .st-who::before{content:"\2014\2014\00a0";letter-spacing:0}
+
+/* 目录里的同一件事 */
+.st-who-tag{
+  display:inline-block;margin-left:12px;padding:1px 9px;
+  border:1px solid var(--line);border-radius:2px;
+  font-family:var(--mono,ui-monospace,monospace);
+  font-size:11.5px;letter-spacing:.16em;color:var(--text-dim);
+  vertical-align:2px;font-weight:400;
+}
+@media (max-width:640px){ .st-who-tag{margin-left:9px;font-size:11px} }
